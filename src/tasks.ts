@@ -1,4 +1,5 @@
 import { reduceBlocks, type Block, type BlockAction } from "./blocks";
+import { newId } from "./id";
 import { swap } from "./list";
 
 // The molecule. A task owns its blocks outright — containment, not references — so a block
@@ -14,8 +15,8 @@ export type Task = { id: TaskId; title: string; blocks: readonly Block[]; outcom
 // So there is always exactly one open task and never zero tasks — neither is a case to handle.
 export type Doc = { before: readonly Task[]; open: Task; after: readonly Task[] };
 
-export const createOutcome = (label: string): Outcome => ({ id: crypto.randomUUID() as OutcomeId, label });
-export const createTask = (): Task => ({ id: crypto.randomUUID() as TaskId, title: "Untitled task", blocks: [], outcomes: [createOutcome("Done")] });
+export const createOutcome = (label: string): Outcome => ({ id: newId(), label });
+export const createTask = (): Task => ({ id: newId(), title: "Untitled task", blocks: [], outcomes: [createOutcome("Done")] });
 export const tasks = (doc: Doc): readonly Task[] => [...doc.before, doc.open, ...doc.after];
 
 // The one way to build a document: open the task at `i`, clamped into range. An empty list
@@ -41,27 +42,34 @@ export type TaskAction =
   | { on: "task"; type: "rename"; title: string }
   | { on: "task"; type: "remove"; id: TaskId }
   | { on: "task"; type: "move"; by: 1 | -1 };
+export type DocAction = { on: "doc"; type: "adopt"; tasks: readonly Task[] };
 export type OutcomeAction =
   | { on: "outcome"; type: "add" }
   | { on: "outcome"; type: "rename"; id: OutcomeId; label: string }
   | { on: "outcome"; type: "remove"; id: OutcomeId }
   | { on: "outcome"; type: "move"; id: OutcomeId; by: 1 | -1 };
-export type Action = TaskAction | OutcomeAction | BlockAction;
+export type Action = DocAction | TaskAction | OutcomeAction | BlockAction;
 
 const reduceOutcomes = (task: Task, action: OutcomeAction): Task => {
   const list = task.outcomes;
-  const i = "id" in action ? list.findIndex((o) => o.id === action.id) : -1;
   switch (action.type) {
     case "add": return setOutcomes(task, [...list, createOutcome("Outcome")]);
     case "rename": return setOutcomes(task, list.map((o) => (o.id === action.id ? { ...o, label: action.label } : o)));
     case "remove": return setOutcomes(task, list.filter((o) => o.id !== action.id)); // the last one is refused
-    case "move": return setOutcomes(task, swap(list, i, i + action.by));
+    case "move": {
+      const i = list.findIndex((o) => o.id === action.id);
+      return setOutcomes(task, swap(list, i, i + action.by));
+    }
   }
 };
 
 export const reduce = (doc: Doc, action: Action): Doc => {
   if (action.on === "block") return { ...doc, open: { ...doc.open, blocks: reduceBlocks(doc.open.blocks, action) } };
   if (action.on === "outcome") return { ...doc, open: reduceOutcomes(doc.open, action) };
+  if (action.on === "doc") {
+    const i = action.tasks.findIndex((t) => t.id === doc.open.id);
+    return at(action.tasks, i < 0 ? doc.before.length : i); // keep looking at the same task if it survived
+  }
   const all = tasks(doc);
   switch (action.type) {
     case "add": return at([...all, createTask()], all.length);

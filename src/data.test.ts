@@ -1,6 +1,6 @@
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 import { createBlock } from "./blocks";
-import { reduce, tasks, type Doc, type OutcomeId, type TaskId } from "./tasks";
+import { createTask, reduce, tasks, type Doc, type OutcomeId, type TaskId } from "./tasks";
 import { load, persist } from "./storage";
 
 const store = new Map<string, string>();
@@ -122,4 +122,56 @@ test("an unknown outcome id changes nothing", () => {
 test("a stored task with no readable outcome still gets one", () => {
   store.set("forms-builder/v3", JSON.stringify([{ id: "a", title: "Old", blocks: [], outcomes: [{ id: "x" }, 7] }]));
   expect(outcomes(load())).toEqual(["Done"]);
+});
+
+const KEY = "forms-builder/v3";
+const stored = (...tasks: unknown[]) => store.set(KEY, JSON.stringify(tasks));
+
+test("ids are still minted where crypto.randomUUID does not exist (plain http)", () => {
+  vi.stubGlobal("crypto", {});
+  const ids = new Set(Array.from({ length: 500 }, () => createTask().id));
+  expect(ids.size).toBe(500);
+  vi.unstubAllGlobals();
+});
+
+test("a kind borrowed from Object.prototype is not a kind", () => {
+  stored({ id: "t", title: "T", outcomes: [{ id: "o", label: "Done" }], blocks: [
+    { id: "b1", kind: "constructor", label: "x" },
+    { id: "b2", kind: "toString", label: "y" },
+    { id: "b3", kind: "text", label: "real", required: false, placeholder: "" },
+  ] });
+  expect(load().open.blocks.map((b) => b.label)).toEqual(["real"]);
+});
+
+test("a stored block cannot carry fields its kind does not have", () => {
+  stored({ id: "t", title: "T", outcomes: [{ id: "o", label: "Done" }],
+    blocks: [{ id: "b", kind: "text", label: "Q", required: false, placeholder: "", min: 99, secret: "payload" }] });
+  expect(load().open.blocks[0]).toEqual({ id: "b", kind: "text", label: "Q", required: false, placeholder: "" });
+});
+
+test("duplicate ids are dropped on load", () => {
+  stored(
+    { id: "t", title: "One", outcomes: [{ id: "o", label: "A" }, { id: "o", label: "B" }],
+      blocks: [{ id: "b", kind: "photo", label: "P", required: false }, { id: "b", kind: "photo", label: "P again", required: false }] },
+    { id: "t", title: "Two", outcomes: [], blocks: [] },
+  );
+  const doc = load();
+  expect(tasks(doc)).toHaveLength(1);
+  expect(doc.open.blocks.map((b) => b.label)).toEqual(["P"]);
+  expect(outcomes(doc)).toEqual(["A"]);
+});
+
+test("a document from another tab is adopted, keeping the task you are looking at", () => {
+  const mine = add(load());
+  const theirs = [...tasks(mine), createTask()]; // a third task appeared elsewhere
+  const after = reduce(mine, { on: "doc", type: "adopt", tasks: theirs });
+  expect(tasks(after)).toHaveLength(3);
+  expect(after.open.id).toBe(mine.open.id);
+});
+
+test("blank labels are filled in on load", () => {
+  stored({ id: "t", title: "   ", outcomes: [{ id: "o", label: "" }],
+    blocks: [{ id: "b", kind: "text", label: " ", required: false, placeholder: "" }] });
+  const doc = load();
+  expect([doc.open.title, doc.open.outcomes[0].label, doc.open.blocks[0]?.label]).toEqual(["Untitled task", "Done", "Untitled"]);
 });

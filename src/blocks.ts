@@ -1,3 +1,4 @@
+import { newId } from "./id";
 import { swap } from "./list";
 
 // The atom. Each kind carries exactly the settings it can use — "a photo with a minimum value"
@@ -20,7 +21,7 @@ const DEFAULTS: { [K in Block["kind"]]: (id: BlockId) => Extract<Block, { kind: 
   button: (id) => ({ id, kind: "button", label: "Submit", action: "submit" }),
 };
 export const KINDS = Object.keys(DEFAULTS) as readonly Block["kind"][];
-export const createBlock = (kind: Block["kind"]): Block => DEFAULTS[kind](crypto.randomUUID() as BlockId);
+export const createBlock = (kind: Block["kind"]): Block => DEFAULTS[kind](newId());
 
 // The only four things that can happen to the blocks of a task: create, update, delete, reorder.
 // Every action is tagged with the layer it acts on, so one dispatch serves the whole app.
@@ -42,15 +43,37 @@ export const reduceBlocks = (blocks: readonly Block[], action: BlockAction): rea
   }
 };
 
-// Anything not provably a block is dropped, so damaged storage can never reach the UI.
-const VALID: { [K in Block["kind"]]: (b: Record<string, unknown>) => boolean } = {
-  text: (b) => typeof b.required === "boolean" && typeof b.placeholder === "string",
-  number: (b) => typeof b.required === "boolean" && typeof b.min === "number" && typeof b.max === "number" && b.min <= b.max,
-  photo: (b) => typeof b.required === "boolean",
-  button: (b) => b.action === "submit" || b.action === "reset",
+// Blocks are parsed, never merely inspected: each kind rebuilds itself out of the fields it
+// knows about, so a stored block cannot arrive carrying a property its kind does not have.
+type Raw = Record<string, unknown>;
+const field = (b: Raw, id: BlockId, label: string): Field | null =>
+  typeof b.required === "boolean" ? { id, label, required: b.required } : null;
+
+const PARSE: { [K in Block["kind"]]: (b: Raw, id: BlockId, label: string) => Extract<Block, { kind: K }> | null } = {
+  text: (b, id, label) => {
+    const f = field(b, id, label);
+    return f && typeof b.placeholder === "string" ? { ...f, kind: "text", placeholder: b.placeholder } : null;
+  },
+  number: (b, id, label) => {
+    const f = field(b, id, label);
+    return f && typeof b.min === "number" && typeof b.max === "number" && b.min <= b.max ? { ...f, kind: "number", min: b.min, max: b.max } : null;
+  },
+  photo: (b, id, label) => {
+    const f = field(b, id, label);
+    return f && { ...f, kind: "photo" };
+  },
+  button: (b, id, label) => (b.action === "submit" || b.action === "reset" ? { id, label, kind: "button", action: b.action } : null),
 };
-export const isBlock = (v: unknown): v is Block => {
-  const b = v as Record<string, unknown>;
-  const kind = b?.kind as Block["kind"];
-  return typeof b?.id === "string" && typeof b.label === "string" && kind in VALID && VALID[kind](b);
+
+// A label is trimmed and, if that leaves nothing, replaced: a block the user cannot see is
+// as good as no block at all.
+const name = (v: unknown): string | null => (typeof v === "string" ? v.trim() || "Untitled" : null);
+
+export const parseBlock = (v: unknown): Block | null => {
+  const b = v as Raw;
+  const label = name(b?.label);
+  if (typeof b?.id !== "string" || label === null) return null;
+  const kind = b.kind as Block["kind"];
+  // hasOwn, not `in`: `in` walks the prototype chain, where "constructor" and "toString" live
+  return Object.hasOwn(PARSE, kind) ? PARSE[kind](b, b.id as BlockId, label) : null;
 };

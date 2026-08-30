@@ -1,34 +1,56 @@
-import { isBlock } from "./blocks";
+import { parseBlock } from "./blocks";
+import { present, unique } from "./list";
 import { at, createOutcome, createTask, setOutcomes, tasks, type Doc, type Outcome, type OutcomeId, type Task, type TaskId } from "./tasks";
 
 // The outside world. Storage holds the plain list of tasks — which one is open is a view
-// concern, not data — and nothing read back is trusted: each task is salvaged as far as it
-// is valid, and anything unreadable costs a blank document rather than a broken one.
+// concern, not data — and nothing read back is trusted: every task is rebuilt field by field,
+// duplicate ids are dropped, and anything unreadable costs a blank document, never a broken one.
+const [KEY, V2, V1] = ["forms-builder/v3", "forms-builder/v2", "forms-builder/v1"];
+
+const read = (key: string): string | null => {
+  try { return localStorage.getItem(key); } catch { return null; } // storage can be blocked outright
+};
+const items = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : []);
+const parseList = (raw: string | null): readonly unknown[] => {
+  try { return items(JSON.parse(raw ?? "[]")); } catch { return []; }
+};
+const name = (v: unknown, fallback: string): string | null => (typeof v === "string" ? v.trim() || fallback : null);
+
 const toOutcome = (v: unknown): Outcome | null => {
   const o = v as Record<string, unknown>;
-  return typeof o?.id === "string" && typeof o.label === "string" ? { id: o.id as OutcomeId, label: o.label } : null;
+  const label = name(o?.label, "Done");
+  return typeof o?.id === "string" && label !== null ? { id: o.id as OutcomeId, label } : null;
 };
 
 const toTask = (v: unknown): Task | null => {
   const t = v as Record<string, unknown>;
-  if (typeof t?.id !== "string" || typeof t.title !== "string" || !Array.isArray(t.blocks)) return null;
-  const outcomes = (Array.isArray(t.outcomes) ? t.outcomes : []).map(toOutcome).filter((o): o is Outcome => o !== null);
-  const task = { id: t.id as TaskId, title: t.title, blocks: t.blocks.filter(isBlock), outcomes: [createOutcome("Done")] as const };
-  return setOutcomes(task, outcomes); // an empty list is refused, so the default outcome stands
+  const title = name(t?.title, "Untitled task");
+  if (typeof t?.id !== "string" || title === null) return null;
+  const blocks = unique(items(t.blocks).map(parseBlock).filter(present));
+  const outcomes = unique(items(t.outcomes).map(toOutcome).filter(present));
+  return setOutcomes({ id: t.id as TaskId, title, blocks, outcomes: [createOutcome("Done")] }, outcomes);
 };
 
-const [KEY, V2, V1] = ["forms-builder/v3", "forms-builder/v2", "forms-builder/v1"];
-const liftV1 = (blocks: string) => JSON.stringify([{ ...createTask(), blocks: JSON.parse(blocks) }]); // v1 was a bare block list
+const parseTasks = (raw: string | null): readonly Task[] => unique(parseList(raw).map(toTask).filter(present));
+// v1 was a bare list of blocks: one task holding whichever of them are still valid.
+const liftV1 = (raw: string | null): readonly Task[] => {
+  const blocks = unique(parseList(raw).map(parseBlock).filter(present));
+  return blocks.length ? [{ ...createTask(), blocks }] : [];
+};
 
 export const load = (): Doc => {
-  try {
-    const stored: unknown = JSON.parse(localStorage.getItem(KEY) ?? localStorage.getItem(V2) ?? liftV1(localStorage.getItem(V1) ?? "[]"));
-    return at(Array.isArray(stored) ? stored.map(toTask).filter((t): t is Task => t !== null) : [], 0);
-  } catch {
-    return at([], 0);
-  }
+  const raw = read(KEY) ?? read(V2);
+  return at(raw !== null ? parseTasks(raw) : liftV1(read(V1)), 0);
 };
 
 export const persist = (doc: Doc) => {
   try { localStorage.setItem(KEY, JSON.stringify(tasks(doc))); } catch { /* not remembered, still usable */ }
+};
+
+// Another tab saving the document is not a conflict to resolve but news to accept: its tasks
+// are the ones on disk, so this tab takes them rather than overwriting them with its own.
+export const onExternalChange = (adopt: (tasks: readonly Task[]) => void) => {
+  const sync = (e: StorageEvent) => { if (e.key === KEY) adopt(parseTasks(e.newValue)); };
+  window.addEventListener("storage", sync);
+  return () => window.removeEventListener("storage", sync);
 };

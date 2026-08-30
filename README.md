@@ -1,6 +1,6 @@
 # Forms builder
 
-A client-side form builder in 285 lines of TypeScript. A **task** is a molecule and a **block**
+A client-side form builder in 377 lines of TypeScript. A **task** is a molecule and a **block**
 is an atom: tasks contain blocks, and the document contains tasks. Stack **text**, **number**,
 **photo** and **button** blocks into a task, give the task the **outcomes** it can end on
 (pool inspection → `OPEN` / `CLOSED`; pool refill → `DRAIN AND FILL` / `PARTIAL FILL` / `SKIP`),
@@ -20,16 +20,17 @@ npm run build      # typecheck + production bundle
 
 | File | Lines | Layer |
 | --- | --- | --- |
-| `src/list.ts` | 9 | `swap`, the one place a "move up / move down" is made safe at the ends |
-| `src/blocks.ts` | 56 | **Atom.** The `Block` union, its four actions, `reduceBlocks`, validation |
-| `src/tasks.ts` | 83 | **Molecule.** `Task`, `Outcome`, the zipper `Doc`, the root `reduce` |
-| `src/storage.ts` | 34 | The outside world: load, persist, validation, migrations |
-| `src/App.tsx` | 97 | The builder: task strip, block toolbar, per-kind editor, outcome row |
+| `src/id.ts` | 5 | Minting ids, with or without `crypto.randomUUID` |
+| `src/list.ts` | 17 | `swap`, `unique`, `present` — the list rules every layer shares |
+| `src/blocks.ts` | 79 | **Atom.** The `Block` union, its four actions, `reduceBlocks`, `parseBlock` |
+| `src/tasks.ts` | 91 | **Molecule.** `Task`, `Outcome`, the zipper `Doc`, the root `reduce` |
+| `src/storage.ts` | 56 | The outside world: load, persist, parsing, migrations, cross-tab sync |
+| `src/App.tsx` | 123 | The builder: task strip, block toolbar, per-kind editor, outcome row |
 | `src/main.tsx` | 6 | Mounts the app |
-| `src/data.test.ts` | 125 | 16 tests over the data layer |
+| `src/data.test.ts` | 177 | 22 tests over the data layer |
 
-Dependencies run one way — `storage` → `tasks` → `blocks` → `list` — so the atom layer knows
-nothing about containers and stays testable on its own.
+Dependencies run one way — `storage` → `tasks` → `blocks` → `list`/`id` — so the atom layer
+knows nothing about containers and stays testable on its own.
 
 ## Invalid states are unrepresentable
 
@@ -80,3 +81,30 @@ functions over `readonly` state, so state is replaced, never mutated.
   saved shape is the plain list of tasks; which one is open is a view concern, not data. Older
   documents are migrated on load: a v1 document (a bare list of blocks) becomes a single task,
   and a v2 task (no outcomes yet) is given one.
+
+## Where the types stop
+
+Making invalid states unrepresentable governs the code that is written; it says nothing about
+data arriving from outside it. Everything below is a boundary rule, enforced at runtime, and
+each one is here because a probe got through:
+
+- **Nothing crosses the boundary unparsed.** `parseBlock` rebuilds a block field by field out of
+  the fields its kind actually has, rather than checking a stored object and passing it along, so
+  a block cannot arrive carrying properties its type forbids. The kind is looked up with
+  `Object.hasOwn`, not `in` — `in` walks the prototype chain, where `constructor` and `toString`
+  live, and both of them once passed as block kinds.
+- **Ids are unique on the way in.** Duplicates are dropped for tasks, blocks and outcomes alike.
+  Two blocks sharing an id meant one edit changed both, and one delete removed both.
+- **Ids exist without a secure context.** `crypto.randomUUID` is secure-context-only, so over
+  plain http it is missing and the app used to fail to render at all; `newId` falls back.
+- **Labels cannot end up blank.** They may be empty while being typed, are filled in when the
+  field is left, and are filled in again on load for anything written behind the app's back.
+- **Typing is not committing.** `""`, `"-"` and `"2."` are all valid keystrokes on the way to a
+  number, so the number fields keep raw text and commit on blur or Enter — sanitising every
+  keystroke made a negative minimum impossible to type. Garbage reverts to the last good value.
+- **Another tab's save is news, not a conflict.** A `storage` event makes this tab adopt the
+  tasks that were saved, keeping whichever task it had open, and a document that arrived that
+  way is never written back — so two tabs neither clobber each other nor ping-pong.
+
+Still open, and known: a save refused for want of quota is swallowed silently, deleting a block
+cannot be undone, and the inputs have no accessible names.

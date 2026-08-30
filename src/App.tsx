@@ -1,9 +1,27 @@
-import { useEffect, useReducer, type ReactElement, type ReactNode } from "react";
+import { useEffect, useReducer, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { KINDS, type Block } from "./blocks";
 import { reduce, tasks } from "./tasks";
-import { load, persist } from "./storage";
+import { load, onExternalChange, persist } from "./storage";
 type Save = (block: Block) => void;
-const toNumber = (v: string) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+// A label may be blank while it is being typed, never once the field is left.
+const Label = ({ value, fallback, save, className }: { value: string; fallback: string; save: (v: string) => void; className?: string }) => (
+  <input className={className} value={value} onChange={(e) => save(e.target.value)} onBlur={(e) => save(e.target.value.trim() || fallback)} />
+);
+
+// A number being typed is not yet a number: "", "-" and "2." are all valid keystrokes on the
+// way to one, and a field that sanitises every keystroke can never be typed a negative into.
+// So it holds the raw text and commits only when it is left, or on Enter.
+function NumberField({ value, commit }: { value: number; commit: (n: number) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const done = () => {
+    const n = Number(draft);
+    if (draft?.trim() && Number.isFinite(n)) commit(n);
+    setDraft(null);
+  };
+  return <input type="text" inputMode="decimal" value={draft ?? String(value)} onChange={(e) => setDraft(e.target.value)}
+                onBlur={done} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />;
+}
+
 const Setting = ({ name, children }: { name: string; children: ReactNode }) => <label className="setting">{name} {children}</label>;
 const Required = ({ on, save }: { on: boolean; save: (on: boolean) => void }) => <Setting name="Required"><input type="checkbox" checked={on} onChange={(e) => save(e.target.checked)} /></Setting>;
 
@@ -22,8 +40,8 @@ function Body({ block, save }: { block: Block; save: Save }): ReactElement {
       return (<>
         <input className="field" type="number" disabled placeholder={`${block.min} to ${block.max}`} />
         <div className="settings">
-          <Setting name="Min"><input type="number" value={block.min} onChange={(e) => save({ ...block, min: Math.min(toNumber(e.target.value), block.max) })} /></Setting>
-          <Setting name="Max"><input type="number" value={block.max} onChange={(e) => save({ ...block, max: Math.max(toNumber(e.target.value), block.min) })} /></Setting>
+          <Setting name="Min"><NumberField value={block.min} commit={(n) => save({ ...block, min: Math.min(n, block.max) })} /></Setting>
+          <Setting name="Max"><NumberField value={block.max} commit={(n) => save({ ...block, max: Math.max(n, block.min) })} /></Setting>
           <Required on={block.required} save={(required) => save({ ...block, required })} />
         </div>
       </>);
@@ -46,7 +64,15 @@ function Body({ block, save }: { block: Block; save: Save }): ReactElement {
 
 export default function App() {
   const [doc, dispatch] = useReducer(reduce, undefined, load);
-  useEffect(() => persist(doc), [doc]);
+  const fromOtherTab = useRef(false);
+  useEffect(() => {
+    if (fromOtherTab.current) fromOtherTab.current = false; // a document that arrived from another tab is not news to send back
+    else persist(doc);
+  }, [doc]);
+  useEffect(() => onExternalChange((incoming) => {
+    fromOtherTab.current = true;
+    dispatch({ on: "doc", type: "adopt", tasks: incoming });
+  }), []);
   const save: Save = (block) => dispatch({ on: "block", type: "save", block });
   const { open } = doc;
   return (
@@ -59,7 +85,7 @@ export default function App() {
         <button className="tab" onClick={() => dispatch({ on: "task", type: "add" })}>+ task</button>
       </nav>
       <header className="task">
-        <input className="title" value={open.title} onChange={(e) => dispatch({ on: "task", type: "rename", title: e.target.value })} />
+        <Label className="title" value={open.title} fallback="Untitled task" save={(title) => dispatch({ on: "task", type: "rename", title })} />
         <button title="Move task earlier" disabled={doc.before.length === 0} onClick={() => dispatch({ on: "task", type: "move", by: -1 })}>↑</button>
         <button title="Move task later" disabled={doc.after.length === 0} onClick={() => dispatch({ on: "task", type: "move", by: 1 })}>↓</button>
         <button title="Delete task" onClick={() => (open.blocks.length === 0 || confirm(`Delete "${open.title}" and its ${open.blocks.length} block(s)?`)) && dispatch({ on: "task", type: "remove", id: open.id })}>✕</button>
@@ -71,7 +97,7 @@ export default function App() {
           <li key={block.id}>
             <header>
               <span className="badge">{block.kind}</span>
-              <input className="name" value={block.label} onChange={(e) => save({ ...block, label: e.target.value })} />
+              <Label className="name" value={block.label} fallback="Untitled" save={(label) => save({ ...block, label })} />
               <button title="Move up" disabled={i === 0} onClick={() => dispatch({ on: "block", type: "move", id: block.id, by: -1 })}>↑</button>
               <button title="Move down" disabled={i === open.blocks.length - 1} onClick={() => dispatch({ on: "block", type: "move", id: block.id, by: 1 })}>↓</button>
               <button title="Delete" onClick={() => dispatch({ on: "block", type: "remove", id: block.id })}>✕</button>
@@ -85,7 +111,7 @@ export default function App() {
         {open.outcomes.map((outcome, i) => (
           <span className="outcome" key={outcome.id}>
             <button title="Move earlier" disabled={i === 0} onClick={() => dispatch({ on: "outcome", type: "move", id: outcome.id, by: -1 })}>←</button>
-            <input value={outcome.label} onChange={(e) => dispatch({ on: "outcome", type: "rename", id: outcome.id, label: e.target.value })} />
+            <Label value={outcome.label} fallback="Outcome" save={(label) => dispatch({ on: "outcome", type: "rename", id: outcome.id, label })} />
             <button title="Move later" disabled={i === open.outcomes.length - 1} onClick={() => dispatch({ on: "outcome", type: "move", id: outcome.id, by: 1 })}>→</button>
             <button title="Delete outcome" disabled={open.outcomes.length === 1} onClick={() => dispatch({ on: "outcome", type: "remove", id: outcome.id })}>✕</button>
           </span>
