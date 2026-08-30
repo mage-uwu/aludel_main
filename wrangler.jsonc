@@ -1,0 +1,11 @@
+{
+  "name": "aludel",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-08-01",
+  "assets": { "directory": "dist", "not_found_handling": "single-page-application" },
+  "durable_objects": { "bindings": [{ "name": "TEAM", "class_name": "Team" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Team"] }],
+  "kv_namespaces": [{ "binding": "DIR", "id": "SET_ME" }],
+  "r2_buckets": [{ "binding": "BLOBS", "bucket_name": "aludel-blobs" }],
+  "vars": { "DEV_USER": "" }
+}
