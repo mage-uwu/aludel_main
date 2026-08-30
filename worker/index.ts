@@ -57,10 +57,7 @@ export default {
 
     const hash = path.match(/^\/api\/blob\/([a-f0-9]{64})$/)?.[1];
     if (hash && req.method === "PUT") { await env.BLOBS.put(hash, req.body); return json({ ok: true }); }
-    if (hash) {
-      const blob = await env.BLOBS.get(hash);
-      return blob ? new Response(blob.body) : json({ error: "no such blob" }, 404);
-    }
+    if (hash) return env.BLOBS.get(hash).then((b) => (b ? new Response(b.body) : json({ error: "no such blob" }, 404)));
     return json({ error: "no such route" }, 404);
   },
 };

@@ -24,14 +24,11 @@ export const session = async (env: Env, req: Request): Promise<{ email: string; 
 };
 
 // The two-step dance: /login sends the browser to Google; /callback verifies what came back.
-export const login = (env: Env, req: Request): Response => {
-  const here = new URL(req.url);
-  const q = new URLSearchParams({
-    client_id: env.GOOGLE_CLIENT_ID, redirect_uri: `${here.origin}/api/auth/callback`,
+export const login = (env: Env, req: Request): Response =>
+  Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID, redirect_uri: `${new URL(req.url).origin}/api/auth/callback`,
     response_type: "code", scope: "openid email", prompt: "select_account",
-  });
-  return Response.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${q}`, 302);
-};
+  })}`, 302);
 
 export const callback = async (env: Env, req: Request): Promise<string | null> => {
   const here = new URL(req.url);

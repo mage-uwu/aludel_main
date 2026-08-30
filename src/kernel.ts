@@ -163,10 +163,9 @@ export const guard = (s: State, d: Draft): string | null => {
 // Pure planning: which forms and entries should exist between now and the horizon, that
 // don't already. The cron appends what this returns, as actor "scheduler".
 const DAY = 86_400_000;
-const step = (anchor: number, k: number, c: Cadence): number => {
-  if (c.unit !== "month") return anchor + k * c.every * (c.unit === "week" ? 7 : 1) * DAY;
-  const d = new Date(anchor); d.setUTCMonth(d.getUTCMonth() + k * c.every); return d.getTime();
-};
+const step = (anchor: number, k: number, c: Cadence): number =>
+  c.unit !== "month" ? anchor + k * c.every * (c.unit === "week" ? 7 : 1) * DAY
+  : new Date(anchor).setUTCMonth(new Date(anchor).getUTCMonth() + k * c.every);
 export const plan = (s: State, now: number, horizonDays: number): Extract<Payload, { type: "dispatched" }>[] => {
   const have = new Set(Object.values(s.entries).map((e) => `${s.forms[e.form]?.site}|${e.task}|${e.window.from}`));
   const out: Extract<Payload, { type: "dispatched" }>[] = [];
@@ -181,9 +180,7 @@ export const plan = (s: State, now: number, horizonDays: number): Extract<Payloa
         if (from > now + horizonDays * DAY) break;
         const due = from + task.cadence.withinDays * DAY;
         if (due < now || svc.skips.some((x) => sameDay(x, from)) || have.has(`${site.id}|${task.key}|${from}`)) continue;
-        const list = batch.get(from) ?? [];
-        list.push({ id: newId(), form: "" as FormId, task: task.key, window: { from, due } });
-        batch.set(from, list);
+        batch.set(from, [...(batch.get(from) ?? []), { id: newId(), form: "" as FormId, task: task.key, window: { from, due } }]);
       }
     }
     for (const [, entries] of batch) {

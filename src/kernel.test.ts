@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { apply, empty, fold, guard, late, newId, plan, status, type Draft, type Entry, type EntryId, type Fact, type Payload, type SiteId, type State, type Template, type TemplateId } from "./kernel";
+import { apply, empty, fold, guard, late, newId, plan, status, type Draft, type EntryId, type Fact, type Payload, type SiteId, type Template, type TemplateId } from "./kernel";
 import { ask, balance, find } from "./read";
 
 // A tiny world: one admin, one office, one field hand, Mike's pool, one template.
