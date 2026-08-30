@@ -1,5 +1,6 @@
 import { useEffect, useReducer, type ReactElement, type ReactNode } from "react";
-import { KINDS, load, persist, reduce, type Block } from "./model";
+import { KINDS, type Block } from "./blocks";
+import { load, persist, reduce, tasks } from "./tasks";
 type Save = (block: Block) => void;
 const toNumber = (v: string) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const Setting = ({ name, children }: { name: string; children: ReactNode }) => <label className="setting">{name} {children}</label>;
@@ -43,23 +44,36 @@ function Body({ block, save }: { block: Block; save: Save }): ReactElement {
 }
 
 export default function App() {
-  const [blocks, dispatch] = useReducer(reduce, undefined, load);
-  useEffect(() => persist(blocks), [blocks]);
-  const save: Save = (block) => dispatch({ type: "save", block });
+  const [doc, dispatch] = useReducer(reduce, undefined, load);
+  useEffect(() => persist(doc), [doc]);
+  const save: Save = (block) => dispatch({ on: "block", type: "save", block });
+  const { open } = doc;
   return (
     <main>
       <h1>Forms builder</h1>
-      <nav>{KINDS.map((kind) => <button key={kind} onClick={() => dispatch({ type: "add", kind })}>+ {kind}</button>)}</nav>
-      {blocks.length === 0 && <p className="empty">Add a block to start your template. It saves as you type.</p>}
+      <nav className="tabs">
+        {tasks(doc).map((task) => (
+          <button key={task.id} className={task.id === open.id ? "tab current" : "tab"} onClick={() => dispatch({ on: "task", type: "open", id: task.id })}>{task.title || "Untitled"}</button>
+        ))}
+        <button className="tab" onClick={() => dispatch({ on: "task", type: "add" })}>+ task</button>
+      </nav>
+      <header className="task">
+        <input className="title" value={open.title} onChange={(e) => dispatch({ on: "task", type: "rename", title: e.target.value })} />
+        <button title="Move task earlier" disabled={doc.before.length === 0} onClick={() => dispatch({ on: "task", type: "move", by: -1 })}>↑</button>
+        <button title="Move task later" disabled={doc.after.length === 0} onClick={() => dispatch({ on: "task", type: "move", by: 1 })}>↓</button>
+        <button title="Delete task" onClick={() => (open.blocks.length === 0 || confirm(`Delete "${open.title}" and its ${open.blocks.length} block(s)?`)) && dispatch({ on: "task", type: "remove", id: open.id })}>✕</button>
+      </header>
+      <nav className="kinds">{KINDS.map((kind) => <button key={kind} onClick={() => dispatch({ on: "block", type: "add", kind })}>+ {kind}</button>)}</nav>
+      {open.blocks.length === 0 && <p className="empty">Add a block to start this task. It saves as you type.</p>}
       <ol>
-        {blocks.map((block, i) => (
+        {open.blocks.map((block, i) => (
           <li key={block.id}>
             <header>
               <span className="badge">{block.kind}</span>
               <input className="name" value={block.label} onChange={(e) => save({ ...block, label: e.target.value })} />
-              <button title="Move up" disabled={i === 0} onClick={() => dispatch({ type: "move", id: block.id, by: -1 })}>↑</button>
-              <button title="Move down" disabled={i === blocks.length - 1} onClick={() => dispatch({ type: "move", id: block.id, by: 1 })}>↓</button>
-              <button title="Delete" onClick={() => dispatch({ type: "remove", id: block.id })}>✕</button>
+              <button title="Move up" disabled={i === 0} onClick={() => dispatch({ on: "block", type: "move", id: block.id, by: -1 })}>↑</button>
+              <button title="Move down" disabled={i === open.blocks.length - 1} onClick={() => dispatch({ on: "block", type: "move", id: block.id, by: 1 })}>↓</button>
+              <button title="Delete" onClick={() => dispatch({ on: "block", type: "remove", id: block.id })}>✕</button>
             </header>
             <Body block={block} save={save} />
           </li>
