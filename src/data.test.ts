@@ -1,6 +1,7 @@
 import { beforeEach, expect, test } from "vitest";
 import { createBlock } from "./blocks";
-import { load, persist, reduce, tasks, type Doc, type TaskId } from "./tasks";
+import { reduce, tasks, type Doc, type OutcomeId, type TaskId } from "./tasks";
+import { load, persist } from "./storage";
 
 const store = new Map<string, string>();
 globalThis.localStorage = {
@@ -63,7 +64,7 @@ test("tasks round-trip through storage", () => {
 });
 
 test("damaged storage is salvaged, never trusted", () => {
-  store.set("forms-builder/v2", JSON.stringify([
+  store.set("forms-builder/v3", JSON.stringify([
     { id: "a", title: "Keep", blocks: [{ id: "b", kind: "number", label: "n", required: false, min: 9, max: 1 }, "junk"] },
     { id: "c", blocks: [] }, // no title
     42,
@@ -79,4 +80,46 @@ test("a v1 block list is lifted into one task", () => {
   const doc = load();
   expect(tasks(doc)).toHaveLength(1);
   expect(doc.open.blocks).toHaveLength(1);
+});
+
+const outcomes = (doc: Doc) => doc.open.outcomes.map((o) => o.label);
+const addOutcome = (doc: Doc) => reduce(doc, { on: "outcome", type: "add" });
+
+test("a task starts with exactly one outcome", () => {
+  expect(outcomes(load())).toEqual(["Done"]);
+});
+
+test("outcomes are created, renamed and reordered", () => {
+  let doc = addOutcome(load());
+  const [first, second] = doc.open.outcomes;
+  doc = reduce(doc, { on: "outcome", type: "rename", id: first.id, label: "OPEN" });
+  doc = reduce(doc, { on: "outcome", type: "rename", id: second!.id, label: "CLOSED" });
+  expect(outcomes(doc)).toEqual(["OPEN", "CLOSED"]);
+  expect(outcomes(reduce(doc, { on: "outcome", type: "move", id: second!.id, by: -1 }))).toEqual(["CLOSED", "OPEN"]);
+  expect(outcomes(reduce(doc, { on: "outcome", type: "move", id: second!.id, by: 1 }))).toEqual(["OPEN", "CLOSED"]); // off the end
+});
+
+test("the last outcome cannot be removed", () => {
+  const doc = load();
+  const [only] = doc.open.outcomes;
+  expect(outcomes(reduce(doc, { on: "outcome", type: "remove", id: only.id }))).toEqual(["Done"]);
+  expect(outcomes(reduce(addOutcome(doc), { on: "outcome", type: "remove", id: only.id }))).toEqual(["Outcome"]);
+});
+
+test("outcome edits land in the open task only", () => {
+  const doc = addOutcome(add(load()));
+  expect(doc.open.outcomes).toHaveLength(2);
+  expect(doc.before[0]?.outcomes).toHaveLength(1);
+});
+
+test("an unknown outcome id changes nothing", () => {
+  const doc = load();
+  const ghost = "not-an-outcome" as OutcomeId;
+  expect(outcomes(reduce(doc, { on: "outcome", type: "remove", id: ghost }))).toEqual(["Done"]);
+  expect(outcomes(reduce(doc, { on: "outcome", type: "move", id: ghost, by: 1 }))).toEqual(["Done"]);
+});
+
+test("a stored task with no readable outcome still gets one", () => {
+  store.set("forms-builder/v3", JSON.stringify([{ id: "a", title: "Old", blocks: [], outcomes: [{ id: "x" }, 7] }]));
+  expect(outcomes(load())).toEqual(["Done"]);
 });

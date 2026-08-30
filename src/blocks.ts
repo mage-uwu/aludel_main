@@ -1,5 +1,8 @@
+import { swap } from "./list";
+
 // The atom. Each kind carries exactly the settings it can use — "a photo with a minimum value"
 // or "a required button" cannot be written down, stored, or rendered, because no such type exists.
+// A button block is a button placed in the flow; the buttons a task can *end* on are its outcomes.
 export type BlockId = string & { readonly __blockId: unique symbol };
 type Field = { id: BlockId; label: string; required: boolean };
 export type Block =
@@ -20,7 +23,7 @@ export const KINDS = Object.keys(DEFAULTS) as readonly Block["kind"][];
 export const createBlock = (kind: Block["kind"]): Block => DEFAULTS[kind](crypto.randomUUID() as BlockId);
 
 // The only four things that can happen to the blocks of a task: create, update, delete, reorder.
-// Every action is tagged with the layer it acts on, so one dispatch serves both layers.
+// Every action is tagged with the layer it acts on, so one dispatch serves the whole app.
 export type BlockAction =
   | { on: "block"; type: "add"; kind: Block["kind"] }
   | { on: "block"; type: "save"; block: Block }
@@ -34,11 +37,7 @@ export const reduceBlocks = (blocks: readonly Block[], action: BlockAction): rea
     case "remove": return blocks.filter((b) => b.id !== action.id);
     case "move": {
       const i = blocks.findIndex((b) => b.id === action.id);
-      const [from, to] = [blocks[i], blocks[i + action.by]];
-      if (!from || !to) return blocks; // unknown id, or a move off either end: no-op
-      const next = [...blocks];
-      [next[i], next[i + action.by]] = [to, from];
-      return next;
+      return swap(blocks, i, i + action.by);
     }
   }
 };

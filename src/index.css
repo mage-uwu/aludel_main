@@ -25,3 +25,9 @@ header { display: flex; align-items: center; gap: .4rem; }
 header.task { display: flex; align-items: center; gap: .4rem; margin-bottom: 1rem; }
 .title { flex: 1; font-size: 1.05rem; font-weight: 600; padding: .45rem .6rem; }
 .empty { opacity: .6; }
+.outcomes { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: 1.5rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+.outcomes h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; opacity: .6; margin: 0 .25rem 0 0; font-weight: 600; }
+.outcome { display: flex; align-items: center; border: 1px solid currentColor; border-radius: 2rem; padding: .1rem .25rem; }
+.outcome input { border: none; text-align: center; font-weight: 600; width: 8rem; padding: .25rem; }
+.outcome button { border: none; padding: .1rem .3rem; opacity: .5; }
+.outcome button:hover:not(:disabled) { opacity: 1; }

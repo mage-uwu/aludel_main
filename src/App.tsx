@@ -1,6 +1,7 @@
 import { useEffect, useReducer, type ReactElement, type ReactNode } from "react";
 import { KINDS, type Block } from "./blocks";
-import { load, persist, reduce, tasks } from "./tasks";
+import { reduce, tasks } from "./tasks";
+import { load, persist } from "./storage";
 type Save = (block: Block) => void;
 const toNumber = (v: string) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const Setting = ({ name, children }: { name: string; children: ReactNode }) => <label className="setting">{name} {children}</label>;
@@ -79,6 +80,18 @@ export default function App() {
           </li>
         ))}
       </ol>
+      <section className="outcomes">
+        <h2>Ends with</h2>
+        {open.outcomes.map((outcome, i) => (
+          <span className="outcome" key={outcome.id}>
+            <button title="Move earlier" disabled={i === 0} onClick={() => dispatch({ on: "outcome", type: "move", id: outcome.id, by: -1 })}>←</button>
+            <input value={outcome.label} onChange={(e) => dispatch({ on: "outcome", type: "rename", id: outcome.id, label: e.target.value })} />
+            <button title="Move later" disabled={i === open.outcomes.length - 1} onClick={() => dispatch({ on: "outcome", type: "move", id: outcome.id, by: 1 })}>→</button>
+            <button title="Delete outcome" disabled={open.outcomes.length === 1} onClick={() => dispatch({ on: "outcome", type: "remove", id: outcome.id })}>✕</button>
+          </span>
+        ))}
+        <button onClick={() => dispatch({ on: "outcome", type: "add" })}>+ outcome</button>
+      </section>
     </main>
   );
 }
