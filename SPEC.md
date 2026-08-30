@@ -164,8 +164,14 @@ office may correct anything, corrections visible everywhere with attribution.
 ## Stack
 
 Vite + React + strict TypeScript PWA (one app, two modes) · Cloudflare Workers, one
-Durable Object per team holding the ledger (SQLite), R2 for photos · the agent on the
-Claude API, tool surface = the eight facts + `find` + `ask`.
+SQLite-backed Durable Object per team holding the ledger, R2 for photos · auth is Google
+OIDC verified in the Worker (~80 lines, session as a signed HTTP-only cookie) — identity
+is Google's problem, authorization is the `granted` facts · the agent on the Claude API,
+tool surface = the eight facts + `find` + `ask`.
+
+Budget: the app is ≤ 800 lines of TypeScript (tests, CSS and config uncounted), which
+holds because the agent is the office UI — chat and preview cards replace a hand-built
+template editor.
 
 The core — nouns, facts, folds, calculator — should hold under a thousand lines, and
 stay there. The mass lives at the edges (offline shell, sync, blob queue, agent eval),
