@@ -99,9 +99,10 @@ late(e)     = logged.at > due                        (lateness survives into his
 balance     = allotment − Σ cost(outcome)            per site × task, when bound
 ```
 
-And one query shape — the calculator, the agent's meat and bones:
+And two read calls — the whole read surface, and the oracle's meat and bones:
 
 ```
+find(filter) → entries                    filter: site? task? actor? status? window?
 ask(channel, aggregation, scope, window) → { value, n, coverage }
 
 channel      template.task.block | template.task.outcome     (a straight vector through history)
@@ -114,6 +115,23 @@ window       any time range
 
 The kind decides which aggregations are legal, so the agent cannot express an invalid
 question — the same move that made invalid blocks unrepresentable, applied to reads.
+`find` answers "did Keegan do Mike's last Wednesday?"; `ask` answers "how much chlorine
+this season?". Between them, every question the office asks out loud.
+
+## The agent — one voice, two roles
+
+One agent, one conversation, two verbs:
+
+- **The oracle** reads freely: `find` and `ask`, no confirmation, no ceremony. Every answer
+  cites the ledger lines it read (their seqs), so "Keegan logged Mike's Wednesday 2:14 pm,
+  outcome CLOSED" is a claim you can tap through to the fact — answers with receipts, per
+  law 7, never a bare number.
+- **The hand** drafts facts: "dispatch a new form at Mike's" becomes a `dispatched` fact
+  rendered as a preview card; the human's tap commits it, marked `via: "agent"`, per law 8.
+
+One thread does both: "how many visits does Mike have left?" → "two" → "alright, dispatch
+the drain" — the second message reuses the first answer's grounding. Authoring a template
+and dispatching daily work are the same agent at different depths, not different agents.
 
 ## The same five nouns, three trades
 
@@ -127,8 +145,8 @@ question — the same move that made invalid blocks unrepresentable, applied to 
 | Balance  | 13 visits / season            | —                          | —                           |
 
 Most companies need one or two templates, ever. Ninety percent of use is dispatching
-forms from templates that already exist; the authoring agent runs about twice per
-company's lifetime, the operations agent every day.
+forms from templates that already exist; the agent authors a template about twice in a
+company's lifetime and dispatches every day.
 
 ## v1 boundaries
 
@@ -146,8 +164,8 @@ office may correct anything, corrections visible everywhere with attribution.
 ## Stack
 
 Vite + React + strict TypeScript PWA (one app, two modes) · Cloudflare Workers, one
-Durable Object per team holding the ledger (SQLite), R2 for photos · agents on the
-Claude API, tool surface = the eight facts + `ask`.
+Durable Object per team holding the ledger (SQLite), R2 for photos · the agent on the
+Claude API, tool surface = the eight facts + `find` + `ask`.
 
 The core — nouns, facts, folds, calculator — should hold under a thousand lines, and
 stay there. The mass lives at the edges (offline shell, sync, blob queue, agent eval),
