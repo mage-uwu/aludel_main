@@ -45,10 +45,10 @@ main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; 
 
 /* the two panes */
 /* One arrangement at every width: the tool window on top, the conversation under it, the
-   prompt at the bottom — a wide screen is the phone, wider, never a second layout to learn.
-   What a big screen buys is room, not rearrangement: both panes run the full width and the
-   tool holds φ's long side by default. The split is always golden; the grip
-   only chooses which pane gets φ's long side (1.618 : 1 ≈ two thirds against one). */
+   prompt at the bottom, never a second layout to learn. What a big screen buys is room, not
+   rearrangement: the conversation runs the full width and the tool holds φ's long side by
+   default. The split is always golden; the grip only chooses which pane gets φ's long side
+   (1.618 : 1 ≈ two thirds against one). */
 /* rows: title bar · stage · grip · conversation · prompt. The stage-to-conversation split
    is still golden; the grip still only chooses which side gets φ's long side. */
 .term { grid-template-rows:minmax(0,.618fr) auto minmax(0,1fr) auto auto; transition:grid-template-rows .4s cubic-bezier(.2,.8,.25,1); }
@@ -70,6 +70,18 @@ main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; 
 .stage { position:relative; width:calc(100% - 1.2rem); margin:.6rem auto .25rem; font:16px/1.55 var(--sans); color:var(--ink);
   background:#fff; border:none; border-radius:12px; overflow:hidden; min-height:0;
   display:grid; grid-template-rows:auto minmax(0,1fr); }
+/* A wide screen is a workstation, not a wide phone. The conversation takes the room — it is
+   a terminal and it wants the width — but the tool is a preview of a phone screen, so on a
+   workstation it holds a phone's proportions and sits centred in the black. The ratio drives
+   the width off the height, and the floor is a real handset: never narrower than the thing
+   it is previewing, so a short screen gives a squat phone rather than a slit. Under the
+   breakpoint the screen already is a phone and the tool takes all of it. */
+@media (min-width:720px) {
+  .stage { justify-self:center; align-self:stretch; height:100%; width:auto; aspect-ratio:9 / 19.5; min-width:400px; max-width:480px; }
+  /* minimised, the window is only its own bar: a phone ratio applied to an auto row has no
+     height to work from and inflates it back open */
+  .wide-min .stage { height:auto; aspect-ratio:auto; }
+}
 /* the window's own buttons, at the end of its bar */
 .tabs .win { margin-left:.1rem; padding:.34rem .5rem; font-size:.85rem; line-height:1; color:var(--dim); border-radius:8px; letter-spacing:0; }
 .tabs > .win:nth-last-child(2) { margin-left:auto; }  /* :first-of-type matches by element, not class — the tabs are buttons too */

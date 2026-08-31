@@ -83,10 +83,14 @@ because a template cannot know which weekday a route runs. Read it before touchi
   app **is** the terminal — one flat black slab whose title bar carries only the centred
   wordmark and a `[ ]` menu (the office/field switch and who you are live in it) — the slab
   takes the whole page bar a hair of white margin, just enough that its rounded corners read
-  as a screen sitting on a desk, and both panes use its full width — no
-  phone-width column on a desktop — with the white **stage** — the tool — docked inside it as
+  as a screen sitting on a desk — with the white **stage** — the tool — docked inside it as
   a window that minimizes and maximizes, pinned above the conversation; the field is the same
-  white sheet, alone on the page. The window is always on
+  white sheet, alone on the page. A wide screen is a **workstation**, not a wide phone: the
+  conversation is a terminal and takes the room, but the tool is a preview of a phone screen,
+  so past 720px it holds a handset's proportions (9:19.5, driven off its height and floored at
+  400px, so a short screen gives a squat phone rather than a slit) and sits centred in the
+  black; under that the screen already is a phone and the tool takes all of it. The thing the
+  crew taps is never rendered wider than the phone it will be tapped on. The window is always on
   top and the prompt always at the bottom: what a big screen buys is room, not rearrangement.
   The tool holds φ's long side by default, and **maximise** gives it the screen with the
   conversation kept to a few lines — which is what a big zoom actually needs. No fake window
@@ -99,7 +103,8 @@ because a template cannot know which weekday a route runs. Read it before touchi
   screen is a hairline or plain space, because the only things that should carry weight are
   the words and the controls. The terminal signs itself in a status strip at the foot. Type is sized for a gloved thumb in daylight: nothing the
   crew reads is under ~0.8rem and nothing they tap is under ~40px — legibility outranks density. One arrangement at
-  every width — a wide screen is the phone, wider. The stage-to-conversation split is always
+  every width — what a wide screen changes is the room around the tool, never where anything
+  sits. The stage-to-conversation split is always
   golden (1.618 : 1); the grip only chooses which side gets φ's long side. Never reuse a
   component's class name as a state modifier — `pane ${wide}` once painted the whole pane
   with the terminal's styling — and because the stage lives inside the terminal, terminal
