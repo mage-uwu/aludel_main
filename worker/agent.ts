@@ -58,7 +58,7 @@ const SPECS: Record<string, string> = { title: '{"title": string} — short, Tit
   outcomes: '{"labels": string[]} — the possible endings as short UPPERCASE labels, spaces between words, never underscores.',
   cadence: '{"every": number, "unit": "day"|"week"|"month"}, or {"every": null} if it does not repeat.',
   day: '{"day": number} — the weekday, 0 = Sunday.',
-  blocks: '{"blocks": [{"kind": "photo"|"number"|"text", "label": string}]} — one per recorded item, kind inferred.',
+  blocks: 'ONE of: {"op":"add","blocks":[{"kind":"photo"|"number"|"text","label":string}]} for things to record · {"op":"remove","target":string} to drop a field they name · {"op":"rename","target":string,"to":string} (omit target to rename the task itself) · {"op":"move","target":string,"by":-1|1} to reorder · {"op":"task","title":string} if they moved on to a different job ("next: filter cleaning") · {"op":"done"}. A correction is never a new field.',
 };
 export const refine = async (env: Env, body: { kind: string; text: string }): Promise<Response> => {
   const res = await oai(env, { model: env.OPENAI_MODEL, input: [{ role: "user", content: body.text }], instructions: `Normalize the tradesperson's words. Reply with ONLY this JSON: ${SPECS[body.kind] ?? SPECS.title}` });
@@ -77,8 +77,7 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
     const r = (await res.json()) as Resp; previous = r.id;
     const calls = r.output.filter((o): o is Call => o.type === "function_call"); const text = textOf(r);
     if (calls.length === 0) return reply(text || "Here's what I put together.", drafts, previous);
-    input = []; // next request: only this turn's tool outputs; previous_response_id carries the rest
-    for (const call of calls) {
+    input = []; for (const call of calls) { // next request: only this turn's tool outputs; previous_response_id carries the rest
       const args = JSON.parse(call.arguments || "{}") as Record<string, unknown>;
       if (call.name === "new_template") return reply("One question at a time — watch the stage.", [], body.previous, (args.id as string) || true); // fork the thread from before the call
       const id = args.id as TemplateId, head = snap.latest[id] ?? 0; // version and name come from the ledger, never the model

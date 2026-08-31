@@ -32,6 +32,12 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   the field logger mount the very same control — `set` given makes it live, `set` omitted
   makes it a disabled preview — so what you build is literally what the crew taps. Never
   fork a second "preview" rendering of a block; add the affordance to `Input` instead.
+- One vocabulary, four verbs: **add · rename · remove · move**. A workflow step never has
+  only `add` — a correction ("drop the pH", "rename it…", "move alk up") must reach the same
+  list as an addition, or it lands as data. Steps normalize the human's words into a verb;
+  `acts()` already knows which control each verb uses, so a verb is an animation for free.
+  Target a named item exact → whole-word → loose, never plain `includes` ("delete ph" must
+  not hit "Photos").
 - The hand: everything Aludel writes onto the stage plays as visible edits under the violet
   touch-cursor — `acts()` diffs old→new into actions that each name the control they use, and
   `perform()` glides, taps, applies. The show is presentation only: the final snap sets the

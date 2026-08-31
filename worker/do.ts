@@ -46,6 +46,5 @@ export class Team extends DurableObject<Env> {
 
   async alarm(): Promise<void> { // idempotent: plan() only mints what is missing, so retries are safe
     this.append("scheduler", plan(this.s, Date.now(), 42)); // keep six weeks of work materialized
-    await this.ctx.storage.setAlarm(Date.now() + 86_400_000);
-  }
+    await this.ctx.storage.setAlarm(Date.now() + 86_400_000); }
 }

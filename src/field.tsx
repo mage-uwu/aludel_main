@@ -40,9 +40,7 @@ function Logger({ hit, done }: { hit: Rec; done: () => void }): ReactElement {
 }
 
 export default function Field(): ReactElement {
-  const [openId, setOpen] = useState<EntryId | null>(null);
-  const [list, setList] = useState<string | null>(null);
-  const now = Date.now();
+  const [openId, setOpen] = useState<EntryId | null>(null); const [list, setList] = useState<string | null>(null); const now = Date.now();
   const mine = (h: Hit) => (!h.assignee || h.assignee === store.me.email) && (!list || (h.list ?? "unrouted") === list);
   const overdue = find(store.state, { status: "overdue" }, now).filter(mine); const pending = find(store.state, { status: "pending" }, now).filter(mine);
   const today = find(store.state, { status: "logged", from: now - 86_400_000 }, now).filter(mine); const lists = [...new Set(find(store.state, {}, now).map((h) => h.list ?? "unrouted"))].sort();

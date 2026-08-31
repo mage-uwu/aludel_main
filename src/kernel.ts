@@ -151,8 +151,7 @@ const step = (anchor: number, k: number, c: Cadence): number =>
   c.unit !== "month" ? anchor + k * c.every * (c.unit === "week" ? 7 : 1) * DAY
   : new Date(anchor).setUTCMonth(new Date(anchor).getUTCMonth() + k * c.every);
 export const plan = (s: State, now: number, horizonDays: number): Extract<Payload, { type: "dispatched" }>[] => {
-  const have = new Set(Object.values(s.entries).map((e) => `${s.forms[e.form]?.site}|${e.task}|${e.window.from}`));
-  const out: Extract<Payload, { type: "dispatched" }>[] = [];
+  const have = new Set(Object.values(s.entries).map((e) => `${s.forms[e.form]?.site}|${e.task}|${e.window.from}`)); const out: Extract<Payload, { type: "dispatched" }>[] = [];
   for (const site of Object.values(s.sites)) for (const svc of site.services) {
     const tpl = versioned(s, svc.template, s.latest[svc.template] ?? 0);
     if (!tpl || tpl.retired) continue;
