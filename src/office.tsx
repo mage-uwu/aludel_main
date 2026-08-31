@@ -12,12 +12,12 @@ import { store } from "./sync";
 type Norm = { title?: string; labels?: string[]; every?: number | null; unit?: Cadence["unit"]; day?: number; blocks?: { kind: string; label: string }[] } | null;
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "x";
-const outcome = (label: string): Outcome => ({ key: slug(label), label, cost: /no.?access|skip/i.test(label) ? 0 : 1 }); // "part of a plan" is just outcome costs
+const outcome = (label: string): Outcome => ({ key: slug(label), label: label.replace(/_+/g, " ").trim(), cost: /no.?access|skip/i.test(label) ? 0 : 1 }); // "part of a plan" is just outcome costs
 const newTask = (title: string): Task => ({ key: slug(title), title, outcomes: [], blocks: [] });
 const last = (t: Template) => t.tasks[t.tasks.length - 1]!;
 const move = (a: Block[], i: number, by: number) => { const j = i + by; if (a[j]) [a[i], a[j]] = [a[j]!, a[i]!]; };
 const block = (kind: string, label: string): Block => {
-  const key = slug(label);
+  const key = slug(label); label = label.replace(/_+/g, " ").trim() || label;
   return kind === "number" ? { key, kind, label, required: false, min: 0, max: 999999 }
     : kind === "photo" ? { key, kind, label, required: false } : { key, kind: "text", label, required: false, placeholder: "" };
 };
@@ -61,7 +61,7 @@ const Form = ({ t, edit }: { t: Template; edit?: (f: (d: Template) => void) => v
           <button title="Move down" disabled={bi === k.blocks.length - 1} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, 1))}>↓</button><button title="Remove" onClick={() => edit((d) => { d.tasks[ti]!.blocks.splice(bi, 1); })}>✕</button></span>}
       </div>)}
       {edit && <button className="add" onClick={() => edit((d) => { d.tasks[ti]!.blocks.push(block("text", "New field")); })}>+ field</button>}
-      <footer className="ends"><span className="hint">ends with</span>{k.outcomes.map((o, oi) => edit ? <input key={oi} className="outcome pencil" value={o.label} onChange={(e) => edit((d) => { const x = d.tasks[ti]!.outcomes[oi]!; x.label = e.target.value; x.key = slug(x.label); })} /> : <span key={oi} className="outcome">{o.label}</span>)}</footer>
+      <footer className="ends"><span className="hint">ends with</span>{k.outcomes.map((o, oi) => edit ? <input key={oi} className="outcome pencil" value={o.label} onChange={(e) => edit((d) => { const x = d.tasks[ti]!.outcomes[oi]!; x.label = e.target.value; x.key = slug(x.label); })} /> : <span key={oi} className="outcome">{o.label.replace(/_+/g, " ")}</span>)}</footer>
     </div>)}
   </article>
 );
@@ -128,7 +128,7 @@ export default function Office(): ReactElement {
           {tab === "templates" && (Object.keys(s.latest).length ? Object.entries(s.latest).map(([id, v]) => <Form key={id} t={s.templates[`${id}@${v}`]!} />) : <p className="empty">No reports yet. Ask Aludel below for a new one.</p>)}
           {tab === "sites" && (Object.keys(s.sites).length ? Object.values(s.sites).map((site) => <div key={site.id} className="card"><b>{site.client.name}</b>
             <span>{site.client.address}{site.services[0]?.list && ` · ${site.services[0].list}`}</span>
-            {site.services.flatMap((svc) => Object.keys(svc.allotments).map((k) => { const b = balance(s, site.id, svc.template, k, now); return b && <span key={k} className={b.left < 0 ? "bad" : ""}>{k}: {b.left} of {b.of} left</span>; }))}</div>)
+            {site.services.flatMap((svc) => Object.keys(svc.allotments).map((k) => { const b = balance(s, site.id, svc.template, k, now); return b && <span key={k} className={b.left < 0 ? "bad" : ""}>{k.replace(/_+/g, " ")}: {b.left} of {b.of} left</span>; }))}</div>)
             : <p className="empty">No sites yet. Ask Aludel to add one.</p>)}
           {tab === "ledger" && store.refusals.map((r, i) => <p key={i} className="row bad">refused: {r.reason}</p>)}
           {tab === "ledger" && [...store.facts].reverse().slice(0, 60).map((f) => <p key={f.seq} className="row"><span className="hint">#{f.seq} · {new Date(f.at).toLocaleString()} · {f.actor}{f.via ? " · via agent" : ""}</span><br />{line(f)}</p>)}

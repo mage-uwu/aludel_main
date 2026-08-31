@@ -15,14 +15,14 @@ const shoot = async (f: File, set: (v?: Value) => void) => {
   await putBlob(hash, f); void fetch(`/api/blob/${hash}`, { method: "PUT", body: f }).catch(() => undefined); // bytes follow when the network allows
   set(hash); };
 export function Input({ b, value, set, label }: { b: Block; value?: Value; set?: (v?: Value) => void; label?: ReactElement }): ReactElement {
-  const head = label ?? <b>{b.label}{b.kind !== "button" && b.required && <i> *</i>}</b>;
+  const head = label ?? <b>{b.label.replace(/_+/g, " ")}{b.kind !== "button" && b.required && <i> *</i>}</b>; // keys are slugs; labels never are
   switch (b.kind) {
     case "text": return <label className="fld">{head}<input value={(value as string) ?? ""} placeholder={b.placeholder || "Their answer"} disabled={!set} onChange={(e) => set?.(e.target.value || undefined)} /></label>;
     case "number": return <label className="fld">{head}<input type="text" inputMode="decimal" value={(value as number)?.toString() ?? ""} placeholder={b.max >= 999999 ? "Number" : `${b.min} – ${b.max}`} disabled={!set}
       onChange={(e) => { const n = Number(e.target.value); set?.(e.target.value.trim() && Number.isFinite(n) ? Math.min(Math.max(n, b.min), b.max) : undefined); }} /></label>;
     case "photo": return <label className="fld">{head}<span className={value ? "shot has" : "shot"}>{value ? "Photo attached" : "Take or choose a photo"}
       {set && <input type="file" accept="image/*" capture="environment" onChange={(e) => { const f = e.target.files?.[0]; if (f) void shoot(f, set); }} />}</span></label>;
-    case "button": return <div className="fld"><button className="cta" disabled={!set} onClick={() => set?.(undefined)}>{b.label}</button></div>;
+    case "button": return <div className="fld"><button className="cta" disabled={!set} onClick={() => set?.(undefined)}>{b.label.replace(/_+/g, " ")}</button></div>;
   }
 }
 
@@ -37,7 +37,7 @@ function Logger({ hit, done }: { hit: Rec; done: () => void }): ReactElement {
       {task.blocks.map((b) => <Input key={b.key} b={b} value={values[b.key]}
         set={(v) => setValues(({ [b.key]: _, ...rest }) => (v === undefined ? rest : { ...rest, [b.key]: v }))} />)}
       <footer><p className="hint">{missing.length ? `still needed: ${missing.map((b) => b.label).join(", ")}` : "ends with"}</p>
-        {task.outcomes.map((o) => <button key={o.key} className="outcome" disabled={missing.length > 0} onClick={() => log(o.key)}>{o.label}</button>)}</footer>
+        {task.outcomes.map((o) => <button key={o.key} className="outcome" disabled={missing.length > 0} onClick={() => log(o.key)}>{o.label.replace(/_+/g, " ")}</button>)}</footer>
     </section>
   );
 }

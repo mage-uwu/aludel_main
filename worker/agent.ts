@@ -31,7 +31,7 @@ Answer questions with find/ask and cite what you read — say the numbers' denom
 ("3 tabs across 1 of 4 visits"), never a bare figure. Make changes only via draft, and keep
 drafts minimal and complete: new ids as short random strings; template edits are a whole new
 version with the same task/block/outcome keys (never retype a key); windows and times are epoch
-ms. To create a new report or template, call new_template — never collect the details in chat;
+ms. Labels are for humans — words with spaces (Title Case; outcomes UPPERCASE), never underscores; only keys are snake_case slugs. To create a new report or template, call new_template — never collect the details in chat;
 for anything else ambiguous, ask back instead of guessing. Team state:\n`;
 
 const oai = (env: Env, body: unknown) => fetch("https://api.openai.com/v1/responses",
@@ -43,7 +43,7 @@ const textOf = (r: Resp) => r.output.filter((o) => o.type === "message").flatMap
 const SPECS: Record<string, string> = {
   title: '{"title": string} — short, Title Case.',
   task: '{"title": string} — a concise task name, Title Case, filler stripped ("Yeah, we clean the cover" → "Cover Cleaning").',
-  outcomes: '{"labels": string[]} — the possible endings as short UPPERCASE labels.',
+  outcomes: '{"labels": string[]} — the possible endings as short UPPERCASE labels, spaces between words, never underscores.',
   cadence: '{"every": number, "unit": "day"|"week"|"month"}, or {"every": null} if it does not repeat.',
   day: '{"day": number} — the weekday, 0 = Sunday.',
   blocks: '{"blocks": [{"kind": "photo"|"number"|"text", "label": string}]} — one per recorded item, kind inferred.',
