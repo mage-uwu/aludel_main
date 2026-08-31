@@ -1,4 +1,4 @@
-import type { Payload, Task, Template } from "../src/kernel";
+import type { Payload, Task, Template, TemplateId } from "../src/kernel";
 import type { Team } from "./do";
 import type { Env } from "./index";
 
@@ -81,8 +81,9 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
     for (const call of calls) {
       const args = JSON.parse(call.arguments || "{}") as Record<string, unknown>;
       if (call.name === "new_template") return reply("One question at a time — watch the stage.", [], body.previous, (args.id as string) || true); // fork the thread from before the call
+      const id = args.id as TemplateId, head = snap.latest[id] ?? 0; // version and name come from the ledger, never the model
       const facts: Payload[] = call.name === "edit_template"
-        ? [{ type: "signed", template: { id: args.id, version: (snap.latest[args.id as string] ?? 0) + 1, name: nice((args.name as string) ?? snap.templates[`${args.id}@${snap.latest[args.id as string]}`]?.name ?? ""), tasks: (args.tasks as Loose[]).map(fix) } as Template }]
+        ? [{ type: "signed", template: { id, version: head + 1, name: nice((args.name as string) ?? snap.templates[`${id}@${head}`]?.name ?? ""), tasks: (args.tasks as Loose[]).map(fix) } as Template }]
         : ((args.facts ?? []) as Payload[]);
       let result: unknown =
         call.name === "find" ? await team.find(args) :

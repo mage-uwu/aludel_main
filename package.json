@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "tsc -b && tsc -p tsconfig.worker.json && sh scripts/loc.sh && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc -b --noEmit && tsc -p tsconfig.worker.json",
     "test": "vitest run"
   },
   "dependencies": {
