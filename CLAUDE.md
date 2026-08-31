@@ -74,10 +74,13 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
 - The look is one committed world (no theme switching, no second layout): in the office the
   app **is** the terminal — one jet-black slab whose title bar carries only the centred
   wordmark and a `[ ]` menu (the office/field switch and who you are live in it) — the slab
-  runs edge to edge, no gutter and no page behind it, while the stage and the log keep a
-  readable measure inside it — with the
+  runs edge to edge, no gutter and no page behind it, and both panes use its full width — no
+  phone-width column on a desktop — with the
   glass **stage** — the tool — docked inside it as a window that minimizes and maximizes,
-  pinned above the conversation; the field keeps its solo glass sheet. No fake window
+  pinned above the conversation; the field keeps its solo glass sheet. The window is always on
+  top and the prompt always at the bottom: what a big screen buys is room, not rearrangement.
+  The tool holds φ's long side by default, and **maximise** gives it the screen with the
+  conversation kept to a few lines — which is what a big zoom actually needs. No fake window
   ornaments in the chrome: no traffic lights, no corner glare — the app is not pretending
   to be a window, it is the window. Type is sized for a gloved thumb in daylight: nothing the
   crew reads is under ~0.8rem and nothing they tap is under ~40px — legibility outranks density. One arrangement at
