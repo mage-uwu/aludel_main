@@ -23,8 +23,7 @@ export type Answer = { value: number | string | Record<string, number> | null; n
 
 export const ask = (s: State, q: Query, now: number): Answer | { error: string } => {
   const scoped = find(s, { ...q, status: undefined }, now).filter((r) => s.forms[r.form]?.template === q.template && r.task === q.task); const done = scoped.map(effective).filter((l): l is NonNullable<typeof l> => !!l);
-  const kind = q.channel === "outcome" ? "outcome"
-    : scoped.map((r) => taskOf(s, r)).find(Boolean)?.blocks.find((b) => b.key === q.channel)?.kind;
+  const kind = q.channel === "outcome" ? "outcome" : scoped.map((r) => taskOf(s, r)).find(Boolean)?.blocks.find((b) => b.key === q.channel)?.kind;
   if (!kind || kind === "button") return { error: `no channel ${q.channel} on task ${q.task}` };
   if (!(LEGAL[kind as keyof typeof LEGAL] as readonly string[]).includes(q.agg)) return { error: `${q.agg} is not legal on ${kind}` };
   if (kind === "outcome") {

@@ -79,7 +79,7 @@ const Form = ({ t, edit }: { t: Template; edit?: (f: (d: Template) => void) => v
 );
 
 const line = (f: Fact): string =>
-  f.type === "granted" ? `${f.email} granted ${f.role}` : f.type === "declared" ? `site declared: ${f.site.client.name}` : f.type === "signed" ? `template signed: ${f.template.name} v${f.template.version}` : f.type === "bound" ? "service bound to site" :
+  f.type === "granted" ? `${f.email} granted ${f.role}` : f.type === "declared" ? `site declared: ${f.site.client.name}` : f.type === "signed" ? (f.template.retired ? `retired "${f.template.name}" — no new work will be planned from it` : `template signed: ${f.template.name} v${f.template.version}`) : f.type === "bound" ? "service bound to site" :
   f.type === "dispatched" ? `dispatched ${f.entries.length} task(s) → ${f.form.meta.name}` : f.type === "logged" ? `logged — ${f.outcome}` : f.type === "corrected" ? `corrected (${f.reason})` : f.type === "steered" ? `due date moved (${f.reason})` : (f as { type: string }).type;
 
 export default function Office(): ReactElement {
@@ -108,10 +108,12 @@ export default function Office(): ReactElement {
   const wizard = (id?: string) => { const v = id ? store.state.latest[id as TemplateId] : undefined; // an id means: add a task to that template, as its next version
     const t: Template = v ? { ...structuredClone(store.state.templates[`${id}@${v}`]!), version: v + 1 } : { id: newId<TemplateId>(), version: 1, name: "", tasks: [] };
     const at = t.version > 1 ? 1 : 0; setDraft(t); setStep(at); say(at, t); };
+  const dead = drafts.flatMap((d) => (d.type === "signed" && d.template.retired ? [d.template.name] : []))[0]; // a staged retirement escalates: the prompt, not the button
   const send = async (text?: string) => {
     const ask = (text ?? input.current?.value ?? "").trim() || (step >= 0 ? hint : "");
     if (!ask || busy) return;
     input.current!.value = ""; setLog((l) => [...l, { who: "you", body: ask }]);
+    if (dead) return void (/^y(es)?$/i.test(ask) ? commit() : setLog((l) => [...l, { who: "err", body: `Type YES to retire "${dead}", or press Discard. Logged work is kept either way.` }]));
     if (step >= 0 && draft) { // scripted flow; the model only normalizes the answer
       const st = STEPS[step]!; setBusy(true);
       const n: Norm = st.refine && !/^done\.?$/i.test(ask) && store.online
@@ -127,7 +129,7 @@ export default function Office(): ReactElement {
     try {
       const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current, view: { tab, draft, drafts } }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean | string }>) : Promise.reject(new Error(String(r.status)))));
       previous.current = res.previous; setLog((l) => [...l, { who: "aludel", body: res.reply }]);
-      const d0 = res.drafts[0]; const sg = res.drafts.length === 1 && d0?.type === "signed" ? d0.template : null;
+      const d0 = res.drafts[0]; const sg = res.drafts.length === 1 && d0?.type === "signed" && !d0.template.retired ? d0.template : null;
       if (sg) { const from = draft?.id === sg.id ? draft : store.state.latest[sg.id] ? structuredClone(store.state.templates[`${sg.id}@${store.state.latest[sg.id]}`]!) : { ...sg, name: "", tasks: [] }; // an edit plays as the diff from the stage draft if one is open, else the live version; a new report builds from nothing
         setDraft({ ...structuredClone(from), id: sg.id, version: sg.version }); await perform(acts(from, sg), sg); } else setDrafts(res.drafts);
       if (res.wizard) wizard(typeof res.wizard === "string" ? res.wizard : undefined);
@@ -141,14 +143,16 @@ export default function Office(): ReactElement {
     <section className={`term wide-${wide}`}>
       <section className="stage">
         <nav className="tabs">{live // while a draft is live the bar belongs to it: the commit is never scrolled away
-          ? <><b>{step >= 0 ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit} disabled={busy}>Commit</button>
+          ? <><b>{step >= 0 ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit} disabled={busy || !!dead}>Commit</button>
             <button className="ghost" onClick={clear} disabled={busy}>Discard</button></>
           : ["templates", "sites", "ledger"].map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}</nav>
         <div className="scroll" ref={stage}>
           {live ? <div className="draft">
             {draft && <Form t={draft} edit={edit} />}
-            {drafts.map((d, i) => <div key={i} className="card"><b>{line({ ...d, seq: 0, at: 0, actor: "" } as Fact)}</b><span>Commit makes it real; Discard throws it away.</span></div>)}</div> : <>
-          {tab === "templates" && (Object.keys(s.latest).length ? Object.entries(s.latest).map(([id, v]) => <Form key={id} t={s.templates[`${id}@${v}`]!} />) : <p className="empty">No reports yet. Ask Aludel below for a new one.</p>)}
+            {drafts.map((d, i) => <div key={i} className={dead ? "card bad" : "card"}><b>{line({ ...d, seq: 0, at: 0, actor: "" } as Fact)}</b>
+              <span>{dead ? "Type YES below to confirm — nothing already logged is deleted." : "Commit makes it real; Discard throws it away."}</span></div>)}</div> : <>
+          {tab === "templates" && (() => { const live = Object.entries(s.latest).map(([id, v]) => s.templates[`${id}@${v}`]!).filter((t) => !t.retired);
+            return live.length ? live.map((t) => <Form key={t.id} t={t} />) : <p className="empty">No reports yet. Ask Aludel below for a new one.</p>; })()}
           {tab === "sites" && (Object.keys(s.sites).length ? Object.values(s.sites).map((site) => <div key={site.id} className="card"><b>{site.client.name}</b>
             <span>{site.client.address}{site.services[0]?.list && ` · ${site.services[0].list}`}</span>
             {site.services.flatMap((svc) => Object.keys(svc.allotments).map((k) => { const b = balance(s, site.id, svc.template, k, now); return b && <span key={k} className={b.left < 0 ? "bad" : ""}>{k.replace(/_+/g, " ")}: {b.left} of {b.of} left</span>; }))}</div>)

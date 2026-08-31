@@ -55,7 +55,6 @@ class Store {
   }
 
   private async save() { await idb.put("kv", "facts", this.facts); await idb.put("kv", "queue", this.queue); }
-
   async sync() {
     try {
       if (this.queue.length) {

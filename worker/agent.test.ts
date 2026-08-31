@@ -1,5 +1,5 @@
 import { expect, test, vi } from "vitest";
-import { apply, empty, guard, type Draft, type Payload, type State, type Template, type TemplateId } from "../src/kernel";
+import { apply, empty, guard, plan, versioned, type Draft, type Payload, type State, type Template, type TemplateId } from "../src/kernel";
 import { chat } from "./agent";
 import type { Env } from "./index";
 
@@ -40,4 +40,28 @@ test("an invented fact type is refused by the guard and never stages", async () 
   const out = await (await chat(env, team(world()), "boss@x.co", { text: "add it" })).json() as { drafts: Payload[] };
   expect(out.drafts).toHaveLength(0);
   expect(guard(world(), { type: "template_task_added", actor: "boss@x.co", at: 1 } as never as Draft)).toBe("no such fact type");
+});
+
+test("retire_template stages a retirement the guard admits; edit_template can never set one", async () => {
+  script([{ type: "function_call", call_id: "c1", name: "retire_template", arguments: JSON.stringify({ id: "tpl1" }) }]);
+  const out = await (await chat(env, team(world()), "boss@x.co", { text: "delete pool report" })).json() as { drafts: Payload[] };
+  const f = out.drafts[0]!; if (f.type !== "signed") throw new Error("not signed");
+  expect(f.template.retired).toBe(true);
+  expect(f.template.version).toBe(2);
+  expect(f.template.tasks).toEqual(V1.tasks); // retirement keeps the content: history still renders
+  expect(guard(world(), { ...f, actor: "boss@x.co", at: Date.now() })).toBeNull();
+
+  script([{ type: "function_call", call_id: "c1", name: "edit_template", arguments: JSON.stringify({ id: "tpl1", tasks: [
+    { key: "water", title: "Water Inspection", retired: true, outcomes: [{ key: "clear", label: "CLEAR" }], blocks: [{ kind: "number", label: "pH" }] }] }) }]);
+  const via = await (await chat(env, team(world()), "boss@x.co", { text: "sneak" })).json() as { drafts: Payload[] };
+  const g = via.drafts[0]!; if (g.type !== "signed") throw new Error("not signed");
+  expect(g.template.retired).toBeUndefined();
+});
+
+test("a retired template plans no new work, and its logged entries still render", () => {
+  const s = world();
+  const retire: Payload = { type: "signed", template: { ...V1, version: 2, retired: true } };
+  apply(s, { ...retire, actor: "boss@x.co", at: 1, seq: 3 } as Draft & { seq: number });
+  expect(plan(s, Date.now(), 42)).toEqual([]);
+  expect(versioned(s, V1.id, 1)).toEqual(V1); // the version entries pinned is untouched
 });

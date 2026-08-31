@@ -8,6 +8,12 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   moving the goalposts.
 - Every write goes through `guard()`; every view is `f(ledger, now)`; task/block/outcome
   keys are minted once, never retyped, never reused.
+- Nothing is ever erased — the ledger is append-only, so "delete a report" is **retirement**:
+  a new version carrying `retired`, still inside the eight facts. It leaves the shelf and
+  `plan()` stops minting work from it; every logged entry keeps rendering against the version
+  it pinned, and dispatched work stays the crew's to finish. Only `retire_template` may set
+  the flag (never `edit_template`), and only a typed **YES** commits it — the button is
+  disabled while one is staged. Any future destructive act joins that same gate.
 - Field work is allocated and filtered by **lists** (routes/crews): a service binding's
   `list` and `assignee` flow onto every entry it mints, the `steered` fact re-routes one
   entry, and the field UI's chips filter by list. Allocation is writing a name on work.

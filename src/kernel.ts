@@ -20,7 +20,7 @@ export type Block =
 export type Outcome = { key: string; label: string; cost: number };
 export type Cadence = { every: number; unit: "day" | "week" | "month"; withinDays: number; day?: number }; // day = the weekday a binding starts from by default; the site's anchor still wins
 export type Task = { key: string; title: string; cadence?: Cadence; blocks: Block[]; outcomes: Outcome[] };
-export type Template = { id: TemplateId; version: number; name: string; tasks: Task[] };
+export type Template = { id: TemplateId; version: number; name: string; tasks: Task[]; retired?: boolean }; // retired: no new work is planned from it; its history still renders
 export type Form = { id: FormId; template: TemplateId; version: number; site: SiteId; meta: Record<string, string> };
 export type Value = string | number; // photos are content hashes
 export type Logged = { at: number; actor: string; values: Record<string, Value>; outcome: string };
@@ -92,15 +92,12 @@ const badValue = (task: Task, key: string, v: Value): boolean => {
   return !b || b.kind === "button" || (b.kind === "number" ? typeof v !== "number" : typeof v !== "string");
 };
 const badKeys = (tpl: Template, prior: Template[]): string | null => {
-  const kinds = new Map<string, string>();
-  for (const p of prior) for (const t of p.tasks) for (const b of t.blocks) kinds.set(`${t.key}/${b.key}`, b.kind);
+  const kinds = new Map<string, string>(); for (const p of prior) for (const t of p.tasks) for (const b of t.blocks) kinds.set(`${t.key}/${b.key}`, b.kind);
   for (const t of tpl.tasks) {
-    if (tpl.tasks.filter((x) => x.key === t.key).length > 1) return `duplicate task key ${t.key}`;
-    if (!t.outcomes.length) return `task ${t.key} has no outcomes`;
+    if (tpl.tasks.filter((x) => x.key === t.key).length > 1) return `duplicate task key ${t.key}`; if (!t.outcomes.length) return `task ${t.key} has no outcomes`;
     for (const b of t.blocks) {
       if (t.blocks.filter((x) => x.key === b.key).length > 1) return `duplicate block key ${b.key}`;
-      const was = kinds.get(`${t.key}/${b.key}`); // keys are never retyped
-      if (was && was !== b.kind) return `block ${t.key}/${b.key} was ${was}, cannot become ${b.kind}`;
+      const was = kinds.get(`${t.key}/${b.key}`); if (was && was !== b.kind) return `block ${t.key}/${b.key} was ${was}, cannot become ${b.kind}`; // keys are never retyped
     }
   }
   return null;
@@ -108,8 +105,7 @@ const badKeys = (tpl: Template, prior: Template[]): string | null => {
 
 export const guard = (s: State, d: Draft): string | null => {
   const boot = d.type === "granted" && Object.keys(s.actors).length === 0; // the first grant founds the team
-  const role = d.actor === "scheduler" ? "office" : s.actors[d.actor]?.role;
-  if (!role && !boot) return "unknown actor";
+  const role = d.actor === "scheduler" ? "office" : s.actors[d.actor]?.role; if (!role && !boot) return "unknown actor";
   if (role && RANK[role] < RANK[GATE[d.type]]) return `${d.type} needs ${GATE[d.type]}`;
   switch (d.type) {
     case "granted": case "declared": return null;
@@ -159,7 +155,7 @@ export const plan = (s: State, now: number, horizonDays: number): Extract<Payloa
   const out: Extract<Payload, { type: "dispatched" }>[] = [];
   for (const site of Object.values(s.sites)) for (const svc of site.services) {
     const tpl = versioned(s, svc.template, s.latest[svc.template] ?? 0);
-    if (!tpl) continue;
+    if (!tpl || tpl.retired) continue;
     const batch = new Map<number, Entry[]>(); // occurrences sharing a date share a form
     for (const task of tpl.tasks) {
       if (!task.cadence) continue;
