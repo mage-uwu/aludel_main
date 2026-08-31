@@ -147,21 +147,26 @@ button { font:inherit; color:inherit; cursor:pointer; }
    edges: a lit bevel, a single gloss arc breaking over the top-right corner, and the
    violet-tinted pool the slab casts on the desk. */
 .term { background:
-    radial-gradient(130% 55% at 88% -18%, rgba(255,255,255,.12), rgba(255,255,255,.035) 42%, transparent 62%),
     linear-gradient(180deg, #08090d, #010204);
+  position:relative;
   border:1px solid rgba(255,255,255,.10); border-radius:var(--r); overflow:hidden; min-height:0;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.13), inset 0 -1px 0 rgba(0,0,0,.6),
     0 2px 4px rgba(10,12,24,.25), 0 28px 64px -26px rgba(52,40,120,.5);
   display:grid; grid-template-rows:auto minmax(0,1fr) auto; font-family:var(--mono); font-size:12px; line-height:1.6; }
-.term::before { content:"aludel — terminal"; padding:.5rem .9rem .5rem 3.6rem; font-size:.6rem; font-weight:600; letter-spacing:.12em;
+.term::after { content:""; position:absolute; top:5px; left:5px; width:40px; height:40px; pointer-events:none;
+  border-top:3.5px solid rgba(255,255,255,.38); border-left:3.5px solid rgba(255,255,255,.38); border-top-left-radius:18px;
+  background:radial-gradient(circle at 24px 24px, rgba(255,255,255,.55) 2.5px, transparent 3.6px);
+  mask-image:radial-gradient(circle at 2px 2px, #000 19px, transparent 42px);
+  -webkit-mask-image:radial-gradient(circle at 2px 2px, #000 19px, transparent 42px); }
+.term::before { content:"aludel — terminal"; padding:.5rem .9rem .5rem 5rem; font-size:.6rem; font-weight:600; letter-spacing:.12em;
   color:#7d8590; border-bottom:1px solid rgba(255,255,255,.08); box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
   background-image:
-    radial-gradient(circle at calc(.95rem - 1px) 38%, rgba(255,255,255,.85) 1px, transparent 1.8px),
-    radial-gradient(circle at calc(1.85rem - 1px) 38%, rgba(255,255,255,.85) 1px, transparent 1.8px),
-    radial-gradient(circle at calc(2.75rem - 1px) 38%, rgba(255,255,255,.85) 1px, transparent 1.8px),
-    radial-gradient(circle at .95rem 50%, #ff5f57 3.5px, transparent 4.6px),
-    radial-gradient(circle at 1.85rem 50%, #febc2e 3.5px, transparent 4.6px),
-    radial-gradient(circle at 2.75rem 50%, #28c840 3.5px, transparent 4.6px),
+    radial-gradient(circle at calc(2.3rem - 1px) 38%, rgba(255,255,255,.85) 1px, transparent 1.8px),
+    radial-gradient(circle at calc(3.2rem - 1px) 38%, rgba(255,255,255,.85) 1px, transparent 1.8px),
+    radial-gradient(circle at calc(4.1rem - 1px) 38%, rgba(255,255,255,.85) 1px, transparent 1.8px),
+    radial-gradient(circle at 2.3rem 50%, #ff5f57 3.5px, transparent 4.6px),
+    radial-gradient(circle at 3.2rem 50%, #febc2e 3.5px, transparent 4.6px),
+    radial-gradient(circle at 4.1rem 50%, #28c840 3.5px, transparent 4.6px),
     linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.015)); }
 .log { overflow-y:auto; overscroll-behavior:contain; padding:.8rem .9rem; display:grid; gap:.35rem; align-content:start; color:var(--tty);
   mask-image:linear-gradient(180deg, transparent 0, #000 .9rem, #000 calc(100% - .4rem), rgba(0,0,0,.4));
