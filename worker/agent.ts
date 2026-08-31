@@ -12,7 +12,7 @@ type Call = { type: "function_call"; call_id: string; name: string; arguments: s
 const TOOLS = [
   { type: "function", name: "find", description: "Look up entries (units of scheduled work). Rows carry status, window, and what was logged. Statuses: scheduled|pending|overdue|logged. list = the route the work is allocated to.", parameters: { type: "object", properties: { site: { type: "string" }, task: { type: "string" }, actor: { type: "string" }, status: { type: "string" }, list: { type: "string" }, from: { type: "number" }, to: { type: "number" } } } },
   { type: "function", name: "ask", description: "Aggregate one channel. channel is a block key or 'outcome'. Legal aggs — number: sum|avg|min|max|last; text: last|count; photo: count|presence; outcome: tally|cost. Answers carry value, n (entries recording it), of (entries in scope).", parameters: { type: "object", properties: { template: { type: "string" }, task: { type: "string" }, channel: { type: "string" }, agg: { type: "string" }, site: { type: "string" }, actor: { type: "string" }, from: { type: "number" }, to: { type: "number" } }, required: ["template", "task", "channel", "agg"] } },
-  { type: "function", name: "new_template", description: "Start the structured new-report interview. Call this whenever the human wants to create a new report or template — do not interrogate them yourself.", parameters: { type: "object", properties: {} } },
+  { type: "function", name: "new_template", description: "Start the structured interview — it asks one question at a time and builds on the human's screen. Call it with no id to create a new report; pass the id of an existing template to add a task to it. Call this the moment the human wants a new report or a new task — never collect names, fields, outcomes, or cadence in chat yourself.", parameters: { type: "object", properties: { id: { type: "string", description: "Existing template id to add a task to; omit for a brand-new report." } } } },
   { type: "function", name: "edit_template", description: "Change an existing template: add/remove/rename tasks, blocks, outcomes, or cadence. Pass the template id and the COMPLETE new task list (every task, changed or not — omissions are deletions). Reuse existing task/block/outcome keys verbatim; omit keys only on brand-new items. The office stages it as the next version and plays your edit on the human's stage, control by control, for their commit.", parameters: { type: "object", properties: { id: { type: "string" }, name: { type: "string" }, tasks: { type: "array", items: { type: "object", properties: { key: { type: "string" }, title: { type: "string" }, cadence: { type: "object", properties: { every: { type: "number" }, unit: { type: "string", enum: ["day", "week", "month"] }, withinDays: { type: "number" }, day: { type: "number" } }, required: ["every", "unit", "withinDays"] }, outcomes: { type: "array", items: { type: "object", properties: { key: { type: "string" }, label: { type: "string" }, cost: { type: "number" } }, required: ["label"] } }, blocks: { type: "array", items: { type: "object", properties: { key: { type: "string" }, kind: { type: "string", enum: ["text", "number", "photo", "button"] }, label: { type: "string" }, required: { type: "boolean" }, min: { type: "number" }, max: { type: "number" }, placeholder: { type: "string" } }, required: ["kind", "label"] } } }, required: ["title", "outcomes", "blocks"] } } }, required: ["id", "tasks"] } },
   { type: "function", name: "draft", description: "Propose facts to append (declared|bound|dispatched|granted|steered — NEVER signed; templates go through new_template or edit_template). They are checked and staged for the human, who commits or discards. Call once, complete, after your reads.", parameters: { type: "object", properties: { facts: { type: "array", items: { type: "object" } } }, required: ["facts"] } },
 ];
@@ -27,8 +27,7 @@ const fix = (t: Loose): Task => ({ key: t.key || slug(t.title), title: nice(t.ti
     : b.kind === "button" ? { key: b.key || slug(b.label), kind: "button", label: nice(b.label), action: "submit" }
     : { key: b.key || slug(b.label), kind: "text", label: nice(b.label), required: !!b.required, placeholder: b.placeholder ?? "" })) });
 
-const digest = (t: Awaited<ReturnType<Team["snapshot"]>>) => JSON.stringify({ now: Date.now(), actors: Object.values(t.actors), sites: Object.values(t.sites),
-  templates: Object.entries(t.latest).map(([id, v]) => t.templates[`${id}@${v}`]) });
+const digest = (t: Awaited<ReturnType<Team["snapshot"]>>) => JSON.stringify({ now: Date.now(), actors: Object.values(t.actors), sites: Object.values(t.sites), templates: Object.entries(t.latest).map(([id, v]) => t.templates[`${id}@${v}`]) });
 
 const SYSTEM = `You are Aludel, the office desk of a trades team. Their world: a Site is a place with a client;
 a Template (versioned) declares Tasks, each with typed blocks, outcomes, and a cadence; dispatching mints a
@@ -39,8 +38,10 @@ denominators out loud ("3 tabs across 1 of 4 visits"), never a bare figure. Make
 tools: edit_template for any change to an existing template (never build signed facts yourself), draft for the
 rest, minimal and complete: new ids as short random strings; windows and times are epoch ms. Labels are for humans —
 words with spaces (Title Case; outcomes UPPERCASE), never underscores; only keys are snake_case slugs. To create
-a new report or template, call new_template — never collect the details in chat; for anything else ambiguous,
-ask back instead of guessing. The office is collaborative: the screen context shows the tab the human has open
+a new report, template, or task, call new_template — never collect the details in chat; use edit_template only
+for direct, fully-specified changes ("rename X", "make Y required", "remove Z"). Speak plainly to tradespeople:
+short sentences, ONE question per turn, never a compound question; when in doubt, start the interview and let
+it do the asking. The office is collaborative: the screen context shows the tab the human has open
 and any uncommitted draft on the stage, including their hand edits — treat that draft as the working copy. To
 change it, draft one signed fact reusing its id and version verbatim; your edit will play out on their stage
 for their commit. Team state:\n`;
@@ -77,8 +78,8 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
     if (calls.length === 0) return reply(text || "Here's what I put together.", drafts, previous);
     input = []; // next request: only this turn's tool outputs; previous_response_id carries the rest
     for (const call of calls) {
-      if (call.name === "new_template") return reply("Let's build it properly — quick questions, one at a time.", [], body.previous, true); // fork the thread from before the call
       const args = JSON.parse(call.arguments || "{}") as Record<string, unknown>;
+      if (call.name === "new_template") return reply("One question at a time — watch the stage.", [], body.previous, (args.id as string) || true); // fork the thread from before the call
       const facts: Payload[] = call.name === "edit_template"
         ? [{ type: "signed", template: { id: args.id, version: (snap.latest[args.id as string] ?? 0) + 1, name: nice((args.name as string) ?? snap.templates[`${args.id}@${snap.latest[args.id as string]}`]?.name ?? ""), tasks: (args.tasks as Loose[]).map(fix) } as Template }]
         : ((args.facts ?? []) as Payload[]);
@@ -96,4 +97,4 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
   return reply("I ran out of turns — try a smaller ask.", drafts, previous);
 };
 
-const reply = (text: string, drafts: Payload[], previous?: string, wizard?: boolean) => new Response(JSON.stringify({ reply: text, drafts, previous, wizard }), { headers: { "Content-Type": "application/json" } });
+const reply = (text: string, drafts: Payload[], previous?: string, wizard?: boolean | string) => new Response(JSON.stringify({ reply: text, drafts, previous, wizard }), { headers: { "Content-Type": "application/json" } });

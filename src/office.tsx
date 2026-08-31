@@ -26,15 +26,12 @@ const block = (kind: string, label: string): Block => {
 // showing, so the form grows as you talk; only the answers pass through the model.
 const STEPS: { q: (t: Template) => string; hint?: (t: Template) => string; refine?: string; go: (t: Template, a: string, n: Norm) => number }[] = [
   { q: () => "What should the report be called?", refine: "title", go: (t, a, n) => ((t.name = n?.title || a), 1) },
-  { q: () => "What is the first task you do on site?", refine: "task", go: (t, a, n) => (t.tasks.push(newTask(n?.title || a)), 2) },
-  { q: (t) => `How can "${last(t).title}" end?`, hint: () => "OK, FOLLOW-UP, NO ACCESS", refine: "outcomes",
-    go: (t, a, n) => ((last(t).outcomes = (n?.labels ?? a.split(",").map((x) => x.trim())).map(outcome).filter((o) => o.label)), last(t).outcomes.length ? 3 : 2) },
-  { q: () => "Does it repeat? Say how often, or 'no'.", hint: () => "every 1 week", refine: "cadence",
-    go: (t, a, n) => { const m = a.match(/(\d+)\s*(day|week|month)/i);
+  { q: (t) => t.tasks.length ? "What's the new task called?" : "What is the first task you do on site?", refine: "task", go: (t, a, n) => (t.tasks.push(newTask(n?.title || a)), 2) },
+  { q: (t) => `How can "${last(t).title}" end?`, hint: () => "OK, FOLLOW-UP, NO ACCESS", refine: "outcomes", go: (t, a, n) => ((last(t).outcomes = (n?.labels ?? a.split(",").map((x) => x.trim())).map(outcome).filter((o) => o.label)), last(t).outcomes.length ? 3 : 2) },
+  { q: () => "Does it repeat? Say how often, or 'no'.", hint: () => "every 1 week", refine: "cadence", go: (t, a, n) => { const m = a.match(/(\d+)\s*(day|week|month)/i);
       if (m) last(t).cadence = { every: +m[1]!, unit: m[2]!.toLowerCase() as Cadence["unit"], withinDays: 7 }; else if (n?.every) last(t).cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 7 };
       return last(t).cadence ? 4 : 5; } }, // repeats → ask the day; one-off → straight to the fields
-  { q: (t) => `What day does "${last(t).title}" usually go out? (A site can override when you bind it.)`, hint: () => "Monday", refine: "day",
-    go: (t, a, n) => { const d = n?.day ?? DAYS.findIndex((x) => new RegExp(x, "i").test(a)); const c = last(t).cadence; if (c && d >= 0) c.day = d; return 5; } },
+  { q: (t) => `What day does "${last(t).title}" usually go out? (A site can override when you bind it.)`, hint: () => "Monday", refine: "day", go: (t, a, n) => { const d = n?.day ?? DAYS.findIndex((x) => new RegExp(x, "i").test(a)); const c = last(t).cadence; if (c && d >= 0) c.day = d; return 5; } },
   { q: (t) => last(t).blocks.length ? "More? Or 'done'." : "What gets recorded on the job? Photos, numbers, notes — list it all, then 'done'.",
     hint: (t) => (last(t).blocks.length ? "done" : "Before photos, Notes"), refine: "blocks",
     go: (t, a, n) => {
@@ -125,12 +122,14 @@ export default function Office(): ReactElement {
     }
     setBusy(true);
     try {
-      const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current, view: { tab, draft, drafts } }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean }>) : Promise.reject(new Error(String(r.status)))));
+      const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current, view: { tab, draft, drafts } }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean | string }>) : Promise.reject(new Error(String(r.status)))));
       previous.current = res.previous; setLog((l) => [...l, { who: "aludel", body: res.reply }]);
       const d0 = res.drafts[0]; const sg = res.drafts.length === 1 && d0?.type === "signed" ? d0.template : null;
       if (sg) { const from = draft?.id === sg.id ? draft : store.state.latest[sg.id] ? structuredClone(store.state.templates[`${sg.id}@${store.state.latest[sg.id]}`]!) : { ...sg, name: "", tasks: [] }; // an edit plays as the diff from the stage draft if one is open, else the live version; a new report builds from nothing
         setDraft({ ...structuredClone(from), id: sg.id, version: sg.version }); await perform(acts(from, sg), sg); } else setDrafts(res.drafts);
-      if (res.wizard) { const t: Template = { id: newId<TemplateId>(), version: 1, name: "", tasks: [] }; setDraft(t); setStep(0); say(0, t); }
+      if (res.wizard) { const w = res.wizard; const v = typeof w === "string" ? store.state.latest[w as TemplateId] : undefined; // an id means: add a task to that template, as its next version
+        const t: Template = v ? { ...structuredClone(store.state.templates[`${w as string}@${v}`]!), version: v + 1 } : { id: newId<TemplateId>(), version: 1, name: "", tasks: [] };
+        const at = t.version > 1 ? 1 : 0; setDraft(t); setStep(at); say(at, t); }
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false);
   };
