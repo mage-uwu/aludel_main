@@ -15,7 +15,7 @@ body::before { content:""; position:fixed; inset:0; z-index:-1; pointer-events:n
     radial-gradient(52rem 36rem at 10% -14%, rgba(140,110,255,.20), transparent 62%),
     radial-gradient(46rem 30rem at 114% 106%, rgba(45,215,150,.18), transparent 60%),
     linear-gradient(180deg, #fdfdff 0%, #eceef6 100%); }
-main { height:100dvh; max-width:70rem; margin:0 auto; padding:.5rem; display:grid; grid-template-rows:auto minmax(0,1fr); gap:.5rem; }
+main { height:100dvh; max-width:52rem; margin:0 auto; padding:.5rem; display:grid; grid-template-rows:auto minmax(0,1fr); gap:.5rem; }
 
 /* header */
 .top { display:flex; align-items:center; gap:.55rem; padding:.3rem .55rem; }
@@ -27,8 +27,9 @@ main { height:100dvh; max-width:70rem; margin:0 auto; padding:.5rem; display:gri
 .hint { color:var(--dim); }
 
 /* the two panes */
+/* One layout at every size: stage on top, terminal at the bottom. A wide screen is the
+   phone, wider — never a second arrangement to learn. */
 .pane { display:grid; gap:.5rem; grid-template-rows:minmax(0,.9fr) minmax(0,1.1fr); min-height:0; }
-@media (min-width:62rem) { .pane { grid-template-rows:none; grid-template-columns:1fr 1fr; } }
 
 /* stage — glass */
 .stage, .solo { background:var(--glass); backdrop-filter:blur(26px) saturate(1.6); -webkit-backdrop-filter:blur(26px) saturate(1.6);

@@ -16,8 +16,8 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   (`OPENAI_MODEL`), never hardcoded.
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
-- The look is one committed world (no theme switching): a glass **stage** over a black
-  **terminal**. Colour encodes provenance and nothing else — violet = a model wrote this,
+- The look is one committed world (no theme switching, no second layout): a glass **stage**
+  over a black **terminal**, stacked at every width — a wide screen is the phone, wider. Colour encodes provenance and nothing else — violet = a model wrote this,
   mint = the machine is certain (script, ledger, guard), white = you. Keep it true: never
   paint a model's words mint. Styling lives in `src/index.css` (uncounted by the LOC gate),
   so pay for polish there, not in TSX. No webfonts — the field runs offline.
