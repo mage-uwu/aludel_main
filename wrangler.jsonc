@@ -9,5 +9,5 @@
   // Later, when sign-in and photo storage go live, create the resources and uncomment:
   // "kv_namespaces": [{ "binding": "DIR", "id": "<wrangler kv namespace create DIR>" }],
   // "r2_buckets": [{ "binding": "BLOBS", "bucket_name": "aludel-blobs" }],
-  "vars": { "DEV_USER": "lafejcompton@gmail.com" }
+  "vars": { "ACCESS_TEAM": "autumn-hall-a7d8", "ACCESS_AUD": "", "DEV_USER": "lafejcompton@gmail.com" }
 }

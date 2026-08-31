@@ -170,10 +170,14 @@ office may correct anything, corrections visible everywhere with attribution.
 ## Stack
 
 Vite + React + strict TypeScript PWA (one app, two modes) · Cloudflare Workers, one
-SQLite-backed Durable Object per team holding the ledger, R2 for photos · auth is Google
-OIDC verified in the Worker (~80 lines, session as a signed HTTP-only cookie) — identity
-is Google's problem, authorization is the `granted` facts · the agent on the Claude API,
-tool surface = the eight facts + `find` + `ask`.
+SQLite-backed Durable Object per team holding the ledger, R2 for photos · auth is
+Cloudflare Access (Zero Trust) in front of the Worker: the edge authenticates everyone
+before our code runs and hands it a signed JWT, verified against the team's public keys
+(~30 lines) — identity is the edge's problem, authorization is the `granted` facts, and
+there is no login flow, cookie, or secret of ours to attack. If the company ever outgrows
+Access seats, the gate swaps back to Google OIDC in the Worker (the implementation lives
+in git history) and nothing else moves · the agent on the Claude API, tool surface = the
+eight facts + `find` + `ask`.
 
 Budget: the app is ≤ 800 lines of TypeScript (tests, CSS and config uncounted), which
 holds because the agent is the office UI — chat and preview cards replace a hand-built

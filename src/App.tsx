@@ -8,12 +8,8 @@ export default function App(): ReactElement {
   const canOffice = store.me.role !== "field";
   const [mode, setMode] = useState<"office" | "field">(() =>
     canOffice && localStorage.getItem("mode") !== "field" ? "office" : "field");
-  if (store.me.role === null && !store.me.email) // a server is present and we're signed out
-    return <main className="gate"><h1>Aludel</h1><p>The ledger of the work.</p><a className="button" href="/api/auth/login">Sign in with Google</a></main>;
-  if (store.online && store.me.role === null) return (
-    <main className="gate"><h1>Aludel</h1><p>You're signed in, but not on a team yet.</p>
-      <button onClick={() => void fetch("/api/team", { method: "POST" }).then(() => store.boot())}>Found a team</button></main>
-  );
+  if (store.me.role === null && !store.me.email) // the edge (Cloudflare Access) let us through but the worker could not verify us
+    return <main className="gate"><h1>Aludel</h1><p>Couldn't verify your session — refresh, or check the Access setup.</p></main>;
   return (
     <main>
       <header className="top">

@@ -13,6 +13,8 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   entry, and the field UI's chips filter by list. Allocation is writing a name on work.
 - The agent drafts; a human's fact commits (`via: "agent"`). The agent's tool surface is
   the eight facts + `find` + `ask`, nothing else.
+- Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
+  the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
 
 Cloudflare setup (per developers.cloudflare.com/agent-setup): the vendored skills in
 `.claude/skills/` (workers-best-practices, durable-objects, wrangler) are from

@@ -41,9 +41,8 @@ class Store {
     this.queue = (await idb.get<Draft[]>("kv", "queue")) ?? [];
     try {
       const res = await fetch("/api/t/me");
-      if (res.status === 401) { this.me = { email: "", role: null }; this.wake(); return; } // signed out: App shows login
-      if (res.status === 428) this.me = { email: "founder", role: null };
-      else if (res.ok) { this.me = await res.json(); this.online = true; }
+      if (res.status === 401) { this.me = { email: "", role: null }; this.wake(); return; } // Access let us in but the worker could not verify us
+      if (res.ok) { this.me = await res.json(); this.online = true; }
     } catch { /* no server: this phone is the ledger */ }
     this.wake();
     if (this.online) { await this.sync(); setInterval(() => void this.sync(), 30_000); }

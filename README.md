@@ -33,14 +33,15 @@ Tests, CSS, and config are uncounted. Currently exactly 800:
 
 ## Deploying
 
-1. `npx wrangler kv namespace create DIR` and put its id in `wrangler.jsonc`;
-   `npx wrangler r2 bucket create aludel-blobs`.
-2. Secrets: `wrangler secret put` for `SESSION_SECRET`, `GOOGLE_CLIENT_ID`,
-   `GOOGLE_CLIENT_SECRET` (a Google OAuth web client with
-   `https://<your-domain>/api/auth/callback` as redirect URI), `ANTHROPIC_API_KEY`.
-3. `npm run build && npx wrangler deploy`. Sign in → found a team → grant your people
-   (`granted` facts, via the desk) → they sign in and land on the same ledger.
+Workers Builds deploys from git (`npm run build`, then `npx wrangler deploy`). Auth is
+Cloudflare Access: enable Access on the Worker's workers.dev domain, copy the Access
+application's audience tag into `ACCESS_AUD` in `wrangler.jsonc` (with `ACCESS_TEAM` as
+your Zero Trust team slug), and manage who may enter in Zero Trust → Access →
+Applications. Everyone verified shares the `alpha` team until the optional `DIR` KV
+namespace is bound (uncomment in `wrangler.jsonc`) for multi-team; the optional R2 bucket
+enables photo upload. `ANTHROPIC_API_KEY` (secret) turns on the desk.
 
-For local server work, set `DEV_USER` in `wrangler.jsonc` and `npx wrangler dev`.
-Without any server the app still runs whole — the same guard and scheduler execute on
-the device, which is also what a phone in a basement does with the queue until signal.
+For local work, `DEV_USER` in `wrangler.jsonc` + `npx wrangler dev` — honored only while
+`ACCESS_AUD` is unset. Without any server the app still runs whole: the same guard and
+scheduler execute on the device, which is also what a phone in a basement does with the
+queue until signal.
