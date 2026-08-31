@@ -45,10 +45,8 @@ export default function Field(): ReactElement {
   const [list, setList] = useState<string | null>(null);
   const now = Date.now();
   const mine = (h: Hit) => (!h.assignee || h.assignee === store.me.email) && (!list || (h.list ?? "unrouted") === list);
-  const overdue = find(store.state, { status: "overdue" }, now).filter(mine);
-  const pending = find(store.state, { status: "pending" }, now).filter(mine);
-  const today = find(store.state, { status: "logged", from: now - 86_400_000 }, now).filter(mine);
-  const lists = [...new Set(find(store.state, {}, now).map((h) => h.list ?? "unrouted"))].sort();
+  const overdue = find(store.state, { status: "overdue" }, now).filter(mine); const pending = find(store.state, { status: "pending" }, now).filter(mine);
+  const today = find(store.state, { status: "logged", from: now - 86_400_000 }, now).filter(mine); const lists = [...new Set(find(store.state, {}, now).map((h) => h.list ?? "unrouted"))].sort();
   const open = openId && store.state.entries[openId];
   if (open) return <Logger hit={open} done={() => setOpen(null)} />;
   const row = (h: Hit, cls = "") => <button key={h.id} className={`entry ${cls}`} onClick={() => setOpen(h.id)}>

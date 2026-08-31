@@ -114,8 +114,7 @@ export const guard = (s: State, d: Draft): string | null => {
   switch (d.type) {
     case "granted": case "declared": return null;
     case "signed": {
-      const head = s.latest[d.template.id] ?? 0;
-      if (d.template.version !== head + 1) return `version must be ${head + 1}`;
+      const head = s.latest[d.template.id] ?? 0; if (d.template.version !== head + 1) return `version must be ${head + 1}`;
       return badKeys(d.template, Array.from({ length: head }, (_, i) => versioned(s, d.template.id, i + 1)).filter((t): t is Template => !!t));
     }
     case "bound": return !s.sites[d.site] ? "unknown site" : !s.latest[d.service.template] ? "unknown template" : null;
@@ -126,14 +125,12 @@ export const guard = (s: State, d: Draft): string | null => {
       for (const e of d.entries) {
         if (s.entries[e.id]) return "entry id already exists";
         if (e.form !== d.form.id) return "entry outside its form";
-        if (!tpl.tasks.some((t) => t.key === e.task)) return `unknown task ${e.task}`;
-        if (e.window.from > e.window.due) return "window ends before it starts";
+        if (!tpl.tasks.some((t) => t.key === e.task)) return `unknown task ${e.task}`; if (e.window.from > e.window.due) return "window ends before it starts";
       }
       return null;
     }
     case "logged": case "corrected": {
-      const r = s.entries[d.entry]; const task = r && taskOf(s, r);
-      if (!r || !task) return "unknown entry";
+      const r = s.entries[d.entry]; const task = r && taskOf(s, r); if (!r || !task) return "unknown entry";
       if (d.type === "corrected") {
         if (!r.logged) return "nothing to correct";
         if (role === "field" && (r.logged.actor !== d.actor || !sameDay(d.at, r.logged.at))) return "field corrects only its own entry, same day";
@@ -146,6 +143,7 @@ export const guard = (s: State, d: Draft): string | null => {
       const r = s.entries[d.entry];
       return !r ? "unknown entry" : r.logged ? "already logged" : d.due !== undefined && d.due < r.window.from ? "due before from" : null;
     }
+    default: return `no such fact type`; // JSON from outside is not bound by our union
   }
 };
 

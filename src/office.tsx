@@ -85,7 +85,7 @@ const Form = ({ t, edit }: { t: Template; edit?: (f: (d: Template) => void) => v
 
 const line = (f: Fact): string =>
   f.type === "granted" ? `${f.email} granted ${f.role}` : f.type === "declared" ? `site declared: ${f.site.client.name}` : f.type === "signed" ? `template signed: ${f.template.name} v${f.template.version}` : f.type === "bound" ? "service bound to site" :
-  f.type === "dispatched" ? `dispatched ${f.entries.length} task(s) → ${f.form.meta.name}` : f.type === "logged" ? `logged — ${f.outcome}` : f.type === "corrected" ? `corrected (${f.reason})` : `due date moved (${f.reason})`;
+  f.type === "dispatched" ? `dispatched ${f.entries.length} task(s) → ${f.form.meta.name}` : f.type === "logged" ? `logged — ${f.outcome}` : f.type === "corrected" ? `corrected (${f.reason})` : f.type === "steered" ? `due date moved (${f.reason})` : (f as { type: string }).type;
 
 export default function Office(): ReactElement {
   const [log, setLog] = useState([{ who: "step", body: "Aludel ready. Ask for a new report, or ask about the work." }]); const [tab, setTab] = useState("templates");
@@ -135,8 +135,7 @@ export default function Office(): ReactElement {
     setBusy(false);
   };
   const clear = () => { setDraft(null); setDrafts([]); setStep(-1); setHint(""); };
-  const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent");
-    setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]); if (!no.length) clear(); };
+  const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent"); setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]); if (!no.length) clear(); };
   const s = store.state; const now = Date.now(); const live = draft || drafts.length > 0;
   return (
     <div className={`pane wide-${wide}`}>
@@ -148,7 +147,7 @@ export default function Office(): ReactElement {
         <div className="scroll" ref={stage}>
           {live ? <div className="draft">
             {draft && <Form t={draft} edit={edit} />}
-            {drafts.map((d, i) => <pre key={i} className="card">{JSON.stringify(d, null, 1)}</pre>)}</div> : <>
+            {drafts.map((d, i) => <div key={i} className="card"><b>{line({ ...d, seq: 0, at: 0, actor: "" } as Fact)}</b><span>Commit makes it real; Discard throws it away.</span></div>)}</div> : <>
           {tab === "templates" && (Object.keys(s.latest).length ? Object.entries(s.latest).map(([id, v]) => <Form key={id} t={s.templates[`${id}@${v}`]!} />) : <p className="empty">No reports yet. Ask Aludel below for a new one.</p>)}
           {tab === "sites" && (Object.keys(s.sites).length ? Object.values(s.sites).map((site) => <div key={site.id} className="card"><b>{site.client.name}</b>
             <span>{site.client.address}{site.services[0]?.list && ` · ${site.services[0].list}`}</span>

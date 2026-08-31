@@ -13,7 +13,12 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   entry, and the field UI's chips filter by list. Allocation is writing a name on work.
 - The agent is named Aludel. It drafts; a human's fact commits (`via: "agent"`). Its tool
   surface is the eight facts + `find` + `ask`, nothing else; its model id is config
-  (`OPENAI_MODEL`), never hardcoded. The office is one shared tool with two operators:
+  (`OPENAI_MODEL`), never hardcoded. Template changes go through typed tools only —
+  `new_template` starts the interview, `edit_template` stages the next version (the worker
+  owns version numbers, key slugs, and label hygiene; the model never hand-rolls a `signed`
+  fact) — and the guard refuses any fact type outside the eight (`default:` is load-bearing;
+  runtime JSON is not bound by our union). Staged drafts render as prose cards, never JSON.
+  The office is one shared tool with two operators:
   every `/api/agent` call carries the screen (`view: { tab, draft, drafts }`), so whatever
   is open to the human is open to the agent — and an agent edit to an open draft plays
   from that draft, never from the ledger, so it can't stomp the human's pencil work.
