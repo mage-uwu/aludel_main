@@ -39,6 +39,7 @@ ms. If the human's ask is ambiguous, ask back instead of guessing. Team state:\n
 
 export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string }): Promise<Response> => {
   if (!env.OPENAI_API_KEY) return reply("No OPENAI_API_KEY reaches the worker. Add it under Settings → Variables and Secrets (the runtime section, not Build) on this worker, as a Secret, and deploy the change.", [], body.previous);
+  if (!body.text) return reply("Your device is running an old cached version of the app — close the tab (or pull to refresh) and reopen, then ask again.", [], body.previous);
   const instructions = SYSTEM + digest(await team.snapshot());
   let input: unknown[] = [{ role: "user", content: body.text }];
   let previous = body.previous;
