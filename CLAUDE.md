@@ -62,8 +62,12 @@ because a template cannot know which weekday a route runs. Read it before touchi
   that types into what it pressed, letter by letter. The cursor is a 13x20 bitmap blown up
   with `shape-rendering:crispEdges`, so its stair steps stay sharp at any size; it carries no
   colour, because it is the machine's hand and not its voice. It enters from below the stage
-  and drives back out when the work is done — never spawned at its destination, because the
-  travel is most of what sells it. `acts()` diffs old→new into actions that each name the control
+  once and then **stays** — a person does not put the mouse away between two edits, and the
+  chain of moves is what makes it read as one mind working; only the routine ending sends it
+  home. Motion is driven frame by frame, never CSS-tweened: a far target takes longer than a
+  near one, the path bows sideways instead of ruling a diagonal, and it eases in and out with
+  a beat of aim before the click. A selector that misses falls back to the job it belongs to,
+  never to the whole card — flying to the wrong place reads as a machine, not a hand. `acts()` diffs old→new into actions that each name the control
   they use; an action carrying `text` is a typing act, and its `go(draft, partial)` takes the
   partial string so the letters can actually arrive one at a time. Adding a field presses
   `+ field` and then names it, the way a person would. Both primitives only need a position,

@@ -91,7 +91,8 @@ const acts = (a: Template, b: Template): Act[] => {
   if (a.name !== b.name) out.push({ sel: ".pencil.name", text: b.name, go: (d, s) => { d.name = s ?? b.name; } });
   b.tasks.forEach((t, i) => {
     const p = a.tasks[i] ?? { ...t, cadence: undefined, outcomes: [], blocks: [] }; const S = `.task:nth-of-type(${i + 1})`; const n = Math.min(p.blocks.length, t.blocks.length);
-    if (!a.tasks[i]) out.push({ sel: ".tpl", go: (d) => { d.tasks[i] = { ...t, cadence: undefined, outcomes: [], blocks: [] }; } });
+    if (!a.tasks[i]) { out.push({ sel: ".tpl", go: (d) => { d.tasks[i] = { ...t, title: "", cadence: undefined, outcomes: [], blocks: [] }; } });
+      out.push({ sel: `${S} > .pencil`, text: t.title, go: (d, x) => { d.tasks[i]!.title = x ?? t.title; } }); }
     else if (p.title !== t.title) out.push({ sel: `${S} > .pencil`, text: t.title, go: (d, s) => { d.tasks[i]!.title = s ?? t.title; } });
     if (J(p.cadence) !== J(t.cadence)) out.push({ sel: S, go: (d) => { d.tasks[i]!.cadence = t.cadence; } });
     if (J(p.outcomes) !== J(t.outcomes)) out.push({ sel: `${S} .ends`, go: (d) => { d.tasks[i]!.outcomes = t.outcomes; } });
@@ -149,35 +150,46 @@ export default function Office(): ReactElement {
   // nobody edits under it. The final snap makes the outcome exact even if a selector misses.
   const perform = async (list: Act[], final: Template) => {
     setBusy(true); const h = hand.current, bar = caret.current;
+    if (!h || !bar || matchMedia("(prefers-reduced-motion: reduce)").matches) { setDraft(final); setBusy(false); return; }
     const box = () => stage.current!.parentElement!.getBoundingClientRect();
-    const put = (e: HTMLElement, x: number, y: number, warp = false) => { const s = box();
-      if (warp) e.style.transition = "none"; // warp = jump there unseen, so the next move is the one you watch
-      Object.assign(e.style, { opacity: "1", left: `${Math.min(x - s.left, s.width - 24)}px`, top: `${y - s.top}px` });
-      if (warp) { void e.offsetHeight; e.style.transition = ""; } };
-    const off = () => { const s = box(); return [s.left + s.width * 0.72, s.bottom + 44] as const; }; // just below the stage, out of sight
-    const play = matchMedia("(prefers-reduced-motion: reduce)").matches ? [] : list;
-    if (play.length && h) { put(h, ...off(), true); await zz(60); } // it starts off-stage and drives in
-    for (const a of play) {
-      const el = (stage.current?.querySelector(a.sel) ?? stage.current?.querySelector(".tpl")) as HTMLElement | null;
-      if (el && h) { el.scrollIntoView({ block: "center", behavior: "smooth" }); await zz(190);
-        const r = el.getBoundingClientRect();
-        put(h, r.left + Math.min(r.width / 2, 90), r.top + r.height / 2);
-        await zz(430); h.classList.add("tap"); await zz(150); h.classList.remove("tap"); }
-      if (a.text !== undefined && el && bar) { // the caret takes over where the pointer just clicked
+    const put = (e: HTMLElement, x: number, y: number) => { const s = box();
+      Object.assign(e.style, { opacity: "1", left: `${Math.min(x - s.left, s.width - 24)}px`, top: `${y - s.top}px` }); };
+    // Motion a person reads as intent, not a tween: a far target takes longer than a near one,
+    // the path bows instead of ruling a diagonal, and it eases out of one control into the next.
+    const glide = (x: number, y: number) => new Promise<void>((ok) => { const s = box();
+      const x0 = parseFloat(h.style.left) || 0, y0 = parseFloat(h.style.top) || 0;
+      const dx = Math.min(x - s.left, s.width - 24) - x0, dy = y - s.top - y0, d = Math.hypot(dx, dy) || 1;
+      const ms = Math.min(820, 190 + d * 0.72), bow = Math.min(64, d * 0.22) * (dx > 0 ? 1 : -1), t0 = performance.now();
+      h.style.opacity = "1";
+      const tick = (t: number) => { const p = Math.min(1, (t - t0) / ms); // ease in, ease out, bowed sideways
+        const e = p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2, k = Math.sin(e * Math.PI) * bow;
+        h.style.left = `${x0 + dx * e - (dy / d) * k}px`; h.style.top = `${y0 + dy * e + (dx / d) * k}px`;
+        p < 1 ? requestAnimationFrame(tick) : ok(); };
+      requestAnimationFrame(tick); });
+    const off = () => { const s = box(); return [s.left + s.width * 0.72, s.bottom + 44] as const; }; // below the stage, out of sight
+    if (list.length && !+h.style.opacity) put(h, ...off()); // it enters from off-stage once, then stays
+    for (const a of list) {
+      const scope = a.sel.split(" ")[0]!; // a missed selector falls back to the job it belongs to, never the whole card
+      const el = (stage.current?.querySelector(a.sel) ?? stage.current?.querySelector(scope)) as HTMLElement | null;
+      if (el) {
+        const s0 = box(), r0 = el.getBoundingClientRect();
+        if (r0.top < s0.top + 10 || r0.bottom > s0.bottom - 10) { el.scrollIntoView({ block: "nearest", behavior: "smooth" }); await zz(260); }
+        const r = el.getBoundingClientRect(); // a small control is clicked in the middle, a wide row near its text
+        await glide(r.width < 170 ? r.left + r.width / 2 : r.left + Math.min(r.width * 0.3, 140), r.top + r.height / 2);
+        await zz(120); h.classList.add("tap"); await zz(150); h.classList.remove("tap"); }
+      if (a.text !== undefined && el) { // the caret takes over where the pointer just clicked
         const f = getComputedStyle(el), pad = parseFloat(f.paddingLeft) + parseFloat(f.borderLeftWidth);
         const ctx = document.createElement("canvas").getContext("2d")!; ctx.font = f.font;
         const r = el.getBoundingClientRect(), pace = a.text.length > 22 ? 22 : 38;
-        if (h) put(h, r.right - 20, r.top + r.height / 2); // it rests at the far end of the field, clear of the letters
+        await glide(r.right - 22, r.top + r.height / 2); // it moves aside, clear of the letters it is typing
         for (let j = 1; j <= a.text.length; j++) {
           setDraft((d) => { const c = structuredClone(d ?? final); a.go(c, a.text!.slice(0, j)); return c; });
           put(bar, r.left + pad + ctx.measureText(a.text.slice(0, j)).width, r.top + r.height / 2); await zz(pace); }
         await zz(220); bar.style.opacity = "0";
       } else setDraft((d) => { const c = structuredClone(d ?? final); a.go(c); return c; });
-      await zz(300); }
-    if (h && play.length) { put(h, ...off()); await zz(440); } // and drives back out when the work is done
-    if (h) h.style.opacity = "0";
-    setDraft(final); setBusy(false); };
-  const say = (t: Template, sh: string[]) => { const c = pending(t, sh); setHint(c?.hint ?? ""); if (!c) setShut(null); // scripted lines speak mint
+      await zz(240); }
+    setDraft(final); setBusy(false); };  // it rests where it finished; the routine ending is what sends it home
+  const say = (t: Template, sh: string[]) => { const c = pending(t, sh); setHint(c?.hint ?? ""); if (!c) { setShut(null); park(); } // scripted lines speak mint
     setLog((l) => [...l, { who: "step", body: c ? c.q(t) : `"${t.name}" is on the stage — tweak anything, then commit it.` }]); };
   const wizard = (id?: string) => { const v = id ? store.state.latest[id as TemplateId] : undefined; // an id means: add a task to that template, as its next version
     const t: Template = v ? { ...structuredClone(store.state.templates[`${id}@${v}`]!), version: v + 1 } : { id: newId<TemplateId>(), version: 1, name: "", tasks: [] };
@@ -206,7 +218,8 @@ export default function Office(): ReactElement {
       if (res.wizard) wizard(typeof res.wizard === "string" ? res.wizard : undefined);
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false); };
-  const clear = () => { setDraft(null); setDrafts([]); setShut(null); setHint(""); };
+  const park = () => { if (hand.current) hand.current.style.opacity = "0"; }; // the work is over: the hand leaves
+  const clear = () => { setDraft(null); setDrafts([]); setShut(null); setHint(""); park(); };
   const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent"); setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]); if (!no.length) clear(); };
   const s = store.state, now = Date.now(), live = draft || drafts.length > 0;
   return (

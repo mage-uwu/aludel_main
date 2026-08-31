@@ -162,8 +162,9 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
    the pointer glides to a control and presses it, and the caret types into what it pressed.
    Violet because a model is acting — the same provenance the terminal speaks. Compose them
    anywhere: they only need a position, so any surface can borrow the same show. */
-.hand, .caret { position:absolute; z-index:9; opacity:0; pointer-events:none;
-  transition:left .43s cubic-bezier(.3,.9,.3,1), top .43s cubic-bezier(.3,.9,.3,1), opacity .25s, transform .13s; }
+.hand, .caret { position:absolute; z-index:9; opacity:0; pointer-events:none; }
+.hand { transition:opacity .25s, transform .13s; }  /* left/top are driven frame by frame, not tweened */
+.caret { transition:left .07s linear, top .12s, opacity .2s; }
 
 /* 1 — the pointer. A real arrow, big enough to read across a room, white-edged so it stays
    legible on the form's own white and on the terminal's black alike. */
