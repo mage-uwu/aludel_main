@@ -8,7 +8,7 @@ export const seed = (): void => {
   store.submit([{ type: "granted", email: store.me.email, role: "admin" }]); // found the team
   const tpl = newId<TemplateId>();
   const anchor = Date.now() - 8 * 86_400_000;
-  const sites: [SiteId, string, string][] = [[newId(), "Mike Rowan", "14 Elm St"], [newId(), "Sandy Alvarez", "9 Beach Rd"]];
+  const sites: [SiteId, string, string, string][] = [[newId(), "Mike Rowan", "14 Elm St", "North loop"], [newId(), "Sandy Alvarez", "9 Beach Rd", "Shore loop"]];
   store.submit([{ type: "signed", template: { id: tpl, version: 1, name: "Pool report", tasks: [
     { key: "clean", title: "Weekly clean", cadence: { every: 1, unit: "week", withinDays: 3 }, blocks: [
       { key: "chlorine", kind: "number", label: "Chlorine tabs added", required: true, min: 0, max: 20 },
@@ -19,9 +19,9 @@ export const seed = (): void => {
       { key: "litres", kind: "number", label: "Litres added", required: true, min: 0, max: 99999 },
     ], outcomes: [{ key: "DONE", label: "DONE", cost: 0 }, { key: "SKIP", label: "SKIP", cost: 0 }] },
   ] } }]);
-  store.submit(sites.flatMap(([id, name, address]) => [
+  store.submit(sites.flatMap(([id, name, address, list]) => [
     { type: "declared" as const, site: { id, client: { name, address, email: `${name.toLowerCase().split(" ")[0]}@client.example` }, services: [] } },
-    { type: "bound" as const, site: id, service: { template: tpl, anchor, skips: [], allotments: { clean: 13 } } },
+    { type: "bound" as const, site: id, service: { template: tpl, anchor, skips: [], allotments: { clean: 13 }, list } },
   ]));
   store.submit(plan(store.state, anchor, 0));      // the round dispatched last week — now past due
   store.submit(plan(store.state, Date.now(), 7)); // and this week's

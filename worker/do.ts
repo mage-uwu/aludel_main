@@ -35,8 +35,7 @@ export class Team extends DurableObject<Env> {
   }
 
   pull(since: number): Fact[] {
-    return [...this.ctx.storage.sql.exec<{ body: string }>("SELECT body FROM facts WHERE seq > ? ORDER BY seq", since)]
-      .map((r) => JSON.parse(r.body) as Fact);
+    return [...this.ctx.storage.sql.exec<{ body: string }>("SELECT body FROM facts WHERE seq > ? ORDER BY seq", since)].map((r) => JSON.parse(r.body) as Fact);
   }
 
   role(email: string): string | null { return this.s.actors[email]?.role ?? (this.head === 0 ? "founder" : null); }

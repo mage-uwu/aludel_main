@@ -44,3 +44,4 @@ button.outcome { border: 1.5px solid currentColor; border-radius: 2rem; font-wei
 .row { border-bottom: 1px solid var(--soft); padding-bottom: .4rem; }
 .gate { display: grid; place-content: center; gap: .8rem; text-align: center; min-height: 80vh; border: none; }
 .gate .button, .gate button { text-decoration: none; background: var(--ledger); color: var(--paper); border: none; padding: .7rem 1.4rem; border-radius: .6rem; font-weight: 700; }
+.chips button { text-transform: none; }

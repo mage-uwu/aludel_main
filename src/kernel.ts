@@ -13,7 +13,7 @@ const RANK: Record<Role, number> = { field: 0, office: 1, admin: 2 };
 
 // -- the five nouns -----------------------------------------------------------------------
 export type Actor = { email: string; role: Role };
-export type Service = { template: TemplateId; anchor: number; skips: number[]; allotments: Record<string, number> };
+export type Service = { template: TemplateId; anchor: number; skips: number[]; allotments: Record<string, number>; list?: string; assignee?: string };
 export type Site = { id: SiteId; client: { name: string; address: string; email: string }; services: Service[] };
 export type Block =
   | { key: string; kind: "text"; label: string; required: boolean; placeholder: string }
@@ -27,7 +27,7 @@ export type Template = { id: TemplateId; version: number; name: string; tasks: T
 export type Form = { id: FormId; template: TemplateId; version: number; site: SiteId; meta: Record<string, string> };
 export type Value = string | number; // photos are content hashes
 export type Logged = { at: number; actor: string; values: Record<string, Value>; outcome: string };
-export type Entry = { id: EntryId; form: FormId; task: string; window: { from: number; due: number }; assignee?: string };
+export type Entry = { id: EntryId; form: FormId; task: string; window: { from: number; due: number }; list?: string; assignee?: string };
 
 // -- the eight facts ----------------------------------------------------------------------
 export type Payload =
@@ -38,7 +38,7 @@ export type Payload =
   | { type: "dispatched"; form: Form; entries: Entry[] }
   | { type: "logged"; entry: EntryId; values: Record<string, Value>; outcome: string }
   | { type: "corrected"; entry: EntryId; values: Record<string, Value>; outcome: string; reason: string }
-  | { type: "rewindowed"; entry: EntryId; due: number; reason: string };
+  | { type: "steered"; entry: EntryId; due?: number; list?: string; assignee?: string; reason: string }; // office redirects one entry's future
 export type Fact = Payload & { seq: number; at: number; actor: string; via?: "agent" };
 export type Draft = Payload & { at: number; actor: string; via?: "agent" }; // the ledger assigns seq
 
@@ -55,10 +55,8 @@ export type State = {
 };
 export const empty = (): State => ({ actors: {}, sites: {}, templates: {}, latest: {}, forms: {}, entries: {} });
 export const versioned = (s: State, id: TemplateId, version: number): Template | undefined => s.templates[`${id}@${version}`];
-export const taskOf = (s: State, r: Entry): Task | undefined => {
-  const form = s.forms[r.form];
-  return form && versioned(s, form.template, form.version)?.tasks.find((t) => t.key === r.task);
-};
+export const taskOf = (s: State, r: Entry): Task | undefined =>
+  s.forms[r.form] && versioned(s, s.forms[r.form]!.template, s.forms[r.form]!.version)?.tasks.find((t) => t.key === r.task);
 
 // apply mutates: the state is the fold's own accumulator, never shared while folding.
 export const apply = (s: State, f: Fact): void => {
@@ -74,7 +72,10 @@ export const apply = (s: State, f: Fact): void => {
       r.logged ? r.trail.push(l) : (r.logged = l); // a second log folds into the trail (law 6)
       break;
     }
-    case "rewindowed": { const r = s.entries[f.entry]; if (r && !r.logged) r.window = { ...r.window, due: f.due }; break; }
+    case "steered": { // Object.assign skips the falses: only the fields the fact names change
+      const r = s.entries[f.entry];
+      if (r && !r.logged) Object.assign(r, f.list !== undefined && { list: f.list }, f.assignee !== undefined && { assignee: f.assignee }, f.due !== undefined && { window: { ...r.window, due: f.due } });
+    }
   }
 };
 export const fold = (facts: readonly Fact[]): State => { const s = empty(); for (const f of facts) apply(s, f); return s; };
@@ -88,10 +89,7 @@ export const effective = (r: Rec): Logged | undefined => r.trail.at(-1) ?? r.log
 
 // -- the guard ----------------------------------------------------------------------------
 // The only defended surface: what may be appended, and by whom. null admits; a string refuses.
-const GATE: Record<Payload["type"], Role> = {
-  granted: "admin", declared: "office", signed: "office", bound: "office",
-  dispatched: "office", logged: "field", corrected: "field", rewindowed: "office",
-};
+const GATE: Record<Payload["type"], Role> = { granted: "admin", declared: "office", signed: "office", bound: "office", dispatched: "office", logged: "field", corrected: "field", steered: "office" };
 const sameDay = (a: number, b: number) => new Date(a).toISOString().slice(0, 10) === new Date(b).toISOString().slice(0, 10);
 const badValue = (task: Task, key: string, v: Value): boolean => {
   const b = task.blocks.find((x) => x.key === key);
@@ -152,9 +150,9 @@ export const guard = (s: State, d: Draft): string | null => {
       for (const [k, v] of Object.entries(d.values)) if (badValue(task, k, v)) return `bad value for ${k}`;
       return null;
     }
-    case "rewindowed": {
+    case "steered": {
       const r = s.entries[d.entry];
-      return !r ? "unknown entry" : r.logged ? "already logged" : d.due < r.window.from ? "due before from" : null;
+      return !r ? "unknown entry" : r.logged ? "already logged" : d.due !== undefined && d.due < r.window.from ? "due before from" : null;
     }
   }
 };
@@ -180,7 +178,8 @@ export const plan = (s: State, now: number, horizonDays: number): Extract<Payloa
         if (from > now + horizonDays * DAY) break;
         const due = from + task.cadence.withinDays * DAY;
         if (due < now || svc.skips.some((x) => sameDay(x, from)) || have.has(`${site.id}|${task.key}|${from}`)) continue;
-        batch.set(from, [...(batch.get(from) ?? []), { id: newId(), form: "" as FormId, task: task.key, window: { from, due } }]);
+        batch.set(from, [...(batch.get(from) ?? []), { id: newId<EntryId>(), form: "" as FormId, task: task.key, window: { from, due }, // allocation flows from the binding:
+          ...(svc.list && { list: svc.list }), ...(svc.assignee && { assignee: svc.assignee }) }]);
       }
     }
     for (const [, entries] of batch) {

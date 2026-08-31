@@ -21,7 +21,7 @@ Tests, CSS, and config are uncounted. Currently exactly 800:
 
 | | file | lines | |
 |---|---|---:|---|
-| kernel | `src/kernel.ts` | 192 | five nouns, eight facts, guard, fold, four lenses, pure scheduler |
+| kernel | `src/kernel.ts` | 193 | five nouns, eight facts, guard, fold, four lenses, pure scheduler |
 | reads | `src/read.ts` | 64 | `find`, `ask` (per-kind legality, denominators), `balance` |
 | store | `src/sync.ts` | 90 | IndexedDB mirror + queue; offline work reconciles by union |
 | field | `src/field.tsx` | 68 | past due / open / logged lists, the logger, photo capture |

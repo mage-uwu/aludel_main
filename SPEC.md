@@ -21,10 +21,12 @@ Each clause of the sentence demands one noun, and there are no others.
 ```ts
 Actor     { id, email, role: "admin" | "office" | "field" }          // who works
 Site      { id, client: { name, address, email },                    // where work lands
-            services: [{ template, anchor, skips, allotments? }] }   //   …and against what balance
+            services: [{ template, anchor, skips, allotments?,      //   …against what balance,
+                         list?, assignee? }] }                      //   …on whose route
 Template  { id, version, signedBy, tasks: [Task] }                   // what the work is
 Form      { id, template, version, site, dispatched, meta }          // one round of paperwork
-Entry     { id, form, taskKey, window: { from, due }, assignee?,     // one task, done once
+Entry     { id, form, taskKey, window: { from, due },               // one task, done once
+            list?, assignee?,                                        //   …on a route, in a hand
             logged?: { at, actor, values: { blockKey: v }, outcomeKey } }
 ```
 
@@ -36,6 +38,10 @@ Task      { key, title, cadence: { every, unit, withinDays }, blocks: [Block], o
 Block     { key, kind: "text" | "number" | "photo" | "button", …only that kind's settings }
 Outcome   { key, label, cost }
 ```
+
+A list is still not a noun — it is a name allocation writes on work. A binding's `list` and
+`assignee` flow onto every entry it mints; `steered` re-routes one entry; the field filters
+by list. Allocating work is writing a name on it, nothing more.
 
 Roles nest: field ⊂ office ⊂ admin. Office/field is a *mode* of the one PWA, not a
 permission. The team is not a record — the team **is** the ledger (one Durable Object per
@@ -55,7 +61,7 @@ marks a fact drafted by the agent and committed by a human.
 | `dispatched` | form + its entries, each with a window         | office, scheduler |
 | `logged`     | entry, values, outcome                         | field             |
 | `corrected`  | entry, values, outcome, reason                 | per policy        |
-| `rewindowed` | entry, new due, reason                         | office            |
+| `steered`    | entry, due?, list?, assignee?, reason          | office            |
 
 That's the entire API — of the app, of the sync protocol, and of the agent.
 
@@ -102,7 +108,7 @@ balance     = allotment − Σ cost(outcome)            per site × task, when b
 And two read calls — the whole read surface, and the oracle's meat and bones:
 
 ```
-find(filter) → entries                    filter: site? task? actor? status? window?
+find(filter) → entries                    filter: site? task? actor? status? list? window?
 ask(channel, aggregation, scope, window) → { value, n, coverage }
 
 channel      template.task.block | template.task.outcome     (a straight vector through history)

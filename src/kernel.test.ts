@@ -121,12 +121,26 @@ test("a second log folds into the trail instead of being refused", () => {
   expect(s.entries[clean.id]!.trail).toHaveLength(1);
 });
 
-test("rewindowing moves due dates, never logged ones", () => {
+test("steering redirects an entry's future, never its past", () => {
   const { s, clean, drain, append } = dispatched();
-  expect(append("dana@x.co", { type: "rewindowed", entry: drain.id, due: T0 + 40 * DAY, reason: "mike travelling" })).toBeNull();
+  expect(append("dana@x.co", { type: "steered", entry: drain.id, due: T0 + 40 * DAY, reason: "mike travelling" })).toBeNull();
   expect(s.entries[drain.id]!.window.due).toBe(T0 + 40 * DAY);
+  expect(append("dana@x.co", { type: "steered", entry: drain.id, assignee: "keegan@x.co", list: "Overflow", reason: "reshuffle" })).toBeNull();
+  expect(s.entries[drain.id]!.window.due).toBe(T0 + 40 * DAY); // steering the list left the window alone
+  expect(s.entries[drain.id]!.list).toBe("Overflow");
   append("keegan@x.co", { type: "logged", entry: clean.id, values: { chlorine: 3 }, outcome: "OPEN" });
-  expect(append("dana@x.co", { type: "rewindowed", entry: clean.id, due: T0 + 9 * DAY, reason: "" })).toBe("already logged");
+  expect(append("dana@x.co", { type: "steered", entry: clean.id, due: T0 + 9 * DAY, reason: "" })).toBe("already logged");
+});
+
+test("allocation flows from the binding, and lists filter the field", () => {
+  const l = founded();
+  l.append("dana@x.co", { type: "bound", site: MIKE, service: { template: TPL, anchor: T0, skips: [], allotments: {}, list: "North loop", assignee: "keegan@x.co" } });
+  for (const p of plan(l.s, T0, 6)) l.append("scheduler", p);
+  const north = find(l.s, { list: "North loop", actor: "keegan@x.co" }, T0 + 1);
+  expect(north.length).toBeGreaterThan(0); // every minted entry carries the route and the hand
+  l.append("dana@x.co", { type: "steered", entry: north[0]!.id, list: "Overflow", assignee: "dana@x.co", reason: "keegan out sick" });
+  expect(find(l.s, { list: "North loop" }, T0 + 1)).toHaveLength(north.length - 1);
+  expect(l.s.entries[north[0]!.id]!.assignee).toBe("dana@x.co");
 });
 
 test("find answers the Keegan question", () => {

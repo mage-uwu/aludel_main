@@ -46,11 +46,13 @@ function Logger({ hit, done }: { hit: Rec; done: () => void }): ReactElement {
 
 export default function Field(): ReactElement {
   const [openId, setOpen] = useState<EntryId | null>(null);
+  const [list, setList] = useState<string | null>(null);
   const now = Date.now();
-  const mine = (h: Hit) => !h.assignee || h.assignee === store.me.email;
+  const mine = (h: Hit) => (!h.assignee || h.assignee === store.me.email) && (!list || (h.list ?? "unrouted") === list);
   const overdue = find(store.state, { status: "overdue" }, now).filter(mine);
   const pending = find(store.state, { status: "pending" }, now).filter(mine);
-  const today = find(store.state, { status: "logged", from: now - 86_400_000 }, now);
+  const today = find(store.state, { status: "logged", from: now - 86_400_000 }, now).filter(mine);
+  const lists = [...new Set(find(store.state, {}, now).map((h) => h.list ?? "unrouted"))].sort();
   const open = openId && store.state.entries[openId];
   if (open) return <Logger hit={open} done={() => setOpen(null)} />;
   const row = (h: Hit, cls = "") => {
@@ -60,6 +62,7 @@ export default function Field(): ReactElement {
   };
   return (
     <section>
+      {lists.length > 1 && <nav className="tabs chips">{[null, ...lists].map((l) => <button key={l ?? "all"} className={l === list ? "on" : ""} onClick={() => setList(l)}>{l ?? "all lists"}</button>)}</nav>}
       {overdue.length > 0 && <><h2 className="bad">Past due · {overdue.length}</h2>{overdue.map((h) => row(h, "bad"))}</>}
       <h2>Open · {pending.length}</h2>
       {pending.length ? pending.map((h) => row(h)) : <p className="hint">Nothing pending. The schedule will bring more.</p>}

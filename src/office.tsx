@@ -67,7 +67,7 @@ export default function Office(): ReactElement {
     <section>
       <nav className="tabs">{["desk", "sites", "templates", "ledger"].map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}</nav>
       {tab === "desk" && <Chat />}
-      {tab === "sites" && Object.values(s.sites).map((site) => <div key={site.id} className="card"><b>{site.client.name}</b><span>{site.client.address}</span>
+      {tab === "sites" && Object.values(s.sites).map((site) => <div key={site.id} className="card"><b>{site.client.name}</b><span>{site.client.address}{site.services[0]?.list && ` · ${site.services[0].list}`}</span>
         {site.services.flatMap((svc) => Object.keys(svc.allotments).map((task) => {
           const b = balance(s, site.id, svc.template, task, now);
           return b && <span key={task} className={b.left < 0 ? "bad" : ""}>{task}: {b.left} of {b.of} left</span>;

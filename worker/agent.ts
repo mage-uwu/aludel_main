@@ -7,11 +7,11 @@ import type { Env } from "./index";
 // team's ledger. The hand only drafts: draft() ends the turn and hands the facts back to
 // the client as a preview card — nothing becomes real until a human's tap appends it.
 const TOOLS: Anthropic.Tool[] = [
-  { name: "find", description: "Look up entries (units of scheduled work). Returns rows with status, window, and what was logged. Statuses: scheduled|pending|overdue|logged.",
-    input_schema: { type: "object", properties: { site: { type: "string" }, task: { type: "string" }, actor: { type: "string" }, status: { type: "string" }, from: { type: "number" }, to: { type: "number" } } } },
+  { name: "find", description: "Look up entries (units of scheduled work). Returns rows with status, window, and what was logged. Statuses: scheduled|pending|overdue|logged. list = the route/crew the work is allocated to.",
+    input_schema: { type: "object", properties: { site: { type: "string" }, task: { type: "string" }, actor: { type: "string" }, status: { type: "string" }, list: { type: "string" }, from: { type: "number" }, to: { type: "number" } } } },
   { name: "ask", description: "Aggregate one channel of history. channel is a block key, or 'outcome'. Legal aggs — number: sum|avg|min|max|last; text: last|count; photo: count|presence; outcome: tally|cost. Answers carry value, n (entries that recorded it), of (entries in scope).",
     input_schema: { type: "object", properties: { template: { type: "string" }, task: { type: "string" }, channel: { type: "string" }, agg: { type: "string" }, site: { type: "string" }, actor: { type: "string" }, from: { type: "number" }, to: { type: "number" } }, required: ["template", "task", "channel", "agg"] } },
-  { name: "draft", description: "Propose facts to append to the ledger (declared|signed|bound|dispatched|granted|rewindowed). They are checked, then shown to the human, who commits or discards them. Call once, with the complete set, after your reads.",
+  { name: "draft", description: "Propose facts to append to the ledger (declared|signed|bound|dispatched|granted|steered). They are checked, then shown to the human, who commits or discards them. Call once, with the complete set, after your reads.",
     input_schema: { type: "object", properties: { facts: { type: "array", items: { type: "object" } } }, required: ["facts"] } },
 ];
 
@@ -25,6 +25,8 @@ const digest = (t: Awaited<ReturnType<DurableObjectStub<Team>["snapshot"]>>) => 
 const SYSTEM = `You are the office desk of a trades team. Their world: a Site is a place with a
 client; a Template (versioned) declares Tasks, each with typed blocks, outcomes, and a cadence;
 dispatching mints a Form and its Entries; the field logs each entry once, with an outcome.
+Work is allocated by lists (routes): a service binding's list and assignee flow onto every
+entry it mints, and steered re-routes one entry (due, list, assignee) until it is logged.
 Answer questions with find/ask and cite what you read — say the numbers' denominators out loud
 ("3 tabs across 1 of 4 visits"), never a bare figure. Make changes only via draft, and keep
 drafts minimal and complete: new ids as short random strings; template edits are a whole new

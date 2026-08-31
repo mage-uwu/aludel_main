@@ -3,8 +3,7 @@
 import type { Env } from "./index";
 
 const b64url = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-const hmacKey = (env: Env) =>
-  crypto.subtle.importKey("raw", new TextEncoder().encode(env.SESSION_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+const hmacKey = (env: Env) => crypto.subtle.importKey("raw", new TextEncoder().encode(env.SESSION_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 
 export const seal = async (env: Env, email: string, team: string): Promise<string> => {
   const body = btoa(JSON.stringify({ email, team, exp: Date.now() + 30 * 86_400_000 })).replace(/=+$/, "");

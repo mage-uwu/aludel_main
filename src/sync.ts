@@ -19,7 +19,6 @@ const idb = {
   put: (store: string, key: string, value: unknown) => op(store, "readwrite", (s) => s.put(value, key)),
 };
 export const putBlob = (hash: string, blob: Blob) => idb.put("blobs", hash, blob);
-export const getBlob = (hash: string) => idb.get<Blob>("blobs", hash);
 
 export type Me = { email: string; role: string | null; team?: string };
 export type Refusal = { draft: Payload; reason: string };
@@ -57,11 +56,10 @@ class Store {
       const draft: Draft = { ...p, at: Date.now(), actor: this.me.email, ...(via && { via }) };
       const reason = guard(this.state, draft);
       if (reason) { refused.push({ draft: p, reason }); continue; }
-      if (this.online) this.queue.push(draft);
-      else { const fact: Fact = { ...draft, seq: this.facts.length + 1 }; this.facts.push(fact); }
-      apply(this.state, { ...draft, seq: 0 });
+      apply(this.state, { ...draft, seq: 0 }); // so the next draft in this batch sees it; wake() refolds anyway
+      this.online ? this.queue.push(draft) : this.facts.push({ ...draft, seq: this.facts.length + 1 });
     }
-    this.version++; for (const fn of this.listeners) fn();
+    this.wake();
     void this.save();
     if (this.online) void this.sync();
     return refused;

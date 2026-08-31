@@ -2,7 +2,7 @@ import { effective, status, taskOf, type Rec, type SiteId, type State, type Stat
 
 // The whole read surface: find answers "did Keegan do Mike's last Wednesday?",
 // ask answers "how much chlorine this season?". Both pure, both f(state, now).
-export type Filter = { site?: SiteId; task?: string; actor?: string; status?: Status; from?: number; to?: number };
+export type Filter = { site?: SiteId; task?: string; actor?: string; status?: Status; list?: string; from?: number; to?: number };
 export type Hit = Rec & { site: SiteId; status: Status };
 
 export const find = (s: State, f: Filter, now: number): Hit[] =>
@@ -11,6 +11,7 @@ export const find = (s: State, f: Filter, now: number): Hit[] =>
     .filter((r) =>
       (!f.site || r.site === f.site) &&
       (!f.task || r.task === f.task) &&
+      (!f.list || r.list === f.list) &&
       (!f.actor || effective(r)?.actor === f.actor || r.assignee === f.actor) &&
       (!f.status || r.status === f.status) &&
       (f.from === undefined || (r.logged?.at ?? r.window.due) >= f.from) &&
