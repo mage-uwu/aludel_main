@@ -3,9 +3,13 @@
 The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touching
 `src/` or `worker/`. Non-negotiables that are easy to lose:
 
-- The app is ≤ 800 lines of TypeScript; `scripts/loc.sh` gates the build. Tests, CSS,
-  and config are uncounted. New code pays for itself by trimming real fat, never by
-  moving the goalposts.
+- The app is ≤ 78,000 **characters** of TypeScript; `scripts/loc.sh` gates the build. Tests,
+  CSS, and config are uncounted. It was a line budget until the count sat pinned at 800 for
+  twenty-five commits while the source grew a third — lines price newlines, newlines are free,
+  so it rewarded density and twice picked the cheaper-to-write design over the correct one.
+  Characters price the thing itself, and remove the incentive to join statements at all. A
+  400-char line cap is only a backstop against a schema crammed onto one line; JSX and prompts
+  may run long. New code still pays for itself by trimming real fat, never by moving the line.
 - Every write goes through `guard()`; every view is `f(ledger, now)`; task/block/outcome
   keys are minted once, never retyped, never reused.
 - Nothing is ever erased — the ledger is append-only, so "delete a report" is **retirement**:
@@ -32,11 +36,17 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   the field logger mount the very same control — `set` given makes it live, `set` omitted
   makes it a disabled preview — so what you build is literally what the crew taps. Never
   fork a second "preview" rendering of a block; add the affordance to `Input` instead.
-- A routine is a **checklist of cues, not a program counter**: each cue declares when it is
-  still unfulfilled (`need(draft)`), and the next question is simply the first cue the draft
-  has not answered. Any cue accepts an **op** instead of an answer — a correction re-routes
-  and the cue stays pending — so order guides without caging. Open-ended cues close by an
-  explicit `skip` ("done", "no"), keyed per task so a new job reopens them.
+- A routine is a **branched checklist of cues, not a program counter**: each cue declares when
+  it is still unfulfilled (`need(draft)`) and only asks then, so a branch is just a need that
+  stays false down the road not taken — decline the repeat and how-often/what-day/how-many-days
+  never fire. The next question is always the first unanswered cue. Any cue accepts an **op**
+  instead of an answer — a correction re-routes and the cue stays pending — so order guides
+  without caging. Open-ended cues close by an explicit `skip` ("done", "no", "none"), keyed to
+  the job they asked about. `K(draft)` is the first job still missing an essential, never just
+  the newest, so moving on cannot strand an unfinished one for the guard to refuse.
+- Cues ask about **this job only**. The client, address and phone belong to the site, never to
+  its paperwork — the crew is never invited to type them into a form, and the normalizer is
+  told so. Most jobs record one or two things; a cleaning is often just a photo.
 - One vocabulary, four verbs: **add · rename · remove · move**. A workflow step never has
   only `add` — a correction ("drop the pH", "rename it…", "move alk up") must reach the same
   list as an addition, or it lands as data. Steps normalize the human's words into a verb;

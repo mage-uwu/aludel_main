@@ -9,13 +9,41 @@ import type { Env } from "./index";
 // via previous_response_id, so each request carries only the new turn and a fresh team digest.
 type Call = { type: "function_call"; call_id: string; name: string; arguments: string }; type Resp = { id: string; output: ({ type: string } & Record<string, unknown>)[] };
 
+const fn = (name: string, description: string, properties: object, required: string[] = []) =>
+  ({ type: "function", name, description, parameters: { type: "object", properties, required } });
+const STR = { type: "string" }, NUM = { type: "number" }, BOOL = { type: "boolean" };
+const TASK_SHAPE = { type: "object", required: ["title", "outcomes", "blocks"], properties: {
+  key: STR, title: STR,
+  cadence: { type: "object", required: ["every", "unit", "withinDays"],
+    properties: { every: NUM, unit: { type: "string", enum: ["day", "week", "month"] }, withinDays: NUM, day: NUM } },
+  outcomes: { type: "array", items: { type: "object", required: ["label"], properties: { key: STR, label: STR, cost: NUM } } },
+  blocks: { type: "array", items: { type: "object", required: ["kind", "label"], properties: {
+    key: STR, kind: { type: "string", enum: ["text", "number", "photo", "button"] }, label: STR, required: BOOL, min: NUM, max: NUM, placeholder: STR } } },
+} };
+
 const TOOLS = [
-  { type: "function", name: "find", description: "Look up entries (units of scheduled work). Rows carry status, window, and what was logged. Statuses: scheduled|pending|overdue|logged. list = the route the work is allocated to.", parameters: { type: "object", properties: { site: { type: "string" }, task: { type: "string" }, actor: { type: "string" }, status: { type: "string" }, list: { type: "string" }, from: { type: "number" }, to: { type: "number" } } } },
-  { type: "function", name: "ask", description: "Aggregate one channel. channel is a block key or 'outcome'. Legal aggs — number: sum|avg|min|max|last; text: last|count; photo: count|presence; outcome: tally|cost. Answers carry value, n (entries recording it), of (entries in scope).", parameters: { type: "object", properties: { template: { type: "string" }, task: { type: "string" }, channel: { type: "string" }, agg: { type: "string" }, site: { type: "string" }, actor: { type: "string" }, from: { type: "number" }, to: { type: "number" } }, required: ["template", "task", "channel", "agg"] } },
-  { type: "function", name: "new_template", description: "Start the structured interview — it asks one question at a time and builds on the human's screen. Call it with no id to create a new report; pass the id of an existing template to add a task to it. Call this the moment the human wants a new report or a new task — never collect names, fields, outcomes, or cadence in chat yourself.", parameters: { type: "object", properties: { id: { type: "string", description: "Existing template id to add a task to; omit for a brand-new report." } } } },
-  { type: "function", name: "edit_template", description: "Change an existing template: add/remove/rename tasks, blocks, outcomes, or cadence. Pass the template id and the COMPLETE new task list (every task, changed or not — omissions are deletions). Reuse existing task/block/outcome keys verbatim; omit keys only on brand-new items. The office stages it as the next version and plays your edit on the human's stage, control by control, for their commit.", parameters: { type: "object", properties: { id: { type: "string" }, name: { type: "string" }, tasks: { type: "array", items: { type: "object", properties: { key: { type: "string" }, title: { type: "string" }, cadence: { type: "object", properties: { every: { type: "number" }, unit: { type: "string", enum: ["day", "week", "month"] }, withinDays: { type: "number" }, day: { type: "number" } }, required: ["every", "unit", "withinDays"] }, outcomes: { type: "array", items: { type: "object", properties: { key: { type: "string" }, label: { type: "string" }, cost: { type: "number" } }, required: ["label"] } }, blocks: { type: "array", items: { type: "object", properties: { key: { type: "string" }, kind: { type: "string", enum: ["text", "number", "photo", "button"] }, label: { type: "string" }, required: { type: "boolean" }, min: { type: "number" }, max: { type: "number" }, placeholder: { type: "string" } }, required: ["kind", "label"] } } }, required: ["title", "outcomes", "blocks"] } } }, required: ["id", "tasks"] } },
-  { type: "function", name: "retire_template", description: "Retire a template so no new work is ever planned from it — the human's answer to 'delete this report'. Already-logged work is kept and still renders; nothing is erased. Staged for the human, who must type YES to confirm. Never use edit_template to empty a template instead.", parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } },
-  { type: "function", name: "draft", description: "Propose facts to append (declared|bound|dispatched|granted|steered — NEVER signed; templates go through new_template or edit_template). They are checked and staged for the human, who commits or discards. Call once, complete, after your reads.", parameters: { type: "object", properties: { facts: { type: "array", items: { type: "object" } } }, required: ["facts"] } },
+  fn("find", "Look up entries (units of scheduled work). Rows carry status, window, and what was logged. "
+    + "Statuses: scheduled|pending|overdue|logged. list = the route the work is allocated to.",
+    { site: STR, task: STR, actor: STR, status: STR, list: STR, from: NUM, to: NUM }),
+  fn("ask", "Aggregate one channel. channel is a block key or 'outcome'. Legal aggs — number: sum|avg|min|max|last; "
+    + "text: last|count; photo: count|presence; outcome: tally|cost. Answers carry value, n (entries recording it), of (entries in scope).",
+    { template: STR, task: STR, channel: STR, agg: STR, site: STR, actor: STR, from: NUM, to: NUM },
+    ["template", "task", "channel", "agg"]),
+  fn("new_template", "Start the structured interview — it asks one question at a time and builds on the human's screen. "
+    + "Call it with no id to create a new report; pass the id of an existing template to add a job to it. "
+    + "Call this the moment the human wants a new report or a new job — never collect names, fields, outcomes, or cadence in chat yourself.",
+    { id: { type: "string", description: "Existing template id to add a job to; omit for a brand-new report." } }),
+  fn("edit_template", "Change an existing template: add/remove/rename jobs, blocks, outcomes, or cadence. "
+    + "Pass the template id and the COMPLETE new task list (every job, changed or not — omissions are deletions). "
+    + "Reuse existing task/block/outcome keys verbatim; omit keys only on brand-new items. "
+    + "The office stages it as the next version and plays your edit on the human's stage, control by control, for their commit.",
+    { id: STR, name: STR, tasks: { type: "array", items: TASK_SHAPE } }, ["id", "tasks"]),
+  fn("retire_template", "Retire a template so no new work is ever planned from it — the human's answer to 'delete this report'. "
+    + "Already-logged work is kept and still renders; nothing is erased. Staged for the human, who must type YES to confirm. "
+    + "Never use edit_template to empty a template instead.", { id: STR }, ["id"]),
+  fn("draft", "Propose facts to append (declared|bound|dispatched|granted|steered — NEVER signed; templates go through "
+    + "new_template or edit_template). They are checked and staged for the human, who commits or discards. "
+    + "Call once, complete, after your reads.", { facts: { type: "array", items: { type: "object" } } }, ["facts"]),
 ];
 // The model speaks loosely; the office fills in what a hand-built task would have — slugged
 // keys, spaced labels, block defaults — so a template arrives whole or not at all.
@@ -53,15 +81,30 @@ const textOf = (r: Resp) => r.output.filter((o) => o.type === "message").flatMap
 
 // The interview's parser: the flow is deterministic, the model normalizes each answer into
 // the step's JSON shape — "Yeah, we clean the cover" becomes {"title": "Cover Cleaning"}.
-const SPECS: Record<string, string> = { title: '{"title": string} — short, Title Case.',
-  task: '{"title": string} — a concise task name, Title Case, filler stripped ("Yeah, we clean the cover" → "Cover Cleaning").',
-  outcomes: '{"labels": string[]} — the possible endings as short UPPERCASE labels, spaces between words, never underscores.',
+const SPECS: Record<string, string> = {
+  title: '{"title": string} — short, Title Case.',
+  task: '{"title": string} — a concise job name, Title Case, filler stripped ("Yeah, we clean the cover" → "Cover Cleaning").',
+  outcomes: '{"labels": string[]} — the ways the job can end, as short UPPERCASE labels, spaces between words, never underscores.',
   cadence: '{"every": number, "unit": "day"|"week"|"month"}, or {"every": null} if it does not repeat.',
   day: '{"day": number} — the weekday, 0 = Sunday.',
-  blocks: '{"op":"add","blocks":[{"kind":"photo"|"number"|"text","label":string}]} — one entry per thing recorded, kind inferred.',
+  days: '{"days": number} — how many days the crew has once the job comes up.',
+  blocks: '{"blocks": [{"kind": "photo"|"number"|"text", "label": string}]} — ONLY what the crew records while doing this one job, one entry each, kind inferred. '
+    + 'Most jobs need one or two; a cleaning is often just a photo. Never invent fields they did not name, never add a catch-all "notes", and never add site facts — '
+    + 'the client, address, phone and email belong to the site, not to its paperwork. If they name nothing, return {"op":"skip"}.',
 };
-// Any cue may be answered with a correction instead. The verbs are the same everywhere.
-const OPS = ' The text may not answer the question at all — if it corrects, inserts, or moves on, reply with ONE op instead: {"op":"remove","target":string} · {"op":"rename","target":string,"to":string} (omit target to rename the task itself, e.g. "rename it to Assessment") · {"op":"move","target":string,"by":-1|1} · {"op":"add","blocks":[{"kind":"photo"|"number"|"text","label":string}]} · {"op":"task","title":string} when they move on to a different job ("next: filter cleaning") · {"op":"skip"} for done/no/none. A correction is never an answer.';
+
+// Any cue may be answered with a correction instead of an answer. The verbs are the same everywhere.
+const OPS = [
+  ' The text may not answer the question at all. If it corrects, inserts, or moves on, reply with ONE op instead:',
+  ' {"op":"remove","target":string} ·',
+  ' {"op":"rename","target":string,"to":string} — omit target to rename the job itself ("rename it to Assessment") ·',
+  ' {"op":"move","target":string,"by":-1|1} ·',
+  ' {"op":"add","blocks":[{"kind":"photo"|"number"|"text","label":string}]} ·',
+  ' {"op":"task","title":string} when they move on to a different job ("next: filter cleaning") ·',
+  ' {"op":"skip"} for done / no / none / nothing.',
+  ' A correction is never an answer.',
+].join("");
+
 export const refine = async (env: Env, body: { kind: string; text: string }): Promise<Response> => {
   const res = await oai(env, { model: env.OPENAI_MODEL, input: [{ role: "user", content: body.text }], instructions: `Normalize the tradesperson's words. Reply with ONLY this JSON: ${SPECS[body.kind] ?? SPECS.title}${OPS}` });
   const raw = res.ok ? /\{[\s\S]*\}/.exec(textOf((await res.json()) as Resp))?.[0] : null;
@@ -70,7 +113,8 @@ export const refine = async (env: Env, body: { kind: string; text: string }): Pr
 export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string; view?: unknown }): Promise<Response> => {
   if (!env.OPENAI_API_KEY) return reply("No OPENAI_API_KEY reaches the worker. Add it under Settings → Variables and Secrets (the runtime section, not Build) on this worker, as a Secret, and deploy the change.", [], body.previous);
   if (!body.text) return reply("Your device is running an old cached version of the app — close the tab (or pull to refresh) and reopen, then ask again.", [], body.previous);
-  const snap = await team.snapshot(); const instructions = SYSTEM + digest(snap) + (body.view ? `\nThe human's screen right now (you share this tool; an open draft is the working copy, theirs and yours): ${JSON.stringify(body.view)}` : "");
+  const snap = await team.snapshot();
+  const instructions = SYSTEM + digest(snap) + (body.view ? `\nThe human's screen right now (you share this tool; an open draft is the working copy, theirs and yours): ${JSON.stringify(body.view)}` : "");
   let input: unknown[] = [{ role: "user", content: body.text }]; let previous = body.previous; let drafts: Payload[] = [];
   for (let turn = 0; turn < 8; turn++) {
     const res = await oai(env, { model: env.OPENAI_MODEL, instructions, tools: TOOLS, input, ...(previous && { previous_response_id: previous }) });

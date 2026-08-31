@@ -9,12 +9,15 @@ import { store } from "./sync";
 // assemble, and every field on it stays clickable, renameable, reorderable by hand. Colour
 // marks provenance: violet when a model spoke, mint when the script or the ledger did.
 // Nothing is real until Commit puts the draft through the guard.
-type Norm = { op?: string; target?: string; to?: string; by?: number; title?: string; labels?: string[]; every?: number | null; unit?: Cadence["unit"]; day?: number; blocks?: { kind: string; label: string }[] } | null;
+type Norm = {
+  op?: string; target?: string; to?: string; by?: number;                 // a correction, in the shared verbs
+  title?: string; labels?: string[]; days?: number;                       // an answer to a cue
+  every?: number | null; unit?: Cadence["unit"]; day?: number; blocks?: { kind: string; label: string }[];
+} | null;
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "x";
 const outcome = (label: string): Outcome => ({ key: slug(label), label: label.replace(/_+/g, " ").trim(), cost: /no.?access|skip/i.test(label) ? 0 : 1 }); // "part of a plan" is just outcome costs
 const newTask = (title: string): Task => ({ key: slug(title), title, outcomes: [], blocks: [] });
-const last = (t: Template) => t.tasks[t.tasks.length - 1]!;
 const move = (a: Block[], i: number, by: number) => { const j = i + by; if (a[j]) [a[i], a[j]] = [a[j]!, a[i]!]; };
 const block = (kind: string, label: string): Block => {
   const key = slug(label); label = label.replace(/_+/g, " ").trim() || label;
@@ -24,8 +27,14 @@ const block = (kind: string, label: string): Block => {
 
 // The verbs, shared by every cue: add · rename · remove · move (+ task). Any cue can take one
 // of these instead of an answer, so a correction is never mistaken for the reply to a question.
+// The job under construction: the first one still missing an essential, else the newest. So
+// "next: filter cleaning" cannot strand the job before it — the checklist walks back, asks for
+// what it lacks, and only then moves on. Nothing incomplete can be left behind for the guard.
+const K = (t: Template): Task =>
+  t.tasks.find((x) => !x.title || !x.outcomes.length) ?? t.tasks[t.tasks.length - 1] ?? { key: "", title: "", outcomes: [], blocks: [] };
+const at = (t: Template) => Math.max(0, t.tasks.indexOf(K(t))); // cues are keyed to the job they ask about
 const op = (t: Template, a: string, n: Norm) => {
-  const k = last(t), m = a.match(/^(photo|number|text)\s+(.+)/i); // an explicit kind is an instruction, not a hint
+  const k = K(t), m = a.match(/^(photo|number|text)\s+(.+)/i); // an explicit kind is an instruction, not a hint
   const v = m ? "add" : /^(?:no,? )?(?:delete|remove|drop|scratch)\b/i.test(a) ? "remove" : n?.op ?? "add";
   if (v === "task") return void t.tasks.push(newTask(n?.title || a));
   const q = (n?.target ?? a.replace(/^\W*\w+\s+/, "")).toLowerCase().trim(); // "delete ph" means pH, never Photos
@@ -35,21 +44,47 @@ const op = (t: Template, a: string, n: Norm) => {
   for (const b of m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : n?.blocks ?? [{ kind: "text", label: a }]) k.blocks.push(block(b.kind, b.label));
 };
 
-// The routine is a checklist, not a program counter: each cue knows when it is still unfulfilled,
-// so the next question is simply the first one the draft has not answered. Corrections land as ops
-// and the cue stays pending — the order is a cue, not a cage.
-type Cue = { key: string; need: (t: Template) => boolean; q: (t: Template) => string; hint?: string; refine: string; take: (t: Template, a: string, n: Norm) => void };
-const CUES: Cue[] = [
-  { key: "name", need: (t) => !t.name, q: () => "What should the report be called?", refine: "title", take: (t, a, n) => { t.name = n?.title || a; } },
-  { key: "task", need: (t) => !t.tasks.length || !last(t).title, q: (t) => (t.tasks.length > 1 ? "What's the new task called?" : "What is the first task you do on site?"), refine: "task", take: (t, a, n) => { const x = n?.title || a; if (t.tasks.length && !last(t).title) { last(t).title = x; last(t).key = slug(x); } else t.tasks.push(newTask(x)); } },
-  { key: "outcomes", need: (t) => !last(t).outcomes.length, q: (t) => `How can "${last(t).title}" end?`, hint: "OK, FOLLOW-UP, NO ACCESS", refine: "outcomes", take: (t, a, n) => { last(t).outcomes = (n?.labels ?? a.split(",").map((x) => x.trim())).map(outcome).filter((o) => o.label); } },
-  { key: "cadence", need: (t) => !last(t).cadence, q: (t) => `Does "${last(t).title}" repeat? Say how often, or 'no'.`, hint: "every 1 week", refine: "cadence",
-    take: (t, a, n) => { const m = a.match(/(\d+)\s*(day|week|month)/i); if (m) last(t).cadence = { every: +m[1]!, unit: m[2]!.toLowerCase() as Cadence["unit"], withinDays: 7 }; else if (n?.every) last(t).cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 7 }; } },
-  { key: "day", need: (t) => !!last(t).cadence && last(t).cadence!.day === undefined, q: (t) => `What day does "${last(t).title}" usually go out? (A site can override it.)`, hint: "Monday", refine: "day", take: (t, a, n) => { const d = n?.day ?? DAYS.findIndex((x) => new RegExp(x, "i").test(a)); if (d >= 0) last(t).cadence!.day = d; } },
-  { key: "fields", need: (t) => !last(t).blocks.length, q: () => "What gets recorded on the job? Photos, numbers, notes — list it all.", hint: "Before photos, Notes", refine: "blocks", take: op },
-  { key: "more", need: () => true, q: (t) => `Anything else on "${last(t).title}"? Add a field, fix one, name another task — or 'done'.`, hint: "done", refine: "blocks", take: op },
+// A routine is a branched checklist. Every cue states when it is still unanswered (`need`),
+// and only asks then — so a branch is nothing but a need that stays false down the road not
+// taken: decline the repeat and the three cues behind it never fire. The next question is
+// always just the first unanswered cue, which is why a correction can arrive at any moment,
+// re-route the draft, and leave the cue standing there to ask itself again.
+type Cue = { key: string; need: (t: Template) => boolean; q: (t: Template) => string; hint?: string; kind: string; take: (t: Template, a: string, n: Norm) => void };
+
+// The TASK subroutine — one pass per job on the report, and it repeats for every job named.
+// Nothing here asks about the site: the client, the address and the phone belong to the site,
+// never to its paperwork, so the crew is never invited to type them into a form.
+const TASK: Cue[] = [
+  { key: "title", kind: "task", need: (t) => !t.tasks.length || !K(t).title,
+    q: (t) => (t.tasks.length > 1 ? "What is the next job called?" : "What is the first job you do on site?"),
+    take: (t, a, n) => { const x = n?.title || a; if (!t.tasks.length) t.tasks.push(newTask(x)); else { K(t).title = x; K(t).key = slug(x); } } },
+  { key: "every", kind: "cadence", need: (t) => !K(t).cadence, hint: "every 3 weeks",
+    q: (t) => `Does "${K(t).title}" repeat? Say how often — or 'no'.`,
+    take: (t, a, n) => { const m = a.match(/(\d+)\s*(day|week|month)/i);
+      if (m) K(t).cadence = { every: +m[1]!, unit: m[2]!.toLowerCase() as Cadence["unit"], withinDays: 0 };
+      else if (n?.every) K(t).cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 0 }; } },
+  { key: "day", kind: "day", need: (t) => !!K(t).cadence && K(t).cadence?.day === undefined, hint: "Monday",
+    q: (t) => `What day does "${K(t).title}" go out? (A site can override it.)`,
+    take: (t, a, n) => { const d = n?.day ?? DAYS.findIndex((x) => new RegExp(x, "i").test(a)); const c = K(t).cadence; if (c && d >= 0) c.day = d; } },
+  { key: "due", kind: "days", need: (t) => !!K(t).cadence && !K(t).cadence?.withinDays, hint: "3 days",
+    q: (t) => `Once "${K(t).title}" comes up, how many days does the crew have to do it?`,
+    take: (t, a, n) => { const d = n?.days ?? +(a.match(/\d+/)?.[0] ?? 0); const c = K(t).cadence; if (c && d > 0) c.withinDays = d; } },
+  { key: "record", kind: "blocks", need: (t) => !K(t).blocks.length, hint: "a photo",
+    q: (t) => `While doing "${K(t).title}", what does the crew write down or photograph? Or 'none'.`, take: op },
+  { key: "ends", kind: "outcomes", need: (t) => !K(t).outcomes.length, hint: "Done, Follow-up, No access",
+    q: (t) => `How can "${K(t).title}" end?`,
+    take: (t, a, n) => { K(t).outcomes = (n?.labels ?? a.split(",").map((x) => x.trim())).map(outcome).filter((o) => o.label); } },
 ];
-const pending = (t: Template, shut: string[]) => CUES.find((c) => !shut.includes(`${c.key}@${t.tasks.length}`) && c.need(t)); // a cue is per-task: a new job reopens them
+
+// The TEMPLATE routine wraps it: name the report, walk a job, then keep offering another.
+const ROUTINE: Cue[] = [
+  { key: "name", kind: "title", need: (t) => !t.name, q: () => "What should the report be called?",
+    take: (t, a, n) => { t.name = n?.title || a; } },
+  ...TASK,
+  { key: "more", kind: "blocks", need: () => true, hint: "done",
+    q: (t) => `Anything else for "${K(t).title}"? Fix a field, or name another job — or 'done'.`, take: op },
+];
+const pending = (t: Template, shut: string[]) => ROUTINE.find((c) => !shut.includes(`${c.key}@${at(t)}`) && c.need(t)); // per job: a new one reopens them
 
 const zz = (ms: number) => new Promise((ok) => setTimeout(ok, ms)); type Act = { sel: string; go: (d: Template) => void };
 // The hand's script: what changed between two drafts, as the edits a person would make. Each
@@ -84,7 +119,13 @@ const Form = ({ t, edit }: { t: Template; edit?: (f: (d: Template) => void) => v
         {edit && <span className="tools"><button title="Move up" disabled={bi === 0} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, -1))}>↑</button>
           <button title="Move down" disabled={bi === k.blocks.length - 1} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, 1))}>↓</button><button title="Remove" onClick={() => edit((d) => { d.tasks[ti]!.blocks.splice(bi, 1); })}>✕</button></span>}
       </div>)}
-      {edit && <button className="add" onClick={() => edit((d) => { d.tasks[ti]!.blocks.push(block("text", "New field")); })}>+ field</button>}<footer className="ends"><span className="hint">ends with</span>{k.outcomes.map((o, oi) => edit ? <input key={oi} className="outcome pencil" value={o.label} onChange={(e) => edit((d) => { const x = d.tasks[ti]!.outcomes[oi]!; x.label = e.target.value; x.key = slug(x.label); })} /> : <span key={oi} className="outcome">{o.label.replace(/_+/g, " ")}</span>)}</footer>
+      {edit && <button className="add" onClick={() => edit((d) => { d.tasks[ti]!.blocks.push(block("text", "New field")); })}>+ field</button>}
+      <footer className="ends"><span className="hint">ends with</span>
+        {k.outcomes.map((o, oi) => edit
+          ? <input key={oi} className="outcome pencil" value={o.label}
+              onChange={(e) => edit((d) => { const x = d.tasks[ti]!.outcomes[oi]!; x.label = e.target.value; x.key = slug(x.label); })} />
+          : <span key={oi} className="outcome">{o.label.replace(/_+/g, " ")}</span>)}
+      </footer>
     </div>)}
   </article>
 );
@@ -96,7 +137,9 @@ const line = (f: Fact): string =>
 export default function Office(): ReactElement {
   const [log, setLog] = useState([{ who: "step", body: "Aludel ready. Ask for a new report, or ask about the work." }]); const [tab, setTab] = useState("templates");
   const [draft, setDraft] = useState<Template | null>(null); const [drafts, setDrafts] = useState<Payload[]>([]);
-  const [shut, setShut] = useState<string[] | null>(null); const [busy, setBusy] = useState(false); const [hint, setHint] = useState(""); // shut: cues the human closed ("done", "no"); null = not in the routine
+  const [shut, setShut] = useState<string[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [hint, setHint] = useState(""); // shut: cues the human closed ("done", "no"); null = not in the routine
   const [wide, setWide] = useState(() => localStorage.getItem("wide") ?? "stage"); // which pane gets φ's long side
   const win = (w: string) => { setWide(w); localStorage.setItem("wide", w); };
   const previous = useRef<string | undefined>(undefined); // the agent thread lives server-side; the interview lives here
@@ -129,12 +172,13 @@ export default function Office(): ReactElement {
     if (dead) return void (/^y(es)?$/i.test(ask) ? commit() : setLog((l) => [...l, { who: "err", body: `Type YES to retire "${dead}", or press Discard. Logged work is kept either way.` }]));
     if (shut && draft) { // the routine: answer the cue, or throw an edit at it — the model only normalizes
       const c = pending(draft, shut)!; const skip = /^(?:done|no|nope|none|skip|that.s it)\b\.?$/i.test(ask); setBusy(true);
-      const n: Norm = skip || !store.online ? null : await fetch("/api/refine", { method: "POST", body: JSON.stringify({ kind: c.refine, text: ask }) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-      const t = structuredClone(draft); const sh = skip || n?.op === "skip" ? [...shut, `${c.key}@${t.tasks.length}`] : shut;
+      const n: Norm = skip || !store.online ? null : await fetch("/api/refine", { method: "POST", body: JSON.stringify({ kind: c.kind, text: ask }) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      const t = structuredClone(draft); const sh = skip || n?.op === "skip" ? [...shut, `${c.key}@${at(draft)}`] : shut; // shut the cue for the job it was asked about
       if (sh === shut) (n?.op && n.op !== "answer" ? op : c.take)(t, ask, n); // an op is a correction, not an answer to the cue
       await perform(acts(draft, t), t); setShut(sh); say(t, sh); return; }
     if (/\b(?:new|add|another|next)\b.*\btask\b/i.test(ask) && (draft || Object.keys(store.state.latest).length < 2)) {
-      if (draft) { const t = structuredClone(draft); t.tasks.push({ key: "", title: "", outcomes: [], blocks: [] }); setDraft(t); setShut(shut ?? []); say(t, shut ?? []); } else wizard(Object.keys(store.state.latest)[0]); return; }
+      if (draft) { const t = structuredClone(draft); t.tasks.push({ key: "", title: "", outcomes: [], blocks: [] }); setDraft(t); setShut(shut ?? []); say(t, shut ?? []); } else wizard(Object.keys(store.state.latest)[0]);
+      return; }
     setBusy(true);
     try { const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current, view: { tab, draft, drafts } }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean | string }>) : Promise.reject(new Error(String(r.status)))));
       previous.current = res.previous; setLog((l) => [...l, { who: "aludel", body: res.reply }]);

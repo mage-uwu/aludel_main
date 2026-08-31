@@ -27,7 +27,9 @@ export function Input({ b, value, set, label }: { b: Block; value?: Value; set?:
 }
 
 function Logger({ hit, done }: { hit: Rec; done: () => void }): ReactElement {
-  const [values, setValues] = useState<Record<string, Value>>({}); const [task, form] = [taskOf(store.state, hit)!, store.state.forms[hit.form]!]; const missing = task.blocks.filter((b) => b.kind !== "button" && b.required && values[b.key] === undefined);
+  const [values, setValues] = useState<Record<string, Value>>({});
+  const [task, form] = [taskOf(store.state, hit)!, store.state.forms[hit.form]!];
+  const missing = task.blocks.filter((b) => b.kind !== "button" && b.required && values[b.key] === undefined);
   const log = (outcome: string) => { const no = store.submit([{ type: "logged", entry: hit.id, values, outcome }]); if (no.length) alert(no[0]!.reason); else done(); };
   return (<section className="solo sheet">
       <header><button className="ghost" onClick={done}>← back</button><h2>{task.title}</h2><p>{form.meta.name} · {form.meta.address} · due {fmt(hit.window.due)}</p></header>

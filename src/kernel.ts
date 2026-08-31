@@ -161,7 +161,7 @@ export const plan = (s: State, now: number, horizonDays: number): Extract<Payloa
       for (let k = 0; ; k++) {
         const from = step(svc.anchor, k, task.cadence);
         if (from > now + horizonDays * DAY) break;
-        const due = from + task.cadence.withinDays * DAY;
+        const due = from + (task.cadence.withinDays || 7) * DAY; // 0 = the cue went unanswered; a week is the safe default
         if (due < now || svc.skips.some((x) => sameDay(x, from)) || have.has(`${site.id}|${task.key}|${from}`)) continue;
         batch.set(from, [...(batch.get(from) ?? []), { id: newId<EntryId>(), form: "" as FormId, task: task.key, window: { from, due }, // allocation flows from the binding:
           ...(svc.list && { list: svc.list }), ...(svc.assignee && { assignee: svc.assignee }) }]);

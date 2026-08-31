@@ -174,3 +174,16 @@ test("the fold is deterministic and replayable", () => {
   expect(fold(facts)).toEqual(s);
   expect(newId()).not.toBe(newId());
 });
+
+// A cadence whose deadline cue went unanswered must not mint same-day work.
+test("an unanswered deadline defaults to a week, never to zero", () => {
+  const s = fold([{ type: "granted", email: "o@x.co", role: "office", actor: "o@x.co", at: T0, seq: 1 }] as Fact[]);
+  const tpl = template(1, [{ key: "clean", title: "Clean", cadence: { every: 1, unit: "week", withinDays: 0 },
+    blocks: [], outcomes: [{ key: "ok", label: "OK", cost: 1 }] }]);
+  for (const p of [{ type: "signed", template: tpl },
+    { type: "declared", site: { id: MIKE, client: { name: "Mike", address: "1 Elm", email: "m@x.co" }, services: [] } },
+    { type: "bound", site: MIKE, service: { template: TPL, anchor: T0, skips: [], allotments: {} } }] as Payload[])
+    apply(s, { ...p, actor: "o@x.co", at: T0, seq: 2 } as Fact);
+  const [first] = plan(s, T0 + DAY, 14);
+  expect(first!.entries[0]!.window.due - first!.entries[0]!.window.from).toBe(7 * DAY);
+});
