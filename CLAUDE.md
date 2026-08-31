@@ -14,6 +14,10 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
 - The agent is named Aludel. It drafts; a human's fact commits (`via: "agent"`). Its tool
   surface is the eight facts + `find` + `ask`, nothing else; its model id is config
   (`OPENAI_MODEL`), never hardcoded.
+- One renderer for a block, everywhere: `Input` in `src/field.tsx`. The office preview and
+  the field logger mount the very same control — `set` given makes it live, `set` omitted
+  makes it a disabled preview — so what you build is literally what the crew taps. Never
+  fork a second "preview" rendering of a block; add the affordance to `Input` instead.
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
 - The look is one committed world (no theme switching, no second layout): a glass **stage**

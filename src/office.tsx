@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { newId, type Block, type Cadence, type Fact, type Outcome, type Payload, type Task, type Template, type TemplateId } from "./kernel";
+import { Input } from "./field";
 import { balance } from "./read";
 import { store } from "./sync";
 
@@ -54,14 +55,13 @@ const Form = ({ t, edit }: { t: Template; edit?: (f: (d: Template) => void) => v
     {t.tasks.map((k, ti) => <div className="task" key={ti}>
       {edit ? <input className="pencil" value={k.title} onChange={(e) => edit((d) => { d.tasks[ti]!.title = e.target.value; })} /> : <b>{k.title}</b>}
       {k.cadence && <em>every {k.cadence.every} {k.cadence.unit}{k.cadence.day !== undefined && ` · ${DAYS[k.cadence.day]}days`}</em>}
-      {k.blocks.map((b, bi) => <div className="brow" key={bi}><i>{b.kind}</i>
-        {edit ? <input className="pencil" value={b.label} onChange={(e) => edit((d) => { d.tasks[ti]!.blocks[bi]!.label = e.target.value; })} /> : <span>{b.label}</span>}
-        {edit && <><button title="Move up" disabled={bi === 0} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, -1))}>↑</button>
-          <button title="Move down" disabled={bi === k.blocks.length - 1} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, 1))}>↓</button>
-          <button title="Remove" onClick={() => edit((d) => { d.tasks[ti]!.blocks.splice(bi, 1); })}>✕</button></>}
+      {k.blocks.map((b, bi) => <div className="wrap" key={bi}>
+        <Input b={b} label={edit ? <input className="pencil" value={b.label} onChange={(e) => edit((d) => { d.tasks[ti]!.blocks[bi]!.label = e.target.value; })} /> : undefined} />
+        {edit && <span className="tools"><button title="Move up" disabled={bi === 0} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, -1))}>↑</button>
+          <button title="Move down" disabled={bi === k.blocks.length - 1} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, 1))}>↓</button><button title="Remove" onClick={() => edit((d) => { d.tasks[ti]!.blocks.splice(bi, 1); })}>✕</button></span>}
       </div>)}
       {edit && <button className="add" onClick={() => edit((d) => { d.tasks[ti]!.blocks.push(block("text", "New field")); })}>+ field</button>}
-      <p className="outs">{k.outcomes.map((o, oi) => edit ? <input key={oi} className="pencil out" value={o.label} onChange={(e) => edit((d) => { const x = d.tasks[ti]!.outcomes[oi]!; x.label = e.target.value; x.key = slug(x.label); })} /> : <span key={oi}>{o.label}</span>)}</p>
+      <footer className="ends"><span className="hint">ends with</span>{k.outcomes.map((o, oi) => edit ? <input key={oi} className="outcome pencil" value={o.label} onChange={(e) => edit((d) => { const x = d.tasks[ti]!.outcomes[oi]!; x.label = e.target.value; x.key = slug(x.label); })} /> : <span key={oi} className="outcome">{o.label}</span>)}</footer>
     </div>)}
   </article>
 );
