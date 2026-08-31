@@ -1,6 +1,6 @@
 import { newId } from "../src/kernel";
 import { session } from "./auth";
-import { chat } from "./agent";
+import { chat, refine } from "./agent";
 import { Team } from "./do";
 export { Team };
 
@@ -43,6 +43,7 @@ export default {
     if (path === "/api/t/find" && req.method === "POST") return json(await stub.find(await req.json()));
     if (path === "/api/t/ask" && req.method === "POST") return json(await stub.ask(await req.json()));
     if (path === "/api/agent" && req.method === "POST") return chat(env, stub, who.email, await req.json());
+    if (path === "/api/refine" && req.method === "POST") return refine(env, await req.json());
 
     const hash = path.match(/^\/api\/blob\/([a-f0-9]{64})$/)?.[1];
     if (hash && req.method === "PUT") { await env.BLOBS?.put(hash, req.body); return json({ ok: !!env.BLOBS }); }

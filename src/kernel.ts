@@ -6,8 +6,7 @@ export type FormId = Id<"form">; export type EntryId = Id<"entry">;
 export const newId = <I extends string>(): I =>
   ((globalThis as { crypto?: Crypto }).crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`) as I;
 
-export type Role = "field" | "office" | "admin";
-const RANK: Record<Role, number> = { field: 0, office: 1, admin: 2 };
+export type Role = "field" | "office" | "admin"; const RANK: Record<Role, number> = { field: 0, office: 1, admin: 2 };
 
 // -- the five nouns -----------------------------------------------------------------------
 export type Actor = { email: string; role: Role };

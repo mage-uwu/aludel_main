@@ -34,8 +34,28 @@ Answer questions with find/ask and cite what you read — say the numbers' denom
 ("3 tabs across 1 of 4 visits"), never a bare figure. Make changes only via draft, and keep
 drafts minimal and complete: new ids as short random strings; template edits are a whole new
 version with the same task/block/outcome keys (never retype a key); windows and times are epoch
-ms. To create a new report or template, call new_template — never collect the details in chat.
-If the human's ask is otherwise ambiguous, ask back instead of guessing. Team state:\n`;
+ms. To create a new report or template, call new_template — never collect the details in chat;
+for anything else ambiguous, ask back instead of guessing. Team state:\n`;
+
+const oai = (env: Env, body: unknown) => fetch("https://api.openai.com/v1/responses",
+  { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.OPENAI_API_KEY}` }, body: JSON.stringify(body) });
+const textOf = (r: Resp) => r.output.filter((o) => o.type === "message").flatMap((m) => (m.content as { type: string; text?: string }[]) ?? []).filter((c) => c.type === "output_text").map((c) => c.text).join("\n");
+
+// The interview's parser: the flow is deterministic, the model normalizes each answer into
+// the step's JSON shape — "Yeah, we clean the cover" becomes {"title": "Cover Cleaning"}.
+const SPECS: Record<string, string> = {
+  title: '{"title": string} — short, Title Case.',
+  task: '{"title": string} — a concise task name, Title Case, filler stripped ("Yeah, we clean the cover" → "Cover Cleaning").',
+  outcomes: '{"labels": string[]} — the possible endings as short UPPERCASE labels.',
+  cadence: '{"every": number, "unit": "day"|"week"|"month"}, or {"every": null} if it does not repeat.',
+  blocks: '{"blocks": [{"kind": "photo"|"number"|"text", "label": string}]} — one per recorded item, kind inferred.',
+};
+export const refine = async (env: Env, body: { kind: string; text: string }): Promise<Response> => {
+  const res = await oai(env, { model: env.OPENAI_MODEL, input: [{ role: "user", content: body.text }],
+    instructions: `Normalize the tradesperson's words. Reply with ONLY this JSON: ${SPECS[body.kind] ?? SPECS.title}` });
+  const raw = res.ok ? /\{[\s\S]*\}/.exec(textOf((await res.json()) as Resp))?.[0] : null;
+  return new Response(raw ?? "null", { headers: { "Content-Type": "application/json" } });
+};
 
 export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string }): Promise<Response> => {
   if (!env.OPENAI_API_KEY) return reply("No OPENAI_API_KEY reaches the worker. Add it under Settings → Variables and Secrets (the runtime section, not Build) on this worker, as a Secret, and deploy the change.", [], body.previous);
@@ -45,17 +65,12 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
   let previous = body.previous;
   let drafts: Payload[] = [];
   for (let turn = 0; turn < 8; turn++) {
-    const res = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.OPENAI_API_KEY}` },
-      body: JSON.stringify({ model: env.OPENAI_MODEL, instructions, tools: TOOLS, input, ...(previous && { previous_response_id: previous }) }),
-    });
+    const res = await oai(env, { model: env.OPENAI_MODEL, instructions, tools: TOOLS, input, ...(previous && { previous_response_id: previous }) });
     if (!res.ok) return reply(`The model API refused (${res.status}): ${(await res.text()).slice(0, 300)}`, [], previous); // misconfiguration diagnoses itself in chat
     const r = (await res.json()) as Resp;
     previous = r.id;
     const calls = r.output.filter((o): o is Call => o.type === "function_call");
-    const text = r.output.filter((o) => o.type === "message")
-      .flatMap((m) => (m.content as { type: string; text?: string }[]) ?? [])
-      .filter((c) => c.type === "output_text").map((c) => c.text).join("\n");
+    const text = textOf(r);
     if (calls.length === 0) return reply(text || "Here's what I put together.", drafts, previous);
     input = []; // next request: only this turn's tool outputs; previous_response_id carries the rest
     for (const call of calls) {

@@ -3,8 +3,7 @@ import { apply, empty, fold, guard, plan, type Draft, type Fact, type Payload, t
 import { ask, find, type Filter, type Query } from "../src/read";
 import type { Env } from "./index";
 
-// One Durable Object per team. The DO *is* the team: its SQLite table is the ledger, its
-// single thread is the serializer that gives facts their total order (law 6).
+// One DO per team: its SQLite table is the ledger, its single thread the serializer (law 6).
 export class Team extends DurableObject<Env> {
   private s: State = empty();
   private head = 0;

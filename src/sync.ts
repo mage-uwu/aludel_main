@@ -20,8 +20,7 @@ const idb = {
 };
 export const putBlob = (hash: string, blob: Blob) => idb.put("blobs", hash, blob);
 
-export type Me = { email: string; role: string | null; team?: string };
-export type Refusal = { draft: Payload; reason: string };
+export type Me = { email: string; role: string | null; team?: string }; export type Refusal = { draft: Payload; reason: string };
 
 class Store {
   facts: Fact[] = []; queue: Draft[] = [];
@@ -45,6 +44,8 @@ class Store {
     } catch { /* no server: this phone is the ledger */ }
     this.wake();
     if (this.online) { await this.sync(); setInterval(() => void this.sync(), 30_000); }
+    if (this.online && this.me.role === "founder" && !Object.keys(this.state.actors).length)
+      this.submit([{ type: "granted", email: this.me.email, role: "admin" }]); // an empty ledger is founded by its first arrival
   }
 
   // The one write path. Locally guarded first, so a bad draft is refused before it queues.
