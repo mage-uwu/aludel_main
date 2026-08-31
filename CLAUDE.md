@@ -82,7 +82,11 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   The tool holds φ's long side by default, and **maximise** gives it the screen with the
   conversation kept to a few lines — which is what a big zoom actually needs. No fake window
   ornaments in the chrome: no traffic lights, no corner glare — the app is not pretending
-  to be a window, it is the window. Type is sized for a gloved thumb in daylight: nothing the
+  to be a window, it is the window. The session speaks in **sigils, not captions** — `$` for
+  what you typed, `#` for what the machine or the model said, `✓` for the ledger — because a
+  shell prompts, it does not label who is talking; colour still carries provenance. The screen
+  is lit slate with scanlines and a vignette, never flat black, and it signs itself in a status
+  strip at the foot. Type is sized for a gloved thumb in daylight: nothing the
   crew reads is under ~0.8rem and nothing they tap is under ~40px — legibility outranks density. One arrangement at
   every width — a wide screen is the phone, wider. The stage-to-conversation split is always
   golden (1.618 : 1); the grip only chooses which side gets φ's long side. Never reuse a
