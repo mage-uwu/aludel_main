@@ -26,10 +26,8 @@ function Logger({ hit, done }: { hit: Rec; done: () => void }): ReactElement {
   const [values, setValues] = useState<Record<string, Value>>({});
   const [task, form] = [taskOf(store.state, hit)!, store.state.forms[hit.form]!];
   const missing = task.blocks.filter((b) => b.kind !== "button" && b.required && values[b.key] === undefined);
-  const log = (outcome: string) => {
-    const refused = store.submit([{ type: "logged", entry: hit.id, values, outcome }]);
-    if (refused.length) alert(refused[0]!.reason); else done();
-  };
+  const log = (outcome: string) => { const no = store.submit([{ type: "logged", entry: hit.id, values, outcome }]);
+    if (no.length) alert(no[0]!.reason); else done(); };
   return (
     <section className="solo sheet">
       <header><button className="ghost" onClick={done}>← back</button><h2>{task.title}</h2><p>{form.meta.name} · {form.meta.address} · due {fmt(hit.window.due)}</p></header>
@@ -54,11 +52,8 @@ export default function Field(): ReactElement {
   const lists = [...new Set(find(store.state, {}, now).map((h) => h.list ?? "unrouted"))].sort();
   const open = openId && store.state.entries[openId];
   if (open) return <Logger hit={open} done={() => setOpen(null)} />;
-  const row = (h: Hit, cls = "") => {
-    const task = taskOf(store.state, h);
-    return <button key={h.id} className={`entry ${cls}`} onClick={() => setOpen(h.id)}>
-      <b>{task?.title ?? h.task}</b><span>{store.state.forms[h.form]?.meta.name} · due {fmt(h.window.due)}</span></button>;
-  };
+  const row = (h: Hit, cls = "") => <button key={h.id} className={`entry ${cls}`} onClick={() => setOpen(h.id)}>
+    <b>{taskOf(store.state, h)?.title ?? h.task}</b><span>{store.state.forms[h.form]?.meta.name} · due {fmt(h.window.due)}</span></button>;
   return (
     <section className="solo"><div className="scroll">
       {lists.length > 1 && <nav className="tabs chips">{[null, ...lists].map((l) => <button key={l ?? "all"} className={l === list ? "on" : ""} onClick={() => setList(l)}>{l ?? "all lists"}</button>)}</nav>}

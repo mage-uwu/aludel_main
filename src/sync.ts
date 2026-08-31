@@ -1,10 +1,9 @@
 import { apply, empty, fold, guard, plan, type Draft, type Fact, type Payload, type State } from "./kernel";
 
-// The device's half of the ledger. IndexedDB mirrors the team's facts plus a queue of
-// payloads not yet admitted by the server; the visible state is fold(facts + queue), so
-// offline work shows immediately and reconciles by union when the network returns (law 6).
-// With no server at all (the demo, or a solo phone) the same guard runs locally and the
-// queue simply is the ledger.
+// The device's half of the ledger. IndexedDB mirrors the team's facts plus a queue of payloads
+// not yet admitted by the server; the visible state is fold(facts + queue), so offline work shows
+// immediately and reconciles by union when the network returns (law 6). With no server at all the
+// same guard runs locally and the queue simply is the ledger.
 const DB = (): Promise<IDBDatabase> => new Promise((ok, err) => {
   const req = indexedDB.open("aludel", 1);
   req.onupgradeneeded = () => { req.result.createObjectStore("kv"); req.result.createObjectStore("blobs"); };
@@ -14,29 +13,24 @@ const op = async <T>(store: string, mode: IDBTransactionMode, run: (s: IDBObject
   const db = await DB();
   return new Promise((ok) => { const r = run(db.transaction(store, mode).objectStore(store)); r.onsuccess = () => ok(r.result as T); r.onerror = () => ok(undefined); });
 };
-const idb = {
-  get: <T>(store: string, key: string) => op<T>(store, "readonly", (s) => s.get(key)),
-  put: (store: string, key: string, value: unknown) => op(store, "readwrite", (s) => s.put(value, key)),
-};
+const idb = { get: <T>(store: string, key: string) => op<T>(store, "readonly", (s) => s.get(key)),
+  put: (store: string, key: string, value: unknown) => op(store, "readwrite", (s) => s.put(value, key)) };
 export const putBlob = (hash: string, blob: Blob) => idb.put("blobs", hash, blob);
 
 export type Me = { email: string; role: string | null; team?: string }; export type Refusal = { draft: Payload; reason: string };
 
 class Store {
-  facts: Fact[] = []; queue: Draft[] = [];
+  facts: Fact[] = []; queue: Draft[] = []; refusals: Refusal[] = []; version = 0;
   state: State = empty();
   me: Me = { email: "you@this.phone", role: "admin" };
   online = false; // true = a Team DO holds the canonical ledger; false = this phone is it
-  refusals: Refusal[] = [];
   private listeners = new Set<() => void>();
-  version = 0;
 
   subscribe = (fn: () => void) => { this.listeners.add(fn); return () => this.listeners.delete(fn); };
   private wake() { this.version++; this.state = fold(this.facts); for (const q of this.queue) apply(this.state, { ...q, seq: 0 }); for (const fn of this.listeners) fn(); }
 
   async boot() {
-    this.facts = (await idb.get<Fact[]>("kv", "facts")) ?? [];
-    this.queue = (await idb.get<Draft[]>("kv", "queue")) ?? [];
+    this.facts = (await idb.get<Fact[]>("kv", "facts")) ?? []; this.queue = (await idb.get<Draft[]>("kv", "queue")) ?? [];
     try {
       const res = await fetch("/api/t/me");
       if (res.status === 401) { this.me = { email: "", role: null }; this.wake(); return; } // Access let us in but the worker could not verify us

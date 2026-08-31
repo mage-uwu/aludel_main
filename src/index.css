@@ -37,7 +37,7 @@ main { height:100dvh; max-width:52rem; margin:0 auto; padding:.5rem; display:gri
   box-shadow:0 1px 2px rgba(20,22,40,.05), 0 18px 44px -22px rgba(20,22,40,.30); display:grid; grid-template-rows:auto minmax(0,1fr); }
 .solo { grid-template-rows:minmax(0,1fr); }
 .scroll { overflow-y:auto; overscroll-behavior:contain; padding:.85rem; display:grid; gap:.55rem; align-content:start; }
-.tabs { display:flex; gap:.2rem; padding:.55rem .6rem; border-bottom:1px solid var(--hair); }
+.tabs { display:flex; align-items:center; gap:.2rem; padding:.5rem .6rem; border-bottom:1px solid var(--hair); }
 .tabs button { border:none; background:none; color:var(--dim); font-size:.74rem; font-weight:650; letter-spacing:.04em; text-transform:uppercase; padding:.3rem .6rem; border-radius:8px; }
 .tabs button.on { color:var(--ink); background:rgba(20,22,40,.06); }
 
@@ -46,13 +46,30 @@ main { height:100dvh; max-width:52rem; margin:0 auto; padding:.5rem; display:gri
 .card b, .tpl h3 { font-size:.92rem; font-weight:680; margin:0; letter-spacing:-.01em; }
 .card span { font-size:.82rem; color:var(--dim); }
 .tpl .v { font-size:.7rem; color:var(--dim); font-weight:500; }
-.task { border-top:1px solid var(--hair); padding-top:.5rem; margin-top:.35rem; display:grid; gap:.22rem; }
+.task { border-top:1px solid var(--hair); padding-top:.55rem; margin-top:.4rem; display:grid; gap:.28rem; }
 .task b { font-size:.85rem; }
 .task em { font-style:normal; font-size:.68rem; color:#7a5cc4; background:rgba(140,110,255,.10); border-radius:999px; padding:.1rem .5rem; justify-self:start; }
 .task p { margin:0; font-size:.78rem; color:var(--dim); }
-.blocks { display:flex; flex-wrap:wrap; gap:.3rem; }
-.blocks span { display:inline-flex; align-items:baseline; gap:.3rem; background:rgba(20,22,40,.045); border-radius:8px; padding:.15rem .45rem; color:var(--ink); font-size:.76rem; }
-.blocks i { font-style:normal; font-size:.6rem; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); }
+/* a field on the form: kind tag, editable label, and its controls */
+.brow { display:flex; align-items:center; gap:.35rem; background:rgba(255,255,255,.75); border:1px solid var(--hair); border-radius:10px; padding:.25rem .35rem .25rem .5rem; }
+.brow i { font-style:normal; font-size:.57rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--dim);
+  background:rgba(20,22,40,.06); border-radius:5px; padding:.16rem .32rem; flex:none; }
+.brow span { flex:1; font-size:.82rem; }
+.brow button { flex:none; border:none; background:none; color:var(--dim); font-size:.8rem; line-height:1; padding:.28rem .3rem; border-radius:6px; }
+.brow button:hover:not(:disabled) { background:rgba(20,22,40,.07); color:var(--ink); }
+.brow button:disabled { opacity:.25; }
+.pencil { flex:1; min-width:0; border:1px solid transparent; background:none; border-radius:7px; padding:.2rem .35rem; font-size:.82rem; font-weight:500; width:auto; }
+.pencil:hover { border-color:var(--hair); background:rgba(255,255,255,.9); }
+.pencil:focus { border-color:#8b6cf0; background:#fff; outline:none; }
+.pencil.name { font-size:1rem; font-weight:700; letter-spacing:-.015em; padding:.25rem .4rem; }
+.task > .pencil { font-size:.9rem; font-weight:650; }
+.pencil.out { flex:0 1 auto; width:auto; font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#1b7a52;
+  background:rgba(50,215,150,.10); border-radius:999px; padding:.16rem .55rem; text-align:center; field-sizing:content; min-width:5rem; }
+.add { border:1px dashed var(--hair); background:none; color:var(--dim); border-radius:9px; padding:.3rem .6rem; font-size:.74rem; justify-self:start; }
+.add:hover { border-color:#8b6cf0; color:#6d4bc0; }
+/* new rows arrive: what Aludel just wrote announces itself */
+@keyframes pop { from { opacity:0; transform:translateY(-5px) scale(.985); } }
+.brow, .task { animation:pop .3s cubic-bezier(.2,.85,.3,1); }
 .outs { display:flex; flex-wrap:wrap; gap:.3rem; }
 .outs span { font-size:.66rem; font-weight:650; letter-spacing:.05em; border:1px solid var(--hair); border-radius:999px; padding:.12rem .55rem; color:#1b7a52; background:rgba(50,215,150,.10); }
 .row { font-size:.8rem; margin:0; padding:.4rem 0; border-bottom:1px solid var(--hair); font-variant-numeric:tabular-nums; }
@@ -63,10 +80,11 @@ main { height:100dvh; max-width:52rem; margin:0 auto; padding:.5rem; display:gri
 
 /* draft: the stage's headline state */
 .draft { border:1px solid rgba(140,110,255,.35); background:rgba(140,110,255,.06); border-radius:14px; padding:.7rem; display:grid; gap:.5rem; }
-.draft > h2 { margin:0; font-size:.66rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#6d4bc0; }
-.draft header { display:flex; align-items:center; gap:.4rem; }
-.draft header h2 { margin-right:auto; }
-.draft .go, .draft .ghost { padding:.4rem .8rem; font-size:.78rem; border-radius:9px; }
+.tabs b { margin-right:auto; font-size:.66rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#6d4bc0; padding-left:.4rem; }
+/* .tabs button is more specific than .go, so these must restate what they need */
+.tabs .go, .tabs .ghost { padding:.34rem .8rem; font-size:.76rem; font-weight:650; border-radius:9px; text-transform:none; letter-spacing:0; }
+.tabs .go { background:linear-gradient(180deg,#8b6cf0,#6f4de0); color:#fff; box-shadow:0 1px 2px rgba(80,50,180,.35), 0 5px 14px -6px rgba(80,50,180,.5); }
+.tabs .ghost { border:1px solid var(--hair); background:rgba(255,255,255,.65); color:var(--dim); }
 button { font:inherit; color:inherit; cursor:pointer; }
 .go { border:none; border-radius:11px; padding:.55rem 1.1rem; font-size:.85rem; font-weight:650; color:#fff;
   background:linear-gradient(180deg,#8b6cf0,#6f4de0); box-shadow:0 1px 2px rgba(80,50,180,.35), 0 6px 16px -6px rgba(80,50,180,.5); }
@@ -128,4 +146,4 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline:2px so
 .outcome:disabled { opacity:.45; box-shadow:none; background:rgba(255,255,255,.5); }
 .outcome:not(:disabled) { color:var(--ink); }
 .gate { display:grid; place-content:center; text-align:center; gap:.6rem; height:100dvh; }
-@media (prefers-reduced-motion:reduce) { * { transition:none !important; } .entry:active, .go:active { transform:none; } }
+@media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } .entry:active, .go:active { transform:none; } }

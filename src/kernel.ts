@@ -96,11 +96,11 @@ const badKeys = (tpl: Template, prior: Template[]): string | null => {
   for (const p of prior) for (const t of p.tasks) for (const b of t.blocks) kinds.set(`${t.key}/${b.key}`, b.kind);
   for (const t of tpl.tasks) {
     if (tpl.tasks.filter((x) => x.key === t.key).length > 1) return `duplicate task key ${t.key}`;
-    if (t.outcomes.length === 0) return `task ${t.key} has no outcomes`;
+    if (!t.outcomes.length) return `task ${t.key} has no outcomes`;
     for (const b of t.blocks) {
       if (t.blocks.filter((x) => x.key === b.key).length > 1) return `duplicate block key ${b.key}`;
-      const was = kinds.get(`${t.key}/${b.key}`);
-      if (was && was !== b.kind) return `block ${t.key}/${b.key} was ${was}, cannot become ${b.kind}`; // keys are never retyped
+      const was = kinds.get(`${t.key}/${b.key}`); // keys are never retyped
+      if (was && was !== b.kind) return `block ${t.key}/${b.key} was ${was}, cannot become ${b.kind}`;
     }
   }
   return null;
@@ -116,15 +116,13 @@ export const guard = (s: State, d: Draft): string | null => {
     case "signed": {
       const head = s.latest[d.template.id] ?? 0;
       if (d.template.version !== head + 1) return `version must be ${head + 1}`;
-      const prior = Array.from({ length: head }, (_, i) => versioned(s, d.template.id, i + 1)).filter((t): t is Template => !!t);
-      return badKeys(d.template, prior);
+      return badKeys(d.template, Array.from({ length: head }, (_, i) => versioned(s, d.template.id, i + 1)).filter((t): t is Template => !!t));
     }
-    case "bound":
-      return !s.sites[d.site] ? "unknown site" : !s.latest[d.service.template] ? "unknown template" : null;
+    case "bound": return !s.sites[d.site] ? "unknown site" : !s.latest[d.service.template] ? "unknown template" : null;
     case "dispatched": {
       const tpl = versioned(s, d.form.template, d.form.version);
       if (!s.sites[d.form.site]) return "unknown site";
-      if (!tpl) return "unknown template version";
+      if (!tpl) return "unknown template version"; // an entry always renders against a pinned version
       for (const e of d.entries) {
         if (s.entries[e.id]) return "entry id already exists";
         if (e.form !== d.form.id) return "entry outside its form";
@@ -134,8 +132,7 @@ export const guard = (s: State, d: Draft): string | null => {
       return null;
     }
     case "logged": case "corrected": {
-      const r = s.entries[d.entry];
-      const task = r && taskOf(s, r);
+      const r = s.entries[d.entry]; const task = r && taskOf(s, r);
       if (!r || !task) return "unknown entry";
       if (d.type === "corrected") {
         if (!r.logged) return "nothing to correct";
