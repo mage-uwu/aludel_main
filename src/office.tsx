@@ -143,8 +143,8 @@ export default function Office(): ReactElement {
   const [shut, setShut] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState(""); // shut: cues the human closed ("done", "no"); null = not in the routine
-  const [wide, setWide] = useState(() => localStorage.getItem("wide") ?? "stage"); // which pane gets φ's long side
-  const win = (w: string) => { setWide(w); localStorage.setItem("wide", w); };
+  const [wide, setWide] = useState(() => localStorage.getItem("split") ?? "stage"); // which pane gets φ's long side
+  const win = (w: string) => { setWide(w); localStorage.setItem("split", w); };
   const previous = useRef<string | undefined>(undefined); // the agent thread lives server-side; the interview lives here
   const input = useRef<HTMLInputElement>(null); const tail = useRef<HTMLDivElement>(null); const stage = useRef<HTMLDivElement>(null); const hand = useRef<HTMLDivElement>(null); const caret = useRef<HTMLDivElement>(null);
   useEffect(() => { tail.current?.scrollTo({ top: 1e7 }); if (shut && !busy) stage.current?.scrollTo({ top: 1e7, behavior: "smooth" }); }, [log, busy, draft, shut]); // the stage follows what Aludel just wrote
@@ -221,7 +221,7 @@ export default function Office(): ReactElement {
             <button className="ghost" onClick={clear} disabled={busy}>Discard</button></>
           : ["templates", "sites", "ledger"].map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}
           <button className="win" title={wide === "min" ? "Restore" : "Minimize"} onClick={() => win(wide === "min" ? "stage" : "min")}>{wide === "min" ? "▣" : "—"}</button>
-          <button className="win" title={wide === "stage" ? "Shrink" : "Maximize"} onClick={() => win(wide === "stage" ? "term" : "stage")}>▢</button></nav>
+          <button className="win" title={wide === "max" ? "Restore" : "Maximize"} onClick={() => win(wide === "max" ? "stage" : "max")}>▢</button></nav>
         <div className="scroll" ref={stage}>
           {live ? <div className="draft">
             {draft && <Form t={draft} edit={edit} />}
