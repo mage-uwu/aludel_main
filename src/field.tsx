@@ -28,11 +28,11 @@ export function Input({ b, value, set, label }: { b: Block; value?: Value; set?:
 
 function Logger({ hit, done }: { hit: Rec; done: () => void }): ReactElement {
   const [values, setValues] = useState<Record<string, Value>>({});
-  const [task, form] = [taskOf(store.state, hit)!, store.state.forms[hit.form]!];
+  const task = taskOf(store.state, hit)!;
   const missing = task.blocks.filter((b) => b.kind !== "button" && b.required && values[b.key] === undefined);
   const log = (outcome: string) => { const no = store.submit([{ type: "logged", entry: hit.id, values, outcome }]); if (no.length) alert(no[0]!.reason); else done(); };
   return (<section className="solo sheet">
-      <header><button className="ghost" onClick={done}>← back</button><h2>{task.title}</h2><p>{form.meta.name} · {form.meta.address} · due {fmt(hit.window.due)}</p></header>
+      <header><button className="ghost" onClick={done}>← back</button><h2>{task.title}</h2><p>{hit.meta.name} · {hit.meta.address} · due {fmt(hit.window.due)}</p></header>
       {task.blocks.map((b) => <Input key={b.key} b={b} value={values[b.key]}
         set={(v) => setValues(({ [b.key]: _, ...rest }) => (v === undefined ? rest : { ...rest, [b.key]: v }))} />)}
       <footer><p className="hint">{missing.length ? `still needed: ${missing.map((b) => b.label).join(", ")}` : "ends with"}</p>{task.outcomes.map((o) => <button key={o.key} className="outcome" disabled={missing.length > 0} onClick={() => log(o.key)}>{o.label.replace(/_+/g, " ")}</button>)}</footer>
@@ -47,7 +47,7 @@ export default function Field(): ReactElement {
   const today = find(store.state, { status: "logged", from: now - 86_400_000 }, now).filter(mine); const lists = [...new Set(find(store.state, {}, now).map((h) => h.list ?? "unrouted"))].sort();
   const open = openId && store.state.entries[openId]; if (open) return <Logger hit={open} done={() => setOpen(null)} />;
   const row = (h: Hit, cls = "") => <button key={h.id} className={`entry ${cls}`} onClick={() => setOpen(h.id)}>
-    <b>{taskOf(store.state, h)?.title ?? h.task}</b><span>{store.state.forms[h.form]?.meta.name} · due {fmt(h.window.due)}</span></button>;
+    <b>{taskOf(store.state, h)?.title ?? h.task}</b><span>{h.meta.name} · due {fmt(h.window.due)}</span></button>;
   return (<section className="solo"><div className="scroll">
       {lists.length > 1 && <nav className="tabs chips">{[null, ...lists].map((l) => <button key={l ?? "all"} className={l === list ? "on" : ""} onClick={() => setList(l)}>{l ?? "all lists"}</button>)}</nav>}
       {overdue.length > 0 && <><h2 className="bad">Past due · {overdue.length}</h2>{overdue.map((h) => row(h, "bad"))}</>}

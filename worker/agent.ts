@@ -15,7 +15,7 @@ const STR = { type: "string" }, NUM = { type: "number" }, BOOL = { type: "boolea
 const TASK_SHAPE = { type: "object", required: ["title", "outcomes", "blocks"], properties: {
   key: STR, title: STR,
   cadence: { type: "object", required: ["every", "unit", "withinDays"],
-    properties: { every: NUM, unit: { type: "string", enum: ["day", "week", "month"] }, withinDays: NUM, day: NUM } },
+    properties: { every: NUM, unit: { type: "string", enum: ["day", "week", "month"] }, withinDays: NUM } },  /* never a day: that is the site's */
   outcomes: { type: "array", items: { type: "object", required: ["label"], properties: { key: STR, label: STR, cost: NUM } } },
   blocks: { type: "array", items: { type: "object", required: ["kind", "label"], properties: {
     key: STR, kind: { type: "string", enum: ["text", "number", "photo", "button"] }, label: STR, required: BOOL, min: NUM, max: NUM, placeholder: STR } } },
@@ -86,7 +86,6 @@ const SPECS: Record<string, string> = {
   task: '{"title": string} — a concise job name, Title Case, filler stripped ("Yeah, we clean the cover" → "Cover Cleaning").',
   outcomes: '{"labels": string[]} — the ways the job can end, as short UPPERCASE labels, spaces between words, never underscores.',
   cadence: '{"every": number, "unit": "day"|"week"|"month"}, or {"every": null} if it does not repeat.',
-  day: '{"day": number} — the weekday, 0 = Sunday.',
   days: '{"days": number} — how many days the crew has once the job comes up.',
   blocks: '{"blocks": [{"kind": "photo"|"number"|"text", "label": string}]} — ONLY what the crew records while doing this one job, one entry each, kind inferred. '
     + 'Most jobs need one or two; a cleaning is often just a photo. Never invent fields they did not name, never add a catch-all "notes", and never add site facts — '

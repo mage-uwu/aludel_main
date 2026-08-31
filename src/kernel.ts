@@ -10,7 +10,7 @@ export type Role = "field" | "office" | "admin"; const RANK: Record<Role, number
 
 // -- the five nouns -----------------------------------------------------------------------
 export type Actor = { email: string; role: Role };
-export type Service = { template: TemplateId; anchor: number; skips: number[]; allotments: Record<string, number>; list?: string; assignee?: string };
+export type Service = { template: TemplateId; anchor: number; skips: number[]; allotments: Record<string, number>; day?: number; list?: string; assignee?: string }; // day = the weekday this site goes out
 export type Site = { id: SiteId; client: { name: string; address: string; email: string }; services: Service[] };
 export type Block =
   | { key: string; kind: "text"; label: string; required: boolean; placeholder: string }
@@ -18,7 +18,7 @@ export type Block =
   | { key: string; kind: "photo"; label: string; required: boolean }
   | { key: string; kind: "button"; label: string; action: "submit" | "reset" };
 export type Outcome = { key: string; label: string; cost: number };
-export type Cadence = { every: number; unit: "day" | "week" | "month"; withinDays: number; day?: number }; // day = the weekday a binding starts from by default; the site's anchor still wins
+export type Cadence = { every: number; unit: "day" | "week" | "month"; withinDays: number }; // how often, and how long the crew has — never which day: that is the site's
 export type Task = { key: string; title: string; cadence?: Cadence; blocks: Block[]; outcomes: Outcome[] };
 export type Template = { id: TemplateId; version: number; name: string; tasks: Task[]; retired?: boolean }; // retired: no new work is planned from it; its history still renders
 export type Form = { id: FormId; template: TemplateId; version: number; site: SiteId; meta: Record<string, string> };
@@ -41,19 +41,17 @@ export type Draft = Payload & { at: number; actor: string; via?: "agent" }; // t
 
 // -- the fold -----------------------------------------------------------------------------
 // A record is an entry plus what happened to it: the first log, then any corrections.
-export type Rec = Entry & { logged?: Logged; trail: Logged[] };
+export type Rec = Entry & Omit<Form, "id"> & { logged?: Logged; trail: Logged[] }; // folded flat: an entry names its own site and version
 export type State = {
   actors: Record<string, Actor>;
   sites: Record<SiteId, Site>;
   templates: Record<string, Template>; // keyed "id@version"; every version kept, forever
   latest: Record<TemplateId, number>;
-  forms: Record<FormId, Form>;
   entries: Record<EntryId, Rec>;
 };
-export const empty = (): State => ({ actors: {}, sites: {}, templates: {}, latest: {}, forms: {}, entries: {} });
+export const empty = (): State => ({ actors: {}, sites: {}, templates: {}, latest: {}, entries: {} });
 export const versioned = (s: State, id: TemplateId, v: number): Template | undefined => s.templates[`${id}@${v}`];
-export const taskOf = (s: State, r: Entry): Task | undefined =>
-  s.forms[r.form] && versioned(s, s.forms[r.form]!.template, s.forms[r.form]!.version)?.tasks.find((t) => t.key === r.task);
+export const taskOf = (s: State, r: Rec): Task | undefined => versioned(s, r.template, r.version)?.tasks.find((t) => t.key === r.task);
 
 // apply mutates: the state is the fold's own accumulator, never shared while folding.
 export const apply = (s: State, f: Fact): void => {
@@ -62,7 +60,7 @@ export const apply = (s: State, f: Fact): void => {
     case "declared": s.sites[f.site.id] = f.site; break; // latest declaration wins, whole
     case "signed": s.templates[`${f.template.id}@${f.template.version}`] = f.template; s.latest[f.template.id] = f.template.version; break;
     case "bound": { const site = s.sites[f.site]; if (site) site.services = [...site.services.filter((x) => x.template !== f.service.template), f.service]; break; }
-    case "dispatched": s.forms[f.form.id] = f.form; for (const e of f.entries) s.entries[e.id] = { ...e, trail: [] }; break;
+    case "dispatched": { const { id: _, ...of } = f.form; for (const e of f.entries) s.entries[e.id] = { ...e, ...of, trail: [] }; break; } // the envelope flattens onto its entries
     case "logged": case "corrected": {
       const r = s.entries[f.entry]; if (!r) break;
       const l: Logged = { at: f.at, actor: f.actor, values: f.values, outcome: f.outcome };
@@ -151,15 +149,17 @@ const step = (anchor: number, k: number, c: Cadence): number =>
   c.unit !== "month" ? anchor + k * c.every * (c.unit === "week" ? 7 : 1) * DAY
   : new Date(anchor).setUTCMonth(new Date(anchor).getUTCMonth() + k * c.every);
 export const plan = (s: State, now: number, horizonDays: number): Extract<Payload, { type: "dispatched" }>[] => {
-  const have = new Set(Object.values(s.entries).map((e) => `${s.forms[e.form]?.site}|${e.task}|${e.window.from}`)); const out: Extract<Payload, { type: "dispatched" }>[] = [];
+  const have = new Set(Object.values(s.entries).map((e) => `${e.site}|${e.task}|${e.window.from}`)); const out: Extract<Payload, { type: "dispatched" }>[] = [];
   for (const site of Object.values(s.sites)) for (const svc of site.services) {
     const tpl = versioned(s, svc.template, s.latest[svc.template] ?? 0);
     if (!tpl || tpl.retired) continue;
+    const anchor = svc.day === undefined ? svc.anchor // the site says which weekday; the anchor slides forward to the first one
+      : svc.anchor + ((svc.day - new Date(svc.anchor).getUTCDay() + 7) % 7) * DAY;
     const batch = new Map<number, Entry[]>(); // occurrences sharing a date share a form
     for (const task of tpl.tasks) {
       if (!task.cadence) continue;
       for (let k = 0; ; k++) {
-        const from = step(svc.anchor, k, task.cadence);
+        const from = step(anchor, k, task.cadence);
         if (from > now + horizonDays * DAY) break;
         const due = from + (task.cadence.withinDays || 7) * DAY; // 0 = the cue went unanswered; a week is the safe default
         if (due < now || svc.skips.some((x) => sameDay(x, from)) || have.has(`${site.id}|${task.key}|${from}`)) continue;

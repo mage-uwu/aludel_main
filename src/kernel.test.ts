@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { apply, empty, fold, guard, late, newId, plan, status, type Draft, type EntryId, type Fact, type Payload, type SiteId, type Template, type TemplateId } from "./kernel";
+import { apply, empty, fold, guard, late, newId, plan, status, taskOf, type Draft, type EntryId, type Fact, type Payload, type SiteId, type Template, type TemplateId } from "./kernel";
 import { ask, balance, find } from "./read";
 
 // A tiny world: one admin, one office, one field hand, Mike's pool, one template.
@@ -186,4 +186,36 @@ test("an unanswered deadline defaults to a week, never to zero", () => {
     apply(s, { ...p, actor: "o@x.co", at: T0, seq: 2 } as Fact);
   const [first] = plan(s, T0 + DAY, 14);
   expect(first!.entries[0]!.window.due - first!.entries[0]!.window.from).toBe(7 * DAY);
+});
+
+// The day a site's work goes out is the site's fact. The template says how often and how long.
+test("a site's day slides its anchor to that weekday; without one the anchor stands", () => {
+  const world = (day?: number) => {
+    const l = founded();
+    l.append("dana@x.co", { type: "signed", template: template(1, [{ key: "clean", title: "Clean",
+      cadence: { every: 1, unit: "week", withinDays: 3 }, blocks: [], outcomes: [{ key: "ok", label: "OK", cost: 1 }] }]) });
+    l.append("dana@x.co", { type: "declared", site: { id: MIKE, client: { name: "Mike", address: "1 Elm", email: "m@x.co" }, services: [] } });
+    l.append("dana@x.co", { type: "bound", site: MIKE, service: { template: TPL, anchor: T0, skips: [], allotments: {}, ...(day !== undefined && { day }) } });
+    return plan(l.s, T0 + DAY, 21);
+  };
+  expect(new Date(T0).getUTCDay()).toBe(1);                                    // T0 is a Monday
+  expect(new Date(world()[0]!.entries[0]!.window.from).getUTCDay()).toBe(1);   // no day: the anchor stands
+  expect(new Date(world(4)[0]!.entries[0]!.window.from).getUTCDay()).toBe(4);  // Thursday route: slid forward
+});
+
+// A form is a dispatch envelope, not a noun: it flattens onto the entries it carried.
+test("an entry names its own site and pinned version, with no forms table to join", () => {
+  const l = founded();
+  l.append("dana@x.co", { type: "signed", template: template(1) });
+  l.append("dana@x.co", { type: "declared", site: { id: MIKE, client: { name: "Mike", address: "1 Elm", email: "m@x.co" }, services: [] } });
+  l.append("dana@x.co", { type: "bound", site: MIKE, service: { template: TPL, anchor: T0, skips: [], allotments: {} } });
+  const due = plan(l.s, T0 + DAY, 21);
+  for (const d of due) l.append("scheduler", d);
+  const r = Object.values(l.s.entries)[0]!;
+  expect(r.site).toBe(MIKE);
+  expect(r.template).toBe(TPL);
+  expect(r.version).toBe(1);
+  expect(r.meta.name).toBe("Mike");                       // the name as the paperwork said it
+  expect(taskOf(l.s, r)?.key).toBe("clean");              // resolves with no forms lookup
+  expect("forms" in l.s).toBe(false);
 });

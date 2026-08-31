@@ -12,9 +12,8 @@ import { store } from "./sync";
 type Norm = {
   op?: string; target?: string; to?: string; by?: number;                 // a correction, in the shared verbs
   title?: string; labels?: string[]; days?: number;                       // an answer to a cue
-  every?: number | null; unit?: Cadence["unit"]; day?: number; blocks?: { kind: string; label: string }[];
+  every?: number | null; unit?: Cadence["unit"]; blocks?: { kind: string; label: string }[];
 } | null;
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "x";
 const outcome = (label: string): Outcome => ({ key: slug(label), label: label.replace(/_+/g, " ").trim(), cost: /no.?access|skip/i.test(label) ? 0 : 1 }); // "part of a plan" is just outcome costs
 const newTask = (title: string): Task => ({ key: slug(title), title, outcomes: [], blocks: [] });
@@ -63,9 +62,6 @@ const TASK: Cue[] = [
     take: (t, a, n) => { const m = a.match(/(\d+)\s*(day|week|month)/i);
       if (m) K(t).cadence = { every: +m[1]!, unit: m[2]!.toLowerCase() as Cadence["unit"], withinDays: 0 };
       else if (n?.every) K(t).cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 0 }; } },
-  { key: "day", kind: "day", need: (t) => !!K(t).cadence && K(t).cadence?.day === undefined, hint: "Monday",
-    q: (t) => `What day does "${K(t).title}" go out? (A site can override it.)`,
-    take: (t, a, n) => { const d = n?.day ?? DAYS.findIndex((x) => new RegExp(x, "i").test(a)); const c = K(t).cadence; if (c && d >= 0) c.day = d; } },
   { key: "due", kind: "days", need: (t) => !!K(t).cadence && !K(t).cadence?.withinDays, hint: "3 days",
     q: (t) => `Once "${K(t).title}" comes up, how many days does the crew have to do it?`,
     take: (t, a, n) => { const d = n?.days ?? +(a.match(/\d+/)?.[0] ?? 0); const c = K(t).cadence; if (c && d > 0) c.withinDays = d; } },
@@ -116,7 +112,7 @@ const Form = ({ t, edit }: { t: Template; edit?: (f: (d: Template) => void) => v
     {edit ? <input className="pencil name" value={t.name} placeholder="Report name" onChange={(e) => edit((d) => { d.name = e.target.value; })} /> : <h3>{t.name} <span className="v">v{t.version}</span></h3>}
     {t.tasks.map((k, ti) => <div className="task" key={ti}>
       {edit ? <input className="pencil" value={k.title} onChange={(e) => edit((d) => { d.tasks[ti]!.title = e.target.value; })} /> : <b>{k.title}</b>}
-      {k.cadence && <em>every {k.cadence.every} {k.cadence.unit}{k.cadence.day !== undefined && ` · ${DAYS[k.cadence.day]}days`}</em>}
+      {k.cadence && <em>every {k.cadence.every} {k.cadence.unit}{k.cadence.withinDays > 1 && ` · ${k.cadence.withinDays} days to do it`}</em>}
       {k.blocks.map((b, bi) => <div className="wrap" key={bi}>
         <Input b={b} label={edit ? <input className="pencil" value={b.label} onChange={(e) => edit((d) => { d.tasks[ti]!.blocks[bi]!.label = e.target.value; })} /> : undefined} />
         {edit && <span className="tools"><button title="Move up" disabled={bi === 0} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, -1))}>↑</button>

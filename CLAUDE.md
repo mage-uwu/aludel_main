@@ -1,6 +1,10 @@
 # Aludel
 
-The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touching
+The spec is SPEC.md — four nouns, eight facts, eight laws. A form is not a noun: Template ×
+Site is a form, so `dispatched` still carries the envelope but it flattens onto its entries —
+an entry names its own site, pinned version and client meta, and there is no forms table to
+join. A cadence says how often and how long; **which day is the site's** (`services[].day`),
+because a template cannot know which weekday a route runs. Read it before touching
 `src/` or `worker/`. Non-negotiables that are easy to lose:
 
 - The app is ≤ 78,000 **characters** of TypeScript; `scripts/loc.sh` gates the build. Tests,

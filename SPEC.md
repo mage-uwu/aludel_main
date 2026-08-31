@@ -14,7 +14,7 @@ Office declares the future. Field logs the past. Every screen is a reading of th
 difference. Pending, overdue, balance, history, "what did Jack do Friday" — none of these
 are stored; they are what the ledger looks like from `now`.
 
-## The five nouns
+## The four nouns
 
 Each clause of the sentence demands one noun, and there are no others.
 
@@ -22,13 +22,24 @@ Each clause of the sentence demands one noun, and there are no others.
 Actor     { id, email, role: "admin" | "office" | "field" }          // who works
 Site      { id, client: { name, address, email },                    // where work lands
             services: [{ template, anchor, skips, allotments?,      //   …against what balance,
-                         list?, assignee? }] }                      //   …on whose route
+                         day?, list?, assignee? }] }                 //   …which day, whose route
 Template  { id, version, signedBy, tasks: [Task] }                   // what the work is
-Form      { id, template, version, site, dispatched, meta }          // one round of paperwork
-Entry     { id, form, taskKey, window: { from, due },               // one task, done once
-            list?, assignee?,                                        //   …on a route, in a hand
+Entry     { id, site, template, version, meta, taskKey,             // one task, done once
+            window: { from, due }, list?, assignee?,                //   …on a route, in a hand
             logged?: { at, actor, values: { blockKey: v }, outcomeKey } }
 ```
+
+There was a fifth. A **Form** — one round of paperwork — was a Template pinned to a Site, and
+nothing was ever appended about one: no filter named a form, no view grouped by one. It was a
+join table wearing a noun's clothes, and this codebase already has a word for a thing derived
+from the ledger — a lens, not a fact. So a form is still the *envelope* a `dispatched` fact
+carries, and then it flattens onto the entries it delivered: an entry now names its own site,
+its pinned version, and the client's name as the paperwork said it. Template × Site **is** a
+form; it does not need to be stored to be true.
+
+A cadence says how often the work comes round and how long the crew has. It never says which
+day: a template cannot know which weekday a particular route runs, so the day is the site's —
+`services[].day` — and it is the site's anchor that the schedule steps from.
 
 Tasks, blocks, and outcomes are the template's syntax tree, not entities — but tasks are
 first-class *within* it, because the field lives in a list of entries filtered by task:
@@ -139,7 +150,7 @@ One thread does both: "how many visits does Mike have left?" → "two" → "alri
 the drain" — the second message reuses the first answer's grounding. Authoring a template
 and dispatching daily work are the same agent at different depths, not different agents.
 
-## The same five nouns, three trades
+## The same four nouns, three trades
 
 |          | Mike's hot tubs               | Ted's ranch                | Bill's ski lift             |
 | -------- | ----------------------------- | -------------------------- | --------------------------- |
