@@ -53,9 +53,13 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   `acts()` already knows which control each verb uses, so a verb is an animation for free.
   Target a named item exact → whole-word → loose, never plain `includes` ("delete ph" must
   not hit "Photos").
-- The hand is **two primitives, and everything composes from them**: a big violet **pointer**
-  that glides to a control and presses it, and a blinking **caret** that types into what it
-  pressed, letter by letter. `acts()` diffs old→new into actions that each name the control
+- The hand is **two primitives, and everything composes from them**: a big black-and-white
+  **pixel cursor** that drives to a control and presses it, and a blinking violet **caret**
+  that types into what it pressed, letter by letter. The cursor is a 13x20 bitmap blown up
+  with `shape-rendering:crispEdges`, so its stair steps stay sharp at any size; it carries no
+  colour, because it is the machine's hand and not its voice. It enters from below the stage
+  and drives back out when the work is done — never spawned at its destination, because the
+  travel is most of what sells it. `acts()` diffs old→new into actions that each name the control
   they use; an action carrying `text` is a typing act, and its `go(draft, partial)` takes the
   partial string so the letters can actually arrive one at a time. Adding a field presses
   `+ field` and then names it, the way a person would. Both primitives only need a position,

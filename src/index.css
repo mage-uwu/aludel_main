@@ -158,22 +158,27 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 
 /* 1 — the pointer. A real arrow, big enough to read across a room, white-edged so it stays
    legible on the form's own white and on the terminal's black alike. */
-.hand { width:30px; height:36px; margin:-3px 0 0 -4px; filter:drop-shadow(0 4px 8px rgba(50,30,120,.45)); }
-.hand::before, .hand::after { content:""; position:absolute; inset:0;
-  clip-path:polygon(6% 2%, 6% 80%, 27% 62%, 42% 96%, 60% 88%, 45% 55%, 72% 53%); }
-.hand::before { background:#fff; transform:scale(1.28); transform-origin:6% 2%; }   /* the outline */
-.hand::after { background:linear-gradient(155deg, #b79aff, #6f4de0 70%); }
-.hand.tap { transform:scale(.78); }
+/* The classic cursor, drawn on a 12x19 pixel grid and blown up: black outline, white fill,
+   stair-stepped edges kept crisp by an integer viewBox and shape-rendering. No colour at all —
+   it is the machine's hand, not its voice; violet stays in the caret and the terminal. */
+.hand { width:44px; height:68px; margin:-4px 0 0 -4px; transform-origin:5% 3%;
+  filter:drop-shadow(3px 4px 0 rgba(20,22,40,.20));
+  background:no-repeat left top/contain url("data:image/svg+xml,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 20' shape-rendering='crispEdges'>\
+<path d='M1 2h1v1h-1zM1 3h2v1h-2zM1 4h3v1h-3zM1 5h4v1h-4zM1 6h5v1h-5zM1 7h6v1h-6zM1 8h7v1h-7zM1 9h8v1h-8zM1 10h9v1h-9zM1 11h10v1h-10zM1 12h6v1h-6zM1 13h3v1h-3zM5 13h3v1h-3zM1 14h2v1h-2zM5 14h3v1h-3zM1 15h1v1h-1zM6 15h3v1h-3zM6 16h3v1h-3zM7 17h3v1h-3zM7 18h3v1h-3z' fill='%23fff'/>\
+<path d='M0 0h1v1h-1zM0 1h2v1h-2zM0 2h1v1h-1zM2 2h1v1h-1zM0 3h1v1h-1zM3 3h1v1h-1zM0 4h1v1h-1zM4 4h1v1h-1zM0 5h1v1h-1zM5 5h1v1h-1zM0 6h1v1h-1zM6 6h1v1h-1zM0 7h1v1h-1zM7 7h1v1h-1zM0 8h1v1h-1zM8 8h1v1h-1zM0 9h1v1h-1zM9 9h1v1h-1zM0 10h1v1h-1zM10 10h1v1h-1zM0 11h1v1h-1zM11 11h1v1h-1zM0 12h1v1h-1zM7 12h6v1h-6zM0 13h1v1h-1zM4 13h1v1h-1zM8 13h1v1h-1zM0 14h1v1h-1zM3 14h2v1h-2zM8 14h1v1h-1zM0 15h1v1h-1zM2 15h1v1h-1zM5 15h1v1h-1zM9 15h1v1h-1zM0 16h2v1h-2zM5 16h1v1h-1zM9 16h1v1h-1zM0 17h1v1h-1zM6 17h1v1h-1zM10 17h1v1h-1zM6 18h1v1h-1zM10 18h1v1h-1zM7 19h4v1h-4z' fill='%230d0f14'/>\
+</svg>"); }
+.hand.tap { transform:scale(.82); }
 /* the press itself: a ring that blooms out of the tip */
-.hand i { position:absolute; left:2px; top:0; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%;
-  border:2px solid rgba(151,116,255,.85); opacity:0; transform:scale(.3); }
+.hand i { position:absolute; left:3px; top:2px; width:14px; height:14px; margin:-7px 0 0 -7px;
+  border:3px solid rgba(20,22,40,.55); opacity:0; transform:scale(.3); }
 .hand.tap i { animation:press .42s ease-out; }
 @keyframes press { from { opacity:.9; transform:scale(.3); } to { opacity:0; transform:scale(3.4); } }
 
 /* 2 — the caret. A fat blinking bar that sits in the field the pointer just pressed, and the
    letters arrive to the left of it, one at a time. */
-.caret { width:3px; height:1.5rem; margin-top:-.75rem; border-radius:2px; background:var(--violet);
-  box-shadow:0 0 12px rgba(151,116,255,.9), 0 0 3px rgba(151,116,255,1); animation:blink .9s steps(1, end) infinite; }
+.caret { width:4px; height:1.45rem; margin-top:-.72rem; background:var(--violet);
+  box-shadow:2px 3px 0 rgba(20,22,40,.18); animation:blink .9s steps(1, end) infinite; }
 /* blink the colour, never the opacity — an animated opacity outranks the inline one that
    shows and hides it, and the caret would sit there blinking at 0,0 forever. */
 @keyframes blink { 50% { background:transparent; box-shadow:none; } }

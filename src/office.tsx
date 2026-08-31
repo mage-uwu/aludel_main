@@ -153,11 +153,17 @@ export default function Office(): ReactElement {
   // nobody edits under it. The final snap makes the outcome exact even if a selector misses.
   const perform = async (list: Act[], final: Template) => {
     setBusy(true); const h = hand.current, bar = caret.current;
-    const put = (e: HTMLElement, x: number, y: number) => { const s = stage.current!.parentElement!.getBoundingClientRect();
-      Object.assign(e.style, { opacity: "1", left: `${Math.min(x - s.left, s.width - 24)}px`, top: `${Math.max(16, Math.min(y - s.top, s.height - 16))}px` }); };
-    for (const a of matchMedia("(prefers-reduced-motion: reduce)").matches ? [] : list) {
+    const box = () => stage.current!.parentElement!.getBoundingClientRect();
+    const put = (e: HTMLElement, x: number, y: number, warp = false) => { const s = box();
+      if (warp) e.style.transition = "none"; // warp = jump there unseen, so the next move is the one you watch
+      Object.assign(e.style, { opacity: "1", left: `${Math.min(x - s.left, s.width - 24)}px`, top: `${y - s.top}px` });
+      if (warp) { void e.offsetHeight; e.style.transition = ""; } };
+    const off = () => { const s = box(); return [s.left + s.width * 0.72, s.bottom + 44] as const; }; // just below the stage, out of sight
+    const play = matchMedia("(prefers-reduced-motion: reduce)").matches ? [] : list;
+    if (play.length && h) { put(h, ...off(), true); await zz(60); } // it starts off-stage and drives in
+    for (const a of play) {
       const el = (stage.current?.querySelector(a.sel) ?? stage.current?.querySelector(".tpl")) as HTMLElement | null;
-      if (el && h) { el.scrollIntoView({ block: "center", behavior: "smooth" }); await zz(320);
+      if (el && h) { el.scrollIntoView({ block: "center", behavior: "smooth" }); await zz(190);
         const r = el.getBoundingClientRect();
         put(h, r.left + Math.min(r.width / 2, 90), r.top + r.height / 2);
         await zz(430); h.classList.add("tap"); await zz(150); h.classList.remove("tap"); }
@@ -165,13 +171,14 @@ export default function Office(): ReactElement {
         const f = getComputedStyle(el), pad = parseFloat(f.paddingLeft) + parseFloat(f.borderLeftWidth);
         const ctx = document.createElement("canvas").getContext("2d")!; ctx.font = f.font;
         const r = el.getBoundingClientRect(), pace = a.text.length > 22 ? 22 : 38;
-        if (h) h.style.opacity = ".28"; // the hand moves aside so the letters it is typing stay readable
+        if (h) put(h, r.right - 20, r.top + r.height / 2); // it rests at the far end of the field, clear of the letters
         for (let j = 1; j <= a.text.length; j++) {
           setDraft((d) => { const c = structuredClone(d ?? final); a.go(c, a.text!.slice(0, j)); return c; });
           put(bar, r.left + pad + ctx.measureText(a.text.slice(0, j)).width, r.top + r.height / 2); await zz(pace); }
         await zz(220); bar.style.opacity = "0";
       } else setDraft((d) => { const c = structuredClone(d ?? final); a.go(c); return c; });
       await zz(300); }
+    if (h && play.length) { put(h, ...off()); await zz(440); } // and drives back out when the work is done
     if (h) h.style.opacity = "0";
     setDraft(final); setBusy(false); };
   const say = (t: Template, sh: string[]) => { const c = pending(t, sh); setHint(c?.hint ?? ""); if (!c) setShut(null); // scripted lines speak mint
