@@ -14,9 +14,15 @@
   --r:18px; color-scheme:light;
 }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-body { margin:0; background:#fff; color:var(--ink); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
-main { height:100dvh; max-width:52rem; margin:0 auto; padding:.5rem; display:grid; grid-template-rows:auto minmax(0,1fr); gap:.5rem; }
-main.office { height:calc(100dvh - .8rem); max-width:none; margin:.4rem; padding:0; gap:0; overflow:hidden;
+/* The document never scrolls or bounces — only .log and .scroll do. On iOS a scrollable
+   document is what lets the keyboard drag the whole app around, so it is pinned. */
+html, body { height:100%; overflow:hidden; overscroll-behavior:none; }
+body { position:fixed; inset:0; margin:0; background:#fff; color:var(--ink); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
+/* --vvh is the visual viewport, published by the shell script in index.html: the only height
+   that shrinks for a keyboard and stays put for a toolbar. svh, not dvh, is the fallback —
+   dvh changes as the browser chrome slides and reflows the whole app mid-scroll. */
+main { height:var(--vvh, 100svh); max-width:52rem; margin:0 auto; padding:.5rem; display:grid; grid-template-rows:auto minmax(0,1fr); gap:.5rem; }
+main.office { height:calc(var(--vvh, 100svh) - .8rem); max-width:none; margin:.4rem; padding:0; gap:0; overflow:hidden;
   border:none; border-radius:16px; background:#000; }
 
 /* header */
@@ -249,6 +255,9 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .term > form { display:flex; align-items:center; gap:.7rem; padding:1rem clamp(1.1rem, 4vw, 2.6rem); padding-bottom:max(1rem, env(safe-area-inset-bottom)); border-top:1px solid rgba(255,255,255,.07); }
 .term > form::before { content:"\203A"; color:var(--mint); font-weight:700; font-size:1.15rem; line-height:1; }
 .term > form input { flex:1; border:none; background:none; color:#e6edf3; font:inherit; caret-color:var(--mint); padding:0; border-radius:0; }
+/* iOS zooms the page whenever it focuses a field under 16px, and the zoom is the jitter. The
+   prompt is the field a phone opens its keyboard for, so it never goes under. */
+@media (max-width:899px) { .term > form input { font-size:16px; } }
 .term > form input:focus-visible { outline:none; }
 .term > form input::placeholder { color:#565e6b; }
 .log::-webkit-scrollbar, .scroll::-webkit-scrollbar { width:6px; }
@@ -284,5 +293,5 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline:2px so
 .outcome:disabled { opacity:.4; }
 .outcome:not(:disabled) { color:var(--ink); }
 .outcome:not(:disabled):active { background:var(--ink); color:#fff; }
-.gate { display:grid; place-content:center; text-align:center; gap:.6rem; height:100dvh; }
+.gate { display:grid; place-content:center; text-align:center; gap:.6rem; height:var(--vvh, 100svh); }
 @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } .entry:active, .go:active { transform:none; } }

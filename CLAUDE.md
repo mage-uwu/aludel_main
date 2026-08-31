@@ -109,6 +109,14 @@ because a template cannot know which weekday a route runs. Read it before touchi
   the words and the controls. The terminal signs itself in a status strip at the foot. Type is sized for a gloved thumb in daylight: nothing the
   crew reads is under ~0.8rem and nothing they tap is under ~40px — legibility outranks density.
   Two arrangements, never three: a third breakpoint is a layout nobody can hold in their head.
+  The shell is sized from the **visual viewport** (`--vvh`, published by the script in
+  `index.html`), never `dvh` — `dvh` slides with the browser's own chrome and reflows the whole
+  app mid-scroll, and on iOS the layout viewport does not shrink for the keyboard at all, so
+  Safari scrolls the page to reveal the focused field and the slab jitters. The document itself
+  never scrolls or bounces (`body` is fixed, `html`/`body` `overflow:hidden`); only `.log` and
+  `.scroll` do. Two rules keep that true: hold the last unzoomed height, because a zoomed visual
+  viewport reports fewer CSS pixels and the app would shrink every time iOS auto-zoomed; and
+  **nothing a phone can focus may be under 16px**, because that auto-zoom is itself the jitter.
   Never reuse a
   component's class name as a state modifier — `pane ${wide}` once painted the whole pane
   with the terminal's styling — and because the stage lives inside the terminal, terminal
