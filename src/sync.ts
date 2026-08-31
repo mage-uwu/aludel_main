@@ -18,7 +18,6 @@ const idb = { get: <T>(store: string, key: string) => op<T>(store, "readonly", (
 export const putBlob = (hash: string, blob: Blob) => idb.put("blobs", hash, blob);
 
 export type Me = { email: string; role: string | null; team?: string }; export type Refusal = { draft: Payload; reason: string };
-
 class Store {
   facts: Fact[] = []; queue: Draft[] = []; refusals: Refusal[] = []; version = 0;
   state: State = empty();

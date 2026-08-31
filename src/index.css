@@ -12,7 +12,7 @@
   --r:18px; color-scheme:light;
 }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
+body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
 /* the light behind the glass: a soft gradient mesh — this is what the frost refracts.
    Decoration only; provenance colours still live in the text, never in chrome. */
 body::before { content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
@@ -30,20 +30,29 @@ main.office { height:calc(100dvh - 1rem); margin:.5rem auto; padding:0; gap:0; b
   box-shadow:inset 0 1px 0 rgba(255,255,255,.13), inset 0 -1px 0 rgba(0,0,0,.6), 0 2px 4px rgba(10,12,24,.25), 0 28px 64px -26px rgba(52,40,120,.5); }
 
 /* header */
-.top { display:flex; align-items:center; gap:.55rem; padding:.3rem .55rem; }
-.top h1 { font-size:1rem; font-weight:800; letter-spacing:-.01em; margin:0; }
+.top { position:relative; display:flex; align-items:center; justify-content:center; padding:.3rem .55rem; }
+.top h1 { font-size:1.05rem; font-weight:800; letter-spacing:-.01em; margin:0; }
+/* the one control in the bar: a bracket that opens who-you-are and where-you-are */
+.kit { position:absolute; right:.5rem; top:50%; transform:translateY(-50%); font:inherit; font-size:.9rem; letter-spacing:.06em;
+  border:1px solid var(--hair); background:rgba(255,255,255,.6); color:var(--dim); border-radius:9px; padding:.35rem .6rem; line-height:1; }
+.kit:hover { color:var(--ink); }
+.kit-menu { position:absolute; right:.5rem; top:calc(100% + .35rem); z-index:30; display:grid; gap:.55rem; justify-items:end; padding:.6rem;
+  background:#fff; border:1px solid var(--hair); border-radius:13px; box-shadow:0 18px 44px -14px rgba(21,23,28,.4); }
+main.office .kit { border-color:rgba(255,255,255,.16); background:rgba(255,255,255,.06); color:#8b949e; }
+main.office .kit:hover { color:#fff; background:rgba(255,255,255,.12); }
+main.office .kit-menu { background:#12161d; border-color:rgba(255,255,255,.14); box-shadow:0 20px 48px -12px rgba(0,0,0,.95); }
 .top nav { display:flex; gap:.15rem; padding:.15rem; background:rgba(255,255,255,.5); border:1px solid rgba(255,255,255,.7);
   backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-radius:999px; box-shadow:0 1px 3px rgba(21,23,28,.08); }
-.top nav button { border:none; background:none; border-radius:999px; padding:.28rem .8rem; font-size:.8rem; font-weight:650; color:var(--dim); text-transform:capitalize; }
+.top nav button { border:none; background:none; border-radius:999px; padding:.45rem 1.1rem; font-size:.85rem; font-weight:700; color:var(--dim); text-transform:capitalize; }
 .top nav button.on { background:#fff; color:var(--ink); box-shadow:0 1px 2px rgba(21,23,28,.14); }
-.top .hint { margin-left:auto; font-size:.72rem; }
-main.office .top { padding:.5rem .8rem; font-family:var(--mono); border-bottom:1px solid rgba(255,255,255,.08);
+.top .hint { font-size:.8rem; white-space:nowrap; }
+main.office .top { padding:.55rem .8rem; font-family:var(--mono); border-bottom:1px solid rgba(255,255,255,.08);
   background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012)); box-shadow:inset 0 1px 0 rgba(255,255,255,.07); }
-main.office .top h1 { font-size:.82rem; font-weight:700; letter-spacing:.02em; color:#e6edf3; }
+main.office .top h1 { font-size:.95rem; font-weight:700; letter-spacing:.06em; color:#e6edf3; }
 main.office .top nav { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.09); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
-main.office .top nav button { font-size:.62rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.26rem .7rem; color:#6e7681; }
+main.office .top nav button { font-size:.75rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.45rem 1rem; color:#8b949e; }
 main.office .top nav button.on { background:rgba(255,255,255,.11); color:#fff; box-shadow:none; }
-main.office .top .hint { font-size:.6rem; letter-spacing:.04em; color:#6e7681; }
+main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; }
 .hint { color:var(--dim); }
 
 /* the two panes */
@@ -54,6 +63,9 @@ main.office .top .hint { font-size:.6rem; letter-spacing:.04em; color:#6e7681; }
    is still golden; the grip still only chooses which side gets φ's long side. */
 .term { grid-template-rows:minmax(0,.618fr) auto minmax(0,1fr) auto; transition:grid-template-rows .4s cubic-bezier(.2,.8,.25,1); }
 .term.wide-stage { grid-template-rows:minmax(0,1.618fr) auto minmax(0,1fr) auto; }
+.term.wide-min { grid-template-rows:auto auto minmax(0,1fr) auto; }
+.wide-min .stage { grid-template-rows:auto; }
+.wide-min .stage .scroll, .wide-min .hand { display:none; }
 .grip { border:none; background:none; padding:.32rem 0; display:grid; place-items:center; cursor:ns-resize; touch-action:manipulation; }
 .grip::after { content:""; width:2.4rem; height:4px; border-radius:99px; background:rgba(255,255,255,.22); transition:background .2s, width .2s; }
 .grip:hover::after, .grip:focus-visible::after { background:#fff; width:3.4rem; }
@@ -65,26 +77,32 @@ main.office .top .hint { font-size:.6rem; letter-spacing:.04em; color:#6e7681; }
   border:1px solid rgba(255,255,255,.75); border-radius:var(--r); overflow:hidden; min-height:0;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.95), 0 1px 2px rgba(21,23,28,.06), 0 24px 56px -28px rgba(40,45,80,.42);
   display:grid; grid-template-rows:auto minmax(0,1fr); }
-.stage { position:relative; margin:.6rem .6rem .2rem; font:15px/1.55 var(--sans); color:var(--ink); background:linear-gradient(118deg, #ffffff, #f2f3f8 55%, #fafbfe);
-  border:1px solid rgba(255,255,255,.22); border-radius:14px; overflow:hidden; min-height:0;
-  box-shadow:inset 0 1px 0 #fff, 0 14px 44px -14px rgba(0,0,0,.85);
+.stage { position:relative; margin:.6rem .6rem .25rem; font:16px/1.55 var(--sans); color:var(--ink);
+  background:radial-gradient(120% 80% at 50% -10%, #fff, #eef0f6 70%, #e7eaf2);
+  border:1px solid rgba(255,255,255,.34); border-radius:15px; overflow:hidden; min-height:0;
+  box-shadow:inset 0 1px 0 #fff, inset 0 -1px 0 rgba(21,23,28,.08),
+    0 0 0 1px rgba(0,0,0,.55), 0 3px 8px rgba(0,0,0,.55), 0 26px 54px -14px rgba(0,0,0,.95);
   display:grid; grid-template-rows:auto minmax(0,1fr); }
+/* the window's own buttons, at the end of its bar */
+.tabs .win { margin-left:.1rem; padding:.34rem .5rem; font-size:.85rem; line-height:1; color:var(--dim); border-radius:8px; letter-spacing:0; }
+.tabs > .win:nth-last-child(2) { margin-left:auto; }  /* :first-of-type matches by element, not class — the tabs are buttons too */
+.tabs .win:hover { background:rgba(21,23,28,.10); color:var(--ink); }
 .solo { grid-template-rows:minmax(0,1fr); }
 .scroll { overflow-y:auto; overscroll-behavior:contain; padding:.85rem; display:grid; gap:.55rem; align-content:start; }
-.tabs { display:flex; align-items:center; gap:.2rem; padding:.5rem .6rem; border-bottom:1px solid var(--hair); }
-.tabs button { border:none; background:none; color:var(--dim); font-size:.74rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:.3rem .6rem; border-radius:8px; }
+.tabs { display:flex; align-items:center; gap:.2rem; padding:.45rem .5rem; border-bottom:1px solid var(--hair); background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.25)); }
+.tabs button { border:none; background:none; color:var(--dim); font-size:.82rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:.45rem .7rem; border-radius:8px; }
 .tabs button.on { color:var(--ink); background:var(--well); }
 
 /* cards, templates, entries */
 .card, .tpl { background:rgba(255,255,255,.74); border:1px solid rgba(255,255,255,.8); border-radius:14px; padding:.75rem .85rem; display:grid; gap:.3rem;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 2px 8px -4px rgba(21,23,28,.10); }
-.card b, .tpl h3 { font-size:.95rem; font-weight:750; margin:0; letter-spacing:-.01em; }
-.card span { font-size:.82rem; color:var(--dim); }
+.card b, .tpl h3 { font-size:1.15rem; font-weight:750; margin:0; letter-spacing:-.015em; }
+.card span { font-size:.9rem; color:var(--dim); }
 pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .tpl .v { font-size:.7rem; color:var(--dim); font-weight:500; }
 .task { border-top:1px solid var(--hair); padding-top:.55rem; margin-top:.4rem; display:grid; gap:.3rem; }
-.task b { font-size:.88rem; font-weight:750; }
-.task em { font-style:normal; font-size:.68rem; font-weight:600; color:var(--dim); background:var(--well); border-radius:999px; padding:.12rem .55rem; justify-self:start; }
+.task b { font-size:1.02rem; font-weight:750; }
+.task em { font-style:normal; font-size:.78rem; font-weight:600; color:var(--dim); background:var(--well); border-radius:999px; padding:.12rem .55rem; justify-self:start; }
 .task p { margin:0; font-size:.78rem; color:var(--dim); }
 /* a field on the form — the real control, not a description of one. The office previews the
    very same input the field will tap, so what you build is literally what they get. */
@@ -95,21 +113,21 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .pencil { min-width:0; border:1px solid transparent; background:none; border-radius:7px; padding:.2rem .35rem; font-size:.82rem; font-weight:500; width:auto; }
 .pencil:hover { border-color:var(--hair); background:#fff; }
 .pencil:focus { border-color:var(--ink); background:#fff; outline:none; }
-.pencil.name { font-size:1.05rem; font-weight:800; letter-spacing:-.015em; padding:.25rem .4rem; }
-.task > .pencil { font-size:.92rem; font-weight:750; }
-.fld > b { font-size:.72rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--lab); }
+.pencil.name { font-size:1.25rem; font-weight:800; letter-spacing:-.02em; padding:.3rem .45rem; }
+.task > .pencil { font-size:1.02rem; font-weight:750; }
+.fld > b { font-size:.82rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--lab); }
 .fld > b:has(.pencil) { display:flex; align-items:center; }
 .fld > b i { font-style:normal; color:#c0392f; }
 .fld b .pencil { field-sizing:content; min-width:5rem; max-width:calc(100% - 1rem); font:inherit; letter-spacing:inherit; text-transform:inherit; color:inherit;
   padding:.14rem .3rem; margin:-.14rem .1rem -.14rem -.3rem; background:none; border-color:transparent; }  /* .fld input paints a well; the label pencil is not a well */
 .fld b .pencil:hover { border-color:var(--hair); }
-.fld input { padding:.65rem .7rem; font-size:16px; font-weight:600; border-radius:9px; border-color:transparent; background:var(--well); }  /* 16px keeps iOS from zooming the page */
+.fld input { padding:.82rem .75rem; font-size:17px; font-weight:600; border-radius:9px; border-color:transparent; background:var(--well); }  /* 16px keeps iOS from zooming the page */
 .fld input:focus-visible { background:#fff; border-color:var(--ink); outline:none; }
 .fld input::placeholder { color:#9aa0ab; font-weight:450; }
 .fld input:disabled { background:rgba(21,23,28,.035); color:#868c98; -webkit-text-fill-color:#868c98; opacity:1; }
 /* the photo tile: the whole card is the shutter, the file input rides invisibly on top */
-.shot { position:relative; display:grid; place-items:center; gap:.25rem; min-height:4.2rem; padding:.7rem; text-align:center;
-  border:1.5px dashed rgba(21,23,28,.22); border-radius:9px; background:var(--well); color:var(--lab); font-size:.8rem; font-weight:650; }
+.shot { position:relative; display:grid; place-items:center; gap:.3rem; min-height:5.2rem; padding:.85rem; text-align:center;
+  border:1.5px dashed rgba(21,23,28,.22); border-radius:9px; background:var(--well); color:var(--lab); font-size:.9rem; font-weight:650; }
 .shot::before { content:"◎"; font-size:1.4rem; line-height:1; opacity:.45; }
 .shot input { position:absolute; inset:0; width:100%; height:100%; padding:0; margin:0; border:none; background:none; opacity:0; cursor:pointer; }
 .shot.has { border-style:solid; border-color:rgba(24,122,72,.45); background:rgba(74,222,128,.10); color:var(--green); }
@@ -122,15 +140,15 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .wrap:has(.tools) .fld > b { padding-right:4.4rem; }
 .tools { position:absolute; top:.42rem; right:.42rem; display:flex; gap:.1rem; opacity:.4; transition:opacity .15s; }
 .wrap:hover .tools, .wrap:focus-within .tools { opacity:1; }
-.tools button { border:none; background:var(--well); color:var(--dim); font-size:.72rem; line-height:1; padding:.3rem .34rem; border-radius:6px; }
+.tools button { border:none; background:var(--well); color:var(--dim); font-size:.85rem; line-height:1; padding:.42rem .5rem; border-radius:7px; }
 .tools button:hover:not(:disabled) { background:var(--ink); color:#fff; }
 .tools button:disabled { opacity:.3; }
-.add { border:1px dashed rgba(21,23,28,.25); background:none; color:var(--dim); border-radius:9px; padding:.35rem .7rem; font-size:.74rem; font-weight:600; justify-self:start; }
+.add { border:1px dashed rgba(21,23,28,.25); background:none; color:var(--dim); border-radius:10px; padding:.5rem .9rem; font-size:.84rem; font-weight:650; justify-self:start; }
 .add:hover { border-color:var(--ink); color:var(--ink); }
 /* how the task ends — the outcome buttons, editable in place */
 .ends { display:flex; flex-wrap:wrap; align-items:center; gap:.35rem; margin-top:.2rem; }
-.ends > .hint { width:100%; font-size:.62rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
-.ends .outcome { padding:.5rem .95rem; font-size:.78rem; }
+.ends > .hint { width:100%; font-size:.7rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+.ends .outcome { padding:.62rem 1.1rem; font-size:.86rem; }
 .outcome.pencil { flex:0 1 auto; width:auto; min-width:5.5rem; field-sizing:content; text-align:center; }
 /* the model's hand: a violet touch-cursor that presses the same controls a human would.
    Violet because a model is acting — the same provenance the terminal speaks. */
@@ -145,7 +163,7 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .row { font-size:.8rem; margin:0; padding:.4rem 0; border-bottom:1px solid var(--hair); font-variant-numeric:tabular-nums; }
 .row .hint { font-size:.65rem; letter-spacing:.01em; }
 .bad { color:#b3271e; }
-.empty { color:var(--dim); font-size:.85rem; padding:2rem 1rem; text-align:center; text-wrap:balance; }
+.empty { color:var(--dim); font-size:.95rem; padding:2rem 1rem; text-align:center; text-wrap:balance; }
 .scroll:has(> .empty:only-child) { align-content:center; }
 
 /* draft: the stage's headline state. The frame stays neutral; the violet word is the
@@ -154,9 +172,9 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
   to { box-shadow:0 0 0 5px rgba(130,98,230,.14), 0 10px 38px -12px rgba(130,98,230,.45); } }
 .draft { border:1px solid rgba(130,98,230,.30); background:rgba(255,255,255,.42); border-radius:14px; padding:.7rem; display:grid; gap:.5rem;
   animation:breathe 2.6s ease-in-out infinite alternate; }
-.tabs b { margin-right:auto; font-size:.66rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:#7a5cd6; padding-left:.4rem; }
+.tabs b { margin-right:auto; font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:#7a5cd6; padding-left:.4rem; }
 /* .tabs button is more specific than .go, so these must restate what they need */
-.tabs .go, .tabs .ghost { padding:.34rem .8rem; font-size:.76rem; font-weight:700; border-radius:9px; text-transform:none; letter-spacing:0; }
+.tabs .go, .tabs .ghost { padding:.45rem .95rem; font-size:.84rem; font-weight:700; border-radius:9px; text-transform:none; letter-spacing:0; }
 .tabs .go { background:linear-gradient(180deg,#2b2f3a,#15171c); color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 2px 6px rgba(21,23,28,.3); }
 .tabs .ghost { border:1px solid var(--hair); background:#fff; color:var(--dim); }
 button { font:inherit; color:inherit; cursor:pointer; }
@@ -171,12 +189,12 @@ button { font:inherit; color:inherit; cursor:pointer; }
 /* The heart is jet black and opaque — no frost in the body. Glass exists only at the
    edges: a lit bevel, a single gloss arc breaking over the top-right corner, and the
    violet-tinted pool the slab casts on the desk. */
-.term { min-height:0; display:grid; font-family:var(--mono); font-size:12px; line-height:1.6; }
+.term { min-height:0; display:grid; font-family:var(--mono); font-size:13.5px; line-height:1.65; }
 .log { overflow-y:auto; overscroll-behavior:contain; padding:.8rem .9rem; display:grid; gap:.35rem; align-content:start; color:var(--tty);
   mask-image:linear-gradient(180deg, transparent 0, #000 .9rem, #000 calc(100% - .4rem), rgba(0,0,0,.4));
   -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 .9rem, #000 calc(100% - .4rem), rgba(0,0,0,.4)); }
-.log p { margin:0; display:grid; grid-template-columns:3.1rem 1fr; gap:.5rem; word-break:break-word; }
-.log b { font-weight:600; font-size:.64rem; letter-spacing:.06em; text-transform:uppercase; padding-top:.14rem; }
+.log p { margin:0; display:grid; grid-template-columns:3.6rem 1fr; gap:.6rem; word-break:break-word; }
+.log b { font-weight:700; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; padding-top:.1rem; }
 .you b { color:#6e7681; } .you { color:#e6edf3; }
 .aludel b { color:var(--violet); } .aludel { color:#d9cdf8; }      /* a model wrote this */
 .aludel b, .aludel { text-shadow:0 0 9px rgba(183,148,255,.35); }
@@ -184,9 +202,9 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .step b, .ledger b, .ledger { text-shadow:0 0 9px rgba(74,222,128,.3); }
 .ledger b { color:var(--mint); } .ledger { color:var(--mint); }
 .err b, .err { color:var(--amber); }
-.term > form { display:flex; align-items:center; gap:.5rem; padding:.65rem .9rem; border-top:1px solid rgba(255,255,255,.08);
+.term > form { display:flex; align-items:center; gap:.6rem; padding:.85rem .9rem; border-top:1px solid rgba(255,255,255,.08);
   background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.015)); box-shadow:inset 0 1px 0 rgba(255,255,255,.07); }
-.term > form::before { content:"❯"; color:var(--mint); font-weight:700; line-height:1; text-shadow:0 0 8px rgba(74,222,128,.55); }
+.term > form::before { content:"❯"; color:var(--mint); font-weight:700; font-size:1.05rem; line-height:1; text-shadow:0 0 8px rgba(74,222,128,.55); }
 .term > form input { flex:1; border:none; background:none; color:#e6edf3; font:inherit; caret-color:var(--mint); padding:0; border-radius:0; }
 .term > form input:focus-visible { outline:none; }
 .term > form input::placeholder { color:#565e6b; }
@@ -196,17 +214,17 @@ button { font:inherit; color:inherit; cursor:pointer; }
 
 /* field */
 .entry { display:grid; gap:.15rem; width:100%; text-align:left; background:rgba(255,255,255,.76); border:1px solid rgba(255,255,255,.8);
-  border-radius:14px; padding:.8rem .85rem; box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 2px 10px -6px rgba(21,23,28,.14); }
+  border-radius:14px; padding:.95rem .95rem; box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 2px 10px -6px rgba(21,23,28,.14); }
 .entry:active { transform:scale(.995); }
-.entry b { font-size:.95rem; font-weight:750; }
-.entry span { font-size:.78rem; color:var(--dim); }
+.entry b { font-size:1.08rem; font-weight:750; }
+.entry span { font-size:.86rem; color:var(--dim); }
 .entry.bad { border-color:rgba(179,39,30,.4); }
 .entry.bad b { color:#b3271e; }
 .entry.done { opacity:.55; }
-.scroll h2 { font-size:.68rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); margin:.6rem 0 -.1rem; }
+.scroll h2 { font-size:.76rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); margin:.6rem 0 -.1rem; }
 .scroll h2.bad { color:#b3271e; }
 .chips { display:flex; gap:.3rem; flex-wrap:wrap; }
-.chips button { border:1px solid rgba(255,255,255,.8); background:rgba(255,255,255,.6); border-radius:999px; padding:.28rem .75rem; font-size:.76rem; font-weight:600; color:var(--dim);
+.chips button { border:1px solid rgba(255,255,255,.8); background:rgba(255,255,255,.6); border-radius:999px; padding:.42rem .95rem; font-size:.84rem; font-weight:600; color:var(--dim);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9); }
 .chips button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
 
@@ -214,13 +232,13 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .sheet { display:grid; grid-template-rows:none; align-content:start; gap:.5rem; padding:.9rem; overflow-y:auto; }
 .sheet header { display:grid; grid-template-columns:auto 1fr; align-items:center; column-gap:.65rem; row-gap:.05rem; margin-bottom:.25rem; }
 .sheet header button { grid-row:1 / span 2; padding:.45rem .55rem; border-radius:10px; font-size:.82rem; }
-.sheet header h2 { grid-column:2; margin:0; font-size:1.15rem; font-weight:800; letter-spacing:-.015em; text-transform:none; color:var(--ink); }
-.sheet header p { grid-column:2; margin:0; font-size:.78rem; color:var(--dim); }
+.sheet header h2 { grid-column:2; margin:0; font-size:1.32rem; font-weight:800; letter-spacing:-.015em; text-transform:none; color:var(--ink); }
+.sheet header p { grid-column:2; margin:0; font-size:.86rem; color:var(--dim); }
 input, select { font:inherit; color:var(--ink); background:#fff; border:1px solid var(--hair); border-radius:11px; padding:.6rem .7rem; width:100%; }
 input:focus-visible, select:focus-visible, button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
 .sheet footer { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.4rem; }
 .sheet footer .hint { width:100%; font-size:.64rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
-.outcome { border:1.5px solid rgba(21,23,28,.16); background:linear-gradient(180deg,#fff,#f2f3f8); border-radius:999px; padding:.7rem 1.2rem; font-size:.85rem; font-weight:800; letter-spacing:.02em;
+.outcome { border:1.5px solid rgba(21,23,28,.16); background:linear-gradient(180deg,#fff,#f2f3f8); border-radius:999px; padding:.85rem 1.35rem; font-size:.95rem; font-weight:800; letter-spacing:.02em;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 3px 10px -5px rgba(21,23,28,.25); }
 .outcome:disabled { opacity:.4; box-shadow:none; }
 .outcome:not(:disabled) { color:var(--ink); }

@@ -72,8 +72,7 @@ const Form = ({ t, edit }: { t: Template; edit?: (f: (d: Template) => void) => v
         {edit && <span className="tools"><button title="Move up" disabled={bi === 0} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, -1))}>↑</button>
           <button title="Move down" disabled={bi === k.blocks.length - 1} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, 1))}>↓</button><button title="Remove" onClick={() => edit((d) => { d.tasks[ti]!.blocks.splice(bi, 1); })}>✕</button></span>}
       </div>)}
-      {edit && <button className="add" onClick={() => edit((d) => { d.tasks[ti]!.blocks.push(block("text", "New field")); })}>+ field</button>}
-      <footer className="ends"><span className="hint">ends with</span>{k.outcomes.map((o, oi) => edit ? <input key={oi} className="outcome pencil" value={o.label} onChange={(e) => edit((d) => { const x = d.tasks[ti]!.outcomes[oi]!; x.label = e.target.value; x.key = slug(x.label); })} /> : <span key={oi} className="outcome">{o.label.replace(/_+/g, " ")}</span>)}</footer>
+      {edit && <button className="add" onClick={() => edit((d) => { d.tasks[ti]!.blocks.push(block("text", "New field")); })}>+ field</button>}<footer className="ends"><span className="hint">ends with</span>{k.outcomes.map((o, oi) => edit ? <input key={oi} className="outcome pencil" value={o.label} onChange={(e) => edit((d) => { const x = d.tasks[ti]!.outcomes[oi]!; x.label = e.target.value; x.key = slug(x.label); })} /> : <span key={oi} className="outcome">{o.label.replace(/_+/g, " ")}</span>)}</footer>
     </div>)}
   </article>
 );
@@ -86,7 +85,8 @@ export default function Office(): ReactElement {
   const [log, setLog] = useState([{ who: "step", body: "Aludel ready. Ask for a new report, or ask about the work." }]); const [tab, setTab] = useState("templates");
   const [draft, setDraft] = useState<Template | null>(null); const [drafts, setDrafts] = useState<Payload[]>([]);
   const [step, setStep] = useState(-1); const [busy, setBusy] = useState(false); const [hint, setHint] = useState("");
-  const [wide, setWide] = useState(() => localStorage.getItem("wide") ?? "term"); // which pane gets φ's long side
+  const [wide, setWide] = useState(() => localStorage.getItem("wide") ?? "stage"); // which pane gets φ's long side
+  const win = (w: string) => { setWide(w); localStorage.setItem("wide", w); };
   const previous = useRef<string | undefined>(undefined); // the agent thread lives server-side; the interview lives here
   const input = useRef<HTMLInputElement>(null); const tail = useRef<HTMLDivElement>(null); const stage = useRef<HTMLDivElement>(null); const hand = useRef<HTMLDivElement>(null);
   useEffect(() => { tail.current?.scrollTo({ top: 1e7 }); if (step >= 0 && !busy) stage.current?.scrollTo({ top: 1e7, behavior: "smooth" }); }, [log, busy, draft, step]); // the stage follows what Aludel just wrote
@@ -116,8 +116,7 @@ export default function Office(): ReactElement {
     if (dead) return void (/^y(es)?$/i.test(ask) ? commit() : setLog((l) => [...l, { who: "err", body: `Type YES to retire "${dead}", or press Discard. Logged work is kept either way.` }]));
     if (step >= 0 && draft) { // scripted flow; the model only normalizes the answer
       const st = STEPS[step]!; setBusy(true);
-      const n: Norm = st.refine && !/^done\.?$/i.test(ask) && store.online
-        ? await fetch("/api/refine", { method: "POST", body: JSON.stringify({ kind: st.refine, text: ask }) }).then((r) => (r.ok ? r.json() : null)).catch(() => null) : null;
+      const n: Norm = st.refine && !/^done\.?$/i.test(ask) && store.online ? await fetch("/api/refine", { method: "POST", body: JSON.stringify({ kind: st.refine, text: ask }) }).then((r) => (r.ok ? r.json() : null)).catch(() => null) : null;
       const t = structuredClone(draft); const next = st.go(t, ask, n);
       await perform(acts(draft, t), t); setStep(next); if (next >= 0) say(next, t);
       else { setHint(""); setLog((l) => [...l, { who: "step", body: `"${t.name}" is on the stage — tweak anything, then commit it.` }]); }
@@ -138,14 +137,16 @@ export default function Office(): ReactElement {
   };
   const clear = () => { setDraft(null); setDrafts([]); setStep(-1); setHint(""); };
   const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent"); setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]); if (!no.length) clear(); };
-  const s = store.state; const now = Date.now(); const live = draft || drafts.length > 0;
+  const s = store.state, now = Date.now(), live = draft || drafts.length > 0;
   return (
     <section className={`term wide-${wide}`}>
       <section className="stage">
         <nav className="tabs">{live // while a draft is live the bar belongs to it: the commit is never scrolled away
           ? <><b>{step >= 0 ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit} disabled={busy || !!dead}>Commit</button>
             <button className="ghost" onClick={clear} disabled={busy}>Discard</button></>
-          : ["templates", "sites", "ledger"].map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}</nav>
+          : ["templates", "sites", "ledger"].map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}
+          <button className="win" title={wide === "min" ? "Restore" : "Minimize"} onClick={() => win(wide === "min" ? "stage" : "min")}>{wide === "min" ? "▣" : "—"}</button>
+          <button className="win" title={wide === "stage" ? "Shrink" : "Maximize"} onClick={() => win(wide === "stage" ? "term" : "stage")}>▢</button></nav>
         <div className="scroll" ref={stage}>
           {live ? <div className="draft">
             {draft && <Form t={draft} edit={edit} />}
@@ -163,7 +164,7 @@ export default function Office(): ReactElement {
         </div>
         <div className="hand" ref={hand} />
       </section>
-      <button className="grip" title={wide === "term" ? "Give the form more room" : "Give the conversation more room"} onClick={() => { const w = wide === "term" ? "stage" : "term"; setWide(w); localStorage.setItem("wide", w); }} />
+      <button className="grip" title={wide === "term" ? "Give the form more room" : "Give the conversation more room"} onClick={() => win(wide === "term" ? "stage" : "term")} />
       <div className="log" ref={tail}>
         {log.map((m, i) => <p key={i} className={m.who}><b>{m.who}</b><span>{m.body}</span></p>)}
         {busy && <p className="step"><b>aludel</b><span>…</span></p>}

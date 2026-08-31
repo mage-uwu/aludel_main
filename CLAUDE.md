@@ -40,11 +40,13 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
 - The look is one committed world (no theme switching, no second layout): in the office the
-  app **is** the terminal — one jet-black slab whose title bar is the real header (wordmark,
-  office/field switch, who you are), with the glass **stage** — the tool — docked inside it,
+  app **is** the terminal — one jet-black slab whose title bar carries only the centred
+  wordmark and a `[ ]` menu (the office/field switch and who you are live in it), with the
+  glass **stage** — the tool — docked inside it as a window that minimizes and maximizes,
   pinned above the conversation; the field keeps its solo glass sheet. No fake window
   ornaments in the chrome: no traffic lights, no corner glare — the app is not pretending
-  to be a window, it is the window. One arrangement at
+  to be a window, it is the window. Type is sized for a gloved thumb in daylight: nothing the
+  crew reads is under ~0.8rem and nothing they tap is under ~40px — legibility outranks density. One arrangement at
   every width — a wide screen is the phone, wider. The stage-to-conversation split is always
   golden (1.618 : 1); the grip only chooses which side gets φ's long side. Never reuse a
   component's class name as a state modifier — `pane ${wide}` once painted the whole pane

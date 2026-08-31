@@ -53,8 +53,7 @@ const textOf = (r: Resp) => r.output.filter((o) => o.type === "message").flatMap
 
 // The interview's parser: the flow is deterministic, the model normalizes each answer into
 // the step's JSON shape — "Yeah, we clean the cover" becomes {"title": "Cover Cleaning"}.
-const SPECS: Record<string, string> = {
-  title: '{"title": string} — short, Title Case.',
+const SPECS: Record<string, string> = { title: '{"title": string} — short, Title Case.',
   task: '{"title": string} — a concise task name, Title Case, filler stripped ("Yeah, we clean the cover" → "Cover Cleaning").',
   outcomes: '{"labels": string[]} — the possible endings as short UPPERCASE labels, spaces between words, never underscores.',
   cadence: '{"every": number, "unit": "day"|"week"|"month"}, or {"every": null} if it does not repeat.',
@@ -74,7 +73,7 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
   let input: unknown[] = [{ role: "user", content: body.text }]; let previous = body.previous; let drafts: Payload[] = [];
   for (let turn = 0; turn < 8; turn++) {
     const res = await oai(env, { model: env.OPENAI_MODEL, instructions, tools: TOOLS, input, ...(previous && { previous_response_id: previous }) });
-    if (!res.ok) return reply(`The model API refused (${res.status}): ${(await res.text()).slice(0, 300)}`, [], previous); // misconfiguration diagnoses itself in chat
+    if (!res.ok) return reply(`The model API refused (${res.status}): ${(await res.text()).slice(0, 300)}`, [], previous);
     const r = (await res.json()) as Resp; previous = r.id;
     const calls = r.output.filter((o): o is Call => o.type === "function_call"); const text = textOf(r);
     if (calls.length === 0) return reply(text || "Here's what I put together.", drafts, previous);

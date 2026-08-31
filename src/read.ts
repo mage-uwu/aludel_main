@@ -2,8 +2,7 @@ import { effective, status, taskOf, type Rec, type SiteId, type State, type Stat
 
 // The whole read surface: find answers "did Keegan do Mike's last Wednesday?",
 // ask answers "how much chlorine this season?". Both pure, both f(state, now).
-export type Filter = { site?: SiteId; task?: string; actor?: string; status?: Status; list?: string; from?: number; to?: number };
-export type Hit = Rec & { site: SiteId; status: Status };
+export type Filter = { site?: SiteId; task?: string; actor?: string; status?: Status; list?: string; from?: number; to?: number }; export type Hit = Rec & { site: SiteId; status: Status };
 
 export const find = (s: State, f: Filter, now: number): Hit[] =>
   Object.values(s.entries)

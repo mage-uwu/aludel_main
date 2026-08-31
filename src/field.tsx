@@ -34,8 +34,7 @@ function Logger({ hit, done }: { hit: Rec; done: () => void }): ReactElement {
       <header><button className="ghost" onClick={done}>← back</button><h2>{task.title}</h2><p>{form.meta.name} · {form.meta.address} · due {fmt(hit.window.due)}</p></header>
       {task.blocks.map((b) => <Input key={b.key} b={b} value={values[b.key]}
         set={(v) => setValues(({ [b.key]: _, ...rest }) => (v === undefined ? rest : { ...rest, [b.key]: v }))} />)}
-      <footer><p className="hint">{missing.length ? `still needed: ${missing.map((b) => b.label).join(", ")}` : "ends with"}</p>
-        {task.outcomes.map((o) => <button key={o.key} className="outcome" disabled={missing.length > 0} onClick={() => log(o.key)}>{o.label.replace(/_+/g, " ")}</button>)}</footer>
+      <footer><p className="hint">{missing.length ? `still needed: ${missing.map((b) => b.label).join(", ")}` : "ends with"}</p>{task.outcomes.map((o) => <button key={o.key} className="outcome" disabled={missing.length > 0} onClick={() => log(o.key)}>{o.label.replace(/_+/g, " ")}</button>)}</footer>
     </section>
   );
 }

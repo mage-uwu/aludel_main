@@ -41,8 +41,7 @@ export class Team extends DurableObject<Env> {
     }
     return { refused };
   }
-  find(filter: Filter) { return find(this.s, filter, Date.now()); }
-  ask(query: Query) { return ask(this.s, query, Date.now()); }
+  find(filter: Filter) { return find(this.s, filter, Date.now()); } ask(query: Query) { return ask(this.s, query, Date.now()); }
   snapshot() { return { head: this.head, sites: this.s.sites, templates: this.s.templates, latest: this.s.latest, actors: this.s.actors }; }
 
   async alarm(): Promise<void> { // idempotent: plan() only mints what is missing, so retries are safe
