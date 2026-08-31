@@ -32,6 +32,11 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   the field logger mount the very same control — `set` given makes it live, `set` omitted
   makes it a disabled preview — so what you build is literally what the crew taps. Never
   fork a second "preview" rendering of a block; add the affordance to `Input` instead.
+- A routine is a **checklist of cues, not a program counter**: each cue declares when it is
+  still unfulfilled (`need(draft)`), and the next question is simply the first cue the draft
+  has not answered. Any cue accepts an **op** instead of an answer — a correction re-routes
+  and the cue stays pending — so order guides without caging. Open-ended cues close by an
+  explicit `skip` ("done", "no"), keyed per task so a new job reopens them.
 - One vocabulary, four verbs: **add · rename · remove · move**. A workflow step never has
   only `add` — a correction ("drop the pH", "rename it…", "move alk up") must reach the same
   list as an addition, or it lands as data. Steps normalize the human's words into a verb;

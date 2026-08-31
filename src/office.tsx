@@ -22,32 +22,34 @@ const block = (kind: string, label: string): Block => {
     : kind === "photo" ? { key, kind, label, required: false } : { key, kind: "text", label, required: false, placeholder: "" };
 };
 
-// The interview: scripted questions, human answers. Each step mutates the draft the stage is
-// showing, so the form grows as you talk; only the answers pass through the model.
-const STEPS: { q: (t: Template) => string; hint?: (t: Template) => string; refine?: string; go: (t: Template, a: string, n: Norm) => number }[] = [
-  { q: () => "What should the report be called?", refine: "title", go: (t, a, n) => ((t.name = n?.title || a), 1) },
-  { q: (t) => t.tasks.length ? "What's the new task called?" : "What is the first task you do on site?", refine: "task", go: (t, a, n) => (t.tasks.push(newTask(n?.title || a)), 2) },
-  { q: (t) => `How can "${last(t).title}" end?`, hint: () => "OK, FOLLOW-UP, NO ACCESS", refine: "outcomes", go: (t, a, n) => ((last(t).outcomes = (n?.labels ?? a.split(",").map((x) => x.trim())).map(outcome).filter((o) => o.label)), last(t).outcomes.length ? 3 : 2) },
-  { q: () => "Does it repeat? Say how often, or 'no'.", hint: () => "every 1 week", refine: "cadence", go: (t, a, n) => { const m = a.match(/(\d+)\s*(day|week|month)/i);
-      if (m) last(t).cadence = { every: +m[1]!, unit: m[2]!.toLowerCase() as Cadence["unit"], withinDays: 7 }; else if (n?.every) last(t).cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 7 };
-      return last(t).cadence ? 4 : 5; } }, // repeats → ask the day; one-off → straight to the fields
-  { q: (t) => `What day does "${last(t).title}" usually go out? (A site can override when you bind it.)`, hint: () => "Monday", refine: "day", go: (t, a, n) => { const d = n?.day ?? DAYS.findIndex((x) => new RegExp(x, "i").test(a)); const c = last(t).cadence; if (c && d >= 0) c.day = d; return 5; } },
-  { q: (t) => last(t).blocks.length ? "More? Or fix one — 'drop the pH', 'rename it…'. Or 'done'." : "What gets recorded on the job? Photos, numbers, notes — list it all, then 'done'.",
-    hint: (t) => (last(t).blocks.length ? "done" : "Before photos, Notes"), refine: "blocks",
-    go: (t, a, n) => {
-      const k = last(t), m = a.match(/^(photo|number|text)\s+(.+)/i); // an explicit kind is an instruction, not a hint
-      const op = m ? "add" : /^done\.?$/i.test(a.trim()) ? "done" : /^(?:no,? )?(?:delete|remove|drop|scratch)\b/i.test(a) ? "remove" : n?.op ?? "add";
-      if (op === "done") return 6;
-      if (op === "task") return (t.tasks.push(newTask(n?.title || a)), 2); // "next: filter cleaning" is a new task, not a field called that
-      const q = (n?.target ?? a.replace(/^\W*\w+\s+/, "")).toLowerCase().trim(); // "delete ph" means pH, never Photos: exact, then whole-word, then loose
-      const i = [(l: string) => l === q, (l: string) => l.split(/\W+/).includes(q), (l: string) => l.includes(q)].reduce((r, f) => (r >= 0 ? r : k.blocks.findIndex((x) => f(x.label.toLowerCase()))), -1);
-      if (op === "remove") { if (i >= 0) k.blocks.splice(i, 1); return 5; }
-      if (op === "move") { if (i >= 0) move(k.blocks, i, n?.by ?? -1); return 5; }
-      if (op === "rename") { if (i >= 0) k.blocks[i]!.label = n?.to ?? a; else k.title = n?.to ?? a; return 5; } // nothing matched: they meant the task
-      for (const b of m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : n?.blocks ?? [{ kind: "text", label: a }]) k.blocks.push(block(b.kind, b.label)); return 5; } },
-  { q: () => "Any other tasks on site? Name one, or 'done'.", hint: () => "done", refine: "task",
-    go: (t, a, n) => (/^done\.?$/i.test(a.trim()) ? -1 : (t.tasks.push(newTask(n?.title || a)), 2)) },
+// The verbs, shared by every cue: add · rename · remove · move (+ task). Any cue can take one
+// of these instead of an answer, so a correction is never mistaken for the reply to a question.
+const op = (t: Template, a: string, n: Norm) => {
+  const k = last(t), m = a.match(/^(photo|number|text)\s+(.+)/i); // an explicit kind is an instruction, not a hint
+  const v = m ? "add" : /^(?:no,? )?(?:delete|remove|drop|scratch)\b/i.test(a) ? "remove" : n?.op ?? "add";
+  if (v === "task") return void t.tasks.push(newTask(n?.title || a));
+  const q = (n?.target ?? a.replace(/^\W*\w+\s+/, "")).toLowerCase().trim(); // "delete ph" means pH, never Photos
+  const i = [(l: string) => l === q, (l: string) => l.split(/\W+/).includes(q), (l: string) => l.includes(q)].reduce((r, f) => (r >= 0 ? r : k.blocks.findIndex((x) => f(x.label.toLowerCase()))), -1);
+  if (v === "remove") { if (i >= 0) k.blocks.splice(i, 1); return; } if (v === "move") { if (i >= 0) move(k.blocks, i, n?.by ?? -1); return; }
+  if (v === "rename") { if (i >= 0) k.blocks[i]!.label = n?.to ?? a; else { k.title = n?.to ?? a; k.key = slug(k.title); } return; } // nothing named: they meant the task
+  for (const b of m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : n?.blocks ?? [{ kind: "text", label: a }]) k.blocks.push(block(b.kind, b.label));
+};
+
+// The routine is a checklist, not a program counter: each cue knows when it is still unfulfilled,
+// so the next question is simply the first one the draft has not answered. Corrections land as ops
+// and the cue stays pending — the order is a cue, not a cage.
+type Cue = { key: string; need: (t: Template) => boolean; q: (t: Template) => string; hint?: string; refine: string; take: (t: Template, a: string, n: Norm) => void };
+const CUES: Cue[] = [
+  { key: "name", need: (t) => !t.name, q: () => "What should the report be called?", refine: "title", take: (t, a, n) => { t.name = n?.title || a; } },
+  { key: "task", need: (t) => !t.tasks.length || !last(t).title, q: (t) => (t.tasks.length > 1 ? "What's the new task called?" : "What is the first task you do on site?"), refine: "task", take: (t, a, n) => { const x = n?.title || a; if (t.tasks.length && !last(t).title) { last(t).title = x; last(t).key = slug(x); } else t.tasks.push(newTask(x)); } },
+  { key: "outcomes", need: (t) => !last(t).outcomes.length, q: (t) => `How can "${last(t).title}" end?`, hint: "OK, FOLLOW-UP, NO ACCESS", refine: "outcomes", take: (t, a, n) => { last(t).outcomes = (n?.labels ?? a.split(",").map((x) => x.trim())).map(outcome).filter((o) => o.label); } },
+  { key: "cadence", need: (t) => !last(t).cadence, q: (t) => `Does "${last(t).title}" repeat? Say how often, or 'no'.`, hint: "every 1 week", refine: "cadence",
+    take: (t, a, n) => { const m = a.match(/(\d+)\s*(day|week|month)/i); if (m) last(t).cadence = { every: +m[1]!, unit: m[2]!.toLowerCase() as Cadence["unit"], withinDays: 7 }; else if (n?.every) last(t).cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 7 }; } },
+  { key: "day", need: (t) => !!last(t).cadence && last(t).cadence!.day === undefined, q: (t) => `What day does "${last(t).title}" usually go out? (A site can override it.)`, hint: "Monday", refine: "day", take: (t, a, n) => { const d = n?.day ?? DAYS.findIndex((x) => new RegExp(x, "i").test(a)); if (d >= 0) last(t).cadence!.day = d; } },
+  { key: "fields", need: (t) => !last(t).blocks.length, q: () => "What gets recorded on the job? Photos, numbers, notes — list it all.", hint: "Before photos, Notes", refine: "blocks", take: op },
+  { key: "more", need: () => true, q: (t) => `Anything else on "${last(t).title}"? Add a field, fix one, name another task — or 'done'.`, hint: "done", refine: "blocks", take: op },
 ];
+const pending = (t: Template, shut: string[]) => CUES.find((c) => !shut.includes(`${c.key}@${t.tasks.length}`) && c.need(t)); // a cue is per-task: a new job reopens them
 
 const zz = (ms: number) => new Promise((ok) => setTimeout(ok, ms)); type Act = { sel: string; go: (d: Template) => void };
 // The hand's script: what changed between two drafts, as the edits a person would make. Each
@@ -94,12 +96,12 @@ const line = (f: Fact): string =>
 export default function Office(): ReactElement {
   const [log, setLog] = useState([{ who: "step", body: "Aludel ready. Ask for a new report, or ask about the work." }]); const [tab, setTab] = useState("templates");
   const [draft, setDraft] = useState<Template | null>(null); const [drafts, setDrafts] = useState<Payload[]>([]);
-  const [step, setStep] = useState(-1); const [busy, setBusy] = useState(false); const [hint, setHint] = useState("");
+  const [shut, setShut] = useState<string[] | null>(null); const [busy, setBusy] = useState(false); const [hint, setHint] = useState(""); // shut: cues the human closed ("done", "no"); null = not in the routine
   const [wide, setWide] = useState(() => localStorage.getItem("wide") ?? "stage"); // which pane gets φ's long side
   const win = (w: string) => { setWide(w); localStorage.setItem("wide", w); };
   const previous = useRef<string | undefined>(undefined); // the agent thread lives server-side; the interview lives here
   const input = useRef<HTMLInputElement>(null); const tail = useRef<HTMLDivElement>(null); const stage = useRef<HTMLDivElement>(null); const hand = useRef<HTMLDivElement>(null);
-  useEffect(() => { tail.current?.scrollTo({ top: 1e7 }); if (step >= 0 && !busy) stage.current?.scrollTo({ top: 1e7, behavior: "smooth" }); }, [log, busy, draft, step]); // the stage follows what Aludel just wrote
+  useEffect(() => { tail.current?.scrollTo({ top: 1e7 }); if (shut && !busy) stage.current?.scrollTo({ top: 1e7, behavior: "smooth" }); }, [log, busy, draft, shut]); // the stage follows what Aludel just wrote
   const edit = (f: (d: Template) => void) => setDraft((d) => { if (!d) return d; const c = structuredClone(d); f(c); return c; });
   // The hand plays each edit where its control lives — glide, tap, land — busy the whole while so
   // nobody edits under it. The final snap makes the outcome exact even if a selector misses.
@@ -114,25 +116,25 @@ export default function Office(): ReactElement {
       setDraft((d) => { const c = structuredClone(d ?? final); a.go(c); return c; }); h?.classList.remove("tap"); await zz(300); }
     if (h) h.style.opacity = "0";
     setDraft(final); setBusy(false); };
-  const say = (i: number, t: Template) => { const st = STEPS[i]!; setLog((l) => [...l, { who: "step", body: st.q(t) }]); setHint(st.hint?.(t) ?? ""); }; // scripted lines speak mint
+  const say = (t: Template, sh: string[]) => { const c = pending(t, sh); setHint(c?.hint ?? ""); if (!c) setShut(null); // scripted lines speak mint
+    setLog((l) => [...l, { who: "step", body: c ? c.q(t) : `"${t.name}" is on the stage — tweak anything, then commit it.` }]); };
   const wizard = (id?: string) => { const v = id ? store.state.latest[id as TemplateId] : undefined; // an id means: add a task to that template, as its next version
     const t: Template = v ? { ...structuredClone(store.state.templates[`${id}@${v}`]!), version: v + 1 } : { id: newId<TemplateId>(), version: 1, name: "", tasks: [] };
-    const at = t.version > 1 ? 1 : 0; setDraft(t); setStep(at); say(at, t); };
+    if (v) t.tasks.push({ key: "", title: "", outcomes: [], blocks: [] }); // an untitled task is the cue to name one
+    setDraft(t); setShut([]); say(t, []); };
   const dead = drafts.flatMap((d) => (d.type === "signed" && d.template.retired ? [d.template.name] : []))[0]; // a staged retirement escalates: the prompt, not the button
-  const send = async (text?: string) => {
-    const ask = (text ?? input.current?.value ?? "").trim() || (step >= 0 ? hint : "");
+  const send = async (text?: string) => { const ask = (text ?? input.current?.value ?? "").trim() || (shut ? hint : "");
     if (!ask || busy) return;
     input.current!.value = ""; setLog((l) => [...l, { who: "you", body: ask }]);
     if (dead) return void (/^y(es)?$/i.test(ask) ? commit() : setLog((l) => [...l, { who: "err", body: `Type YES to retire "${dead}", or press Discard. Logged work is kept either way.` }]));
-    if (step >= 0 && draft) { // scripted flow; the model only normalizes the answer
-      const st = STEPS[step]!; setBusy(true);
-      const n: Norm = st.refine && !/^done\.?$/i.test(ask) && store.online ? await fetch("/api/refine", { method: "POST", body: JSON.stringify({ kind: st.refine, text: ask }) }).then((r) => (r.ok ? r.json() : null)).catch(() => null) : null;
-      const t = structuredClone(draft); const next = st.go(t, ask, n);
-      await perform(acts(draft, t), t); setStep(next); if (next >= 0) say(next, t);
-      else { setHint(""); setLog((l) => [...l, { who: "step", body: `"${t.name}" is on the stage — tweak anything, then commit it.` }]); }
-      return; }
+    if (shut && draft) { // the routine: answer the cue, or throw an edit at it — the model only normalizes
+      const c = pending(draft, shut)!; const skip = /^(?:done|no|nope|none|skip|that.s it)\b\.?$/i.test(ask); setBusy(true);
+      const n: Norm = skip || !store.online ? null : await fetch("/api/refine", { method: "POST", body: JSON.stringify({ kind: c.refine, text: ask }) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      const t = structuredClone(draft); const sh = skip || n?.op === "skip" ? [...shut, `${c.key}@${t.tasks.length}`] : shut;
+      if (sh === shut) (n?.op && n.op !== "answer" ? op : c.take)(t, ask, n); // an op is a correction, not an answer to the cue
+      await perform(acts(draft, t), t); setShut(sh); say(t, sh); return; }
     if (/\b(?:new|add|another|next)\b.*\btask\b/i.test(ask) && (draft || Object.keys(store.state.latest).length < 2)) {
-      if (draft) { setStep(1); say(1, draft); } else wizard(Object.keys(store.state.latest)[0]); return; }
+      if (draft) { const t = structuredClone(draft); t.tasks.push({ key: "", title: "", outcomes: [], blocks: [] }); setDraft(t); setShut(shut ?? []); say(t, shut ?? []); } else wizard(Object.keys(store.state.latest)[0]); return; }
     setBusy(true);
     try { const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current, view: { tab, draft, drafts } }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean | string }>) : Promise.reject(new Error(String(r.status)))));
       previous.current = res.previous; setLog((l) => [...l, { who: "aludel", body: res.reply }]);
@@ -142,14 +144,14 @@ export default function Office(): ReactElement {
       if (res.wizard) wizard(typeof res.wizard === "string" ? res.wizard : undefined);
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false); };
-  const clear = () => { setDraft(null); setDrafts([]); setStep(-1); setHint(""); };
+  const clear = () => { setDraft(null); setDrafts([]); setShut(null); setHint(""); };
   const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent"); setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]); if (!no.length) clear(); };
   const s = store.state, now = Date.now(), live = draft || drafts.length > 0;
   return (
     <section className={`term wide-${wide}`}>
       <section className="stage">
         <nav className="tabs">{live // while a draft is live the bar belongs to it: the commit is never scrolled away
-          ? <><b>{step >= 0 ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit} disabled={busy || !!dead}>Commit</button>
+          ? <><b>{shut ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit} disabled={busy || !!dead}>Commit</button>
             <button className="ghost" onClick={clear} disabled={busy}>Discard</button></>
           : ["templates", "sites", "ledger"].map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}
           <button className="win" title={wide === "min" ? "Restore" : "Minimize"} onClick={() => win(wide === "min" ? "stage" : "min")}>{wide === "min" ? "▣" : "—"}</button>

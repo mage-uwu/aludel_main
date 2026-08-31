@@ -58,18 +58,19 @@ const SPECS: Record<string, string> = { title: '{"title": string} — short, Tit
   outcomes: '{"labels": string[]} — the possible endings as short UPPERCASE labels, spaces between words, never underscores.',
   cadence: '{"every": number, "unit": "day"|"week"|"month"}, or {"every": null} if it does not repeat.',
   day: '{"day": number} — the weekday, 0 = Sunday.',
-  blocks: 'ONE of: {"op":"add","blocks":[{"kind":"photo"|"number"|"text","label":string}]} for things to record · {"op":"remove","target":string} to drop a field they name · {"op":"rename","target":string,"to":string} (omit target to rename the task itself) · {"op":"move","target":string,"by":-1|1} to reorder · {"op":"task","title":string} if they moved on to a different job ("next: filter cleaning") · {"op":"done"}. A correction is never a new field.',
+  blocks: '{"op":"add","blocks":[{"kind":"photo"|"number"|"text","label":string}]} — one entry per thing recorded, kind inferred.',
 };
+// Any cue may be answered with a correction instead. The verbs are the same everywhere.
+const OPS = ' The text may not answer the question at all — if it corrects, inserts, or moves on, reply with ONE op instead: {"op":"remove","target":string} · {"op":"rename","target":string,"to":string} (omit target to rename the task itself, e.g. "rename it to Assessment") · {"op":"move","target":string,"by":-1|1} · {"op":"add","blocks":[{"kind":"photo"|"number"|"text","label":string}]} · {"op":"task","title":string} when they move on to a different job ("next: filter cleaning") · {"op":"skip"} for done/no/none. A correction is never an answer.';
 export const refine = async (env: Env, body: { kind: string; text: string }): Promise<Response> => {
-  const res = await oai(env, { model: env.OPENAI_MODEL, input: [{ role: "user", content: body.text }], instructions: `Normalize the tradesperson's words. Reply with ONLY this JSON: ${SPECS[body.kind] ?? SPECS.title}` });
+  const res = await oai(env, { model: env.OPENAI_MODEL, input: [{ role: "user", content: body.text }], instructions: `Normalize the tradesperson's words. Reply with ONLY this JSON: ${SPECS[body.kind] ?? SPECS.title}${OPS}` });
   const raw = res.ok ? /\{[\s\S]*\}/.exec(textOf((await res.json()) as Resp))?.[0] : null;
   return new Response(raw ?? "null", { headers: { "Content-Type": "application/json" } }); };
 
 export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string; view?: unknown }): Promise<Response> => {
   if (!env.OPENAI_API_KEY) return reply("No OPENAI_API_KEY reaches the worker. Add it under Settings → Variables and Secrets (the runtime section, not Build) on this worker, as a Secret, and deploy the change.", [], body.previous);
   if (!body.text) return reply("Your device is running an old cached version of the app — close the tab (or pull to refresh) and reopen, then ask again.", [], body.previous);
-  const snap = await team.snapshot();
-  const instructions = SYSTEM + digest(snap) + (body.view ? `\nThe human's screen right now (you share this tool; an open draft is the working copy, theirs and yours): ${JSON.stringify(body.view)}` : "");
+  const snap = await team.snapshot(); const instructions = SYSTEM + digest(snap) + (body.view ? `\nThe human's screen right now (you share this tool; an open draft is the working copy, theirs and yours): ${JSON.stringify(body.view)}` : "");
   let input: unknown[] = [{ role: "user", content: body.text }]; let previous = body.previous; let drafts: Payload[] = [];
   for (let turn = 0; turn < 8; turn++) {
     const res = await oai(env, { model: env.OPENAI_MODEL, instructions, tools: TOOLS, input, ...(previous && { previous_response_id: previous }) });
