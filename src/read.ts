@@ -9,13 +9,9 @@ export const find = (s: State, f: Filter, now: number): Hit[] =>
   Object.values(s.entries)
     .map((r) => ({ ...r, site: s.forms[r.form]?.site as SiteId, status: status(r, now) }))
     .filter((r) =>
-      (!f.site || r.site === f.site) &&
-      (!f.task || r.task === f.task) &&
-      (!f.list || r.list === f.list) &&
-      (!f.actor || effective(r)?.actor === f.actor || r.assignee === f.actor) &&
-      (!f.status || r.status === f.status) &&
-      (f.from === undefined || (r.logged?.at ?? r.window.due) >= f.from) &&
-      (f.to === undefined || (r.logged?.at ?? r.window.from) <= f.to))
+      (!f.site || r.site === f.site) && (!f.task || r.task === f.task) && (!f.list || r.list === f.list) &&
+      (!f.actor || effective(r)?.actor === f.actor || r.assignee === f.actor) && (!f.status || r.status === f.status) &&
+      (f.from === undefined || (r.logged?.at ?? r.window.due) >= f.from) && (f.to === undefined || (r.logged?.at ?? r.window.from) <= f.to))
     .sort((a, b) => a.window.due - b.window.due);
 
 // The calculator. The block's kind decides which aggregations are legal, so an invalid

@@ -48,6 +48,7 @@ const SPECS: Record<string, string> = {
   task: '{"title": string} — a concise task name, Title Case, filler stripped ("Yeah, we clean the cover" → "Cover Cleaning").',
   outcomes: '{"labels": string[]} — the possible endings as short UPPERCASE labels.',
   cadence: '{"every": number, "unit": "day"|"week"|"month"}, or {"every": null} if it does not repeat.',
+  day: '{"day": number} — the weekday, 0 = Sunday.',
   blocks: '{"blocks": [{"kind": "photo"|"number"|"text", "label": string}]} — one per recorded item, kind inferred.',
 };
 export const refine = async (env: Env, body: { kind: string; text: string }): Promise<Response> => {

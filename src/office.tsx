@@ -9,7 +9,8 @@ import { store } from "./sync";
 // model (/api/refine), with the local parse as offline fallback; drafts land on the stage,
 // and nothing is real until Commit puts them through the guard.
 type Wiz = { step: number; name: string; tasks: Task[]; cur: { title: string; outcomes: Outcome[]; cadence?: Cadence; blocks: Block[] } };
-type Norm = { title?: string; labels?: string[]; every?: number | null; unit?: Cadence["unit"]; blocks?: { kind: string; label: string }[] } | null;
+type Norm = { title?: string; labels?: string[]; every?: number | null; unit?: Cadence["unit"]; day?: number; blocks?: { kind: string; label: string }[] } | null;
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "x";
 const outcome = (label: string): Outcome => ({ key: slug(label), label, cost: /no.?access|skip/i.test(label) ? 0 : 1 }); // "part of a plan" is just outcome costs
 const task = (title: string): Wiz["cur"] => ({ title, outcomes: [], blocks: [] });
@@ -23,15 +24,20 @@ const STEPS: { q: (w: Wiz) => string; hint?: (w: Wiz) => string; refine?: string
   { q: () => "What is the first task you do on site?", refine: "task", go: (w, a, n) => ((w.cur = task(n?.title || a)), 2) },
   { q: (w) => `How can "${w.cur.title}" end?`, hint: () => "OK, FOLLOW-UP, NO ACCESS", refine: "outcomes",
     go: (w, a, n) => ((w.cur.outcomes = (n?.labels ?? a.split(",").map((x) => x.trim())).map(outcome).filter((o) => o.label)), w.cur.outcomes.length ? 3 : 2) },
-  { q: () => "Does it repeat? Say how often, or 'no'. (Which weekday is set per site, when you bind it.)", hint: () => "every 1 week", refine: "cadence",
-    go: (w, a, n) => { const m = a.match(/(\d+)\s*week/i); if (m) w.cur.cadence = { every: +m[1]!, unit: "week", withinDays: 7 }; else if (n?.every) w.cur.cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 7 }; return 4; } },
+  { q: () => "Does it repeat? Say how often, or 'no'.", hint: () => "every 1 week", refine: "cadence",
+    go: (w, a, n) => { const m = a.match(/(\d+)\s*(day|week|month)/i);
+      if (m) w.cur.cadence = { every: +m[1]!, unit: m[2]!.toLowerCase() as Cadence["unit"], withinDays: 7 };
+      else if (n?.every) w.cur.cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 7 };
+      return w.cur.cadence ? 4 : 5; } }, // repeats → ask the day; one-off → straight to the fields
+  { q: (w) => `What day does "${w.cur.title}" usually go out? (A site can override when you bind it.)`, hint: () => "Monday", refine: "day",
+    go: (w, a, n) => { const d = n?.day ?? DAYS.findIndex((x) => new RegExp(x, "i").test(a)); if (w.cur.cadence && d >= 0) w.cur.cadence.day = d; return 5; } },
   { q: (w) => w.cur.blocks.length ? `Got ${w.cur.blocks.map((b) => `${b.label} (${b.kind})`).join(", ")}. More? Or 'done'.` : "What gets recorded on the job? Photos, numbers, notes — list it all, then 'done'.",
     hint: (w) => (w.cur.blocks.length ? "done" : "Before photos, Notes"), refine: "blocks",
     go: (w, a, n) => {
-      if (/^done\.?$/i.test(a.trim())) { w.tasks.push({ key: slug(w.cur.title), ...w.cur }); return 5; }
+      if (/^done\.?$/i.test(a.trim())) { w.tasks.push({ key: slug(w.cur.title), ...w.cur }); return 6; }
       const m = a.match(/^(photo|number|text)\s+(.+)/i);
-      for (const b of n?.blocks ?? (m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : [{ kind: "text", label: a }])) w.cur.blocks.push(block(b.kind, b.label));
-      return 4;
+      for (const b of m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : n?.blocks ?? [{ kind: "text", label: a }]) w.cur.blocks.push(block(b.kind, b.label));
+      return 5;
     } },
   { q: () => "Any other tasks on site? Name one, or 'done'.", hint: () => "done", refine: "task", go: (w, a, n) => (/^done\.?$/i.test(a.trim()) ? -1 : ((w.cur = task(n?.title || a)), 2)) },
 ];
@@ -39,19 +45,16 @@ const STEPS: { q: (w: Wiz) => string; hint?: (w: Wiz) => string; refine?: string
 const Preview = ({ t }: { t: Template }): ReactElement => (
   <article className="tpl">
     <h3>{t.name} <span className="v">v{t.version}</span></h3>
-    {t.tasks.map((k) => <div className="task" key={k.key}><b>{k.title}</b>{k.cadence && <em>every {k.cadence.every} {k.cadence.unit}</em>}
+    {t.tasks.map((k) => <div className="task" key={k.key}><b>{k.title}</b>{k.cadence && <em>every {k.cadence.every} {k.cadence.unit}{k.cadence.day !== undefined && ` · ${DAYS[k.cadence.day]}days`}</em>}
       <p className="blocks">{k.blocks.length ? k.blocks.map((b) => <span key={b.key}>{b.label}<i>{b.kind}</i></span>) : "nothing recorded"}</p>
       <p className="outs">{k.outcomes.map((o) => <span key={o.key}>{o.label}</span>)}</p></div>)}
   </article>
 );
 
 const line = (f: Fact): string =>
-  f.type === "granted" ? `${f.email} granted ${f.role}` :
-  f.type === "declared" ? `site declared: ${f.site.client.name}` :
-  f.type === "signed" ? `template signed: ${f.template.name} v${f.template.version}` :
-  f.type === "bound" ? "service bound to site" :
-  f.type === "dispatched" ? `dispatched ${f.entries.length} task(s) → ${f.form.meta.name}` :
-  f.type === "logged" ? `logged — ${f.outcome}` :
+  f.type === "granted" ? `${f.email} granted ${f.role}` : f.type === "declared" ? `site declared: ${f.site.client.name}` :
+  f.type === "signed" ? `template signed: ${f.template.name} v${f.template.version}` : f.type === "bound" ? "service bound to site" :
+  f.type === "dispatched" ? `dispatched ${f.entries.length} task(s) → ${f.form.meta.name}` : f.type === "logged" ? `logged — ${f.outcome}` :
   f.type === "corrected" ? `corrected (${f.reason})` : `due date moved (${f.reason})`;
 
 export default function Office(): ReactElement {

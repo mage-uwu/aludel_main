@@ -18,7 +18,7 @@ export type Block =
   | { key: string; kind: "photo"; label: string; required: boolean }
   | { key: string; kind: "button"; label: string; action: "submit" | "reset" };
 export type Outcome = { key: string; label: string; cost: number };
-export type Cadence = { every: number; unit: "day" | "week" | "month"; withinDays: number };
+export type Cadence = { every: number; unit: "day" | "week" | "month"; withinDays: number; day?: number }; // day = the weekday a binding starts from by default; the site's anchor still wins
 export type Task = { key: string; title: string; cadence?: Cadence; blocks: Block[]; outcomes: Outcome[] };
 export type Template = { id: TemplateId; version: number; name: string; tasks: Task[] };
 export type Form = { id: FormId; template: TemplateId; version: number; site: SiteId; meta: Record<string, string> };
