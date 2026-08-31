@@ -19,32 +19,33 @@ const block = (kind: string, label: string): Block => {
   return kind === "number" ? { key, kind, label, required: false, min: 0, max: 999999 }
     : kind === "photo" ? { key, kind, label, required: false } : { key, kind: "text", label, required: false, placeholder: "" };
 };
-const STEPS: { q: (w: Wiz) => string; s?: string[]; refine?: string; go: (w: Wiz, a: string, n: Norm) => number }[] = [
+const STEPS: { q: (w: Wiz) => string; hint?: (w: Wiz) => string; refine?: string; go: (w: Wiz, a: string, n: Norm) => number }[] = [
   { q: () => "What should the report be called?", refine: "title", go: (w, a, n) => ((w.name = n?.title || a), 1) },
   { q: () => "What is the first task you do on site?", refine: "task", go: (w, a, n) => ((w.cur = task(n?.title || a)), 2) },
-  { q: (w) => `How can "${w.cur.title}" end?`, s: ["OK, FOLLOW-UP, NO ACCESS"], refine: "outcomes",
+  { q: (w) => `How can "${w.cur.title}" end?`, hint: () => "OK, FOLLOW-UP, NO ACCESS", refine: "outcomes",
     go: (w, a, n) => ((w.cur.outcomes = (n?.labels ?? a.split(",").map((x) => x.trim())).map(outcome).filter((o) => o.label)), w.cur.outcomes.length ? 3 : 2) },
-  { q: () => "Does it repeat? Say how often, or 'no'. (Which weekday is set per site, when you bind it.)", s: ["every 1 week", "every 2 weeks", "no"], refine: "cadence",
+  { q: () => "Does it repeat? Say how often, or 'no'. (Which weekday is set per site, when you bind it.)", hint: () => "every 1 week", refine: "cadence",
     go: (w, a, n) => { const m = a.match(/(\d+)\s*week/i); if (m) w.cur.cadence = { every: +m[1]!, unit: "week", withinDays: 7 }; else if (n?.every) w.cur.cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 7 }; return 4; } },
   { q: (w) => w.cur.blocks.length ? `Got ${w.cur.blocks.map((b) => `${b.label} (${b.kind})`).join(", ")}. More? Or 'done'.` : "What gets recorded on the job? Photos, numbers, notes — list it all, then 'done'.",
-    s: ["photo Before photos", "text Notes", "done"], refine: "blocks",
+    hint: (w) => (w.cur.blocks.length ? "done" : "Before photos, Notes"), refine: "blocks",
     go: (w, a, n) => {
       if (/^done\.?$/i.test(a.trim())) { w.tasks.push({ key: slug(w.cur.title), ...w.cur }); return 5; }
       const m = a.match(/^(photo|number|text)\s+(.+)/i);
       for (const b of n?.blocks ?? (m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : [{ kind: "text", label: a }])) w.cur.blocks.push(block(b.kind, b.label));
       return 4;
     } },
-  { q: () => "Any other tasks on site? Name one, or 'done'.", s: ["done"], refine: "task", go: (w, a, n) => (/^done\.?$/i.test(a.trim()) ? -1 : ((w.cur = task(n?.title || a)), 2)) },
+  { q: () => "Any other tasks on site? Name one, or 'done'.", hint: () => "done", refine: "task", go: (w, a, n) => (/^done\.?$/i.test(a.trim()) ? -1 : ((w.cur = task(n?.title || a)), 2)) },
 ];
 
 function Chat(): ReactElement {
   const [log, setLog] = useState<{ who: string; body: string }[]>([]);
   const [drafts, setDrafts] = useState<Payload[]>([]); const [busy, setBusy] = useState(false);
+  const [hint, setHint] = useState(""); // the ghost on the line: Enter accepts it, typing overrules it, Tab fills it for editing
   const previous = useRef<string | undefined>(undefined); const wiz = useRef<Wiz | null>(null); // the agent thread lives server-side; the interview lives here
   const input = useRef<HTMLInputElement>(null);
-  const say = (w: Wiz) => { const st = STEPS[w.step]!; setLog((l) => [...l, { who: "aludel", body: st.q(w) }, ...(st.s ? [{ who: "suggest", body: st.s.join("|") }] : [])]); };
+  const say = (w: Wiz) => { const st = STEPS[w.step]!; setLog((l) => [...l, { who: "aludel", body: st.q(w) }]); setHint(st.hint?.(w) ?? ""); };
   const send = async (text?: string) => {
-    const ask = (text ?? input.current?.value ?? "").trim();
+    const ask = (text ?? input.current?.value ?? "").trim() || (wiz.current ? hint : "");
     if (!ask || busy) return;
     input.current!.value = "";
     setLog((l) => [...l, { who: "you", body: ask }]);
@@ -57,7 +58,7 @@ function Chat(): ReactElement {
       setBusy(false);
       const next = st.go(w, ask, n);
       if (next !== -1) { w.step = next; say(w); return; }
-      wiz.current = null;
+      wiz.current = null; setHint("");
       setDrafts([{ type: "signed", template: { id: newId<TemplateId>(), version: 1, name: w.name, tasks: w.tasks } }]);
       setLog((l) => [...l, { who: "aludel", body: `"${w.name}" is drafted below — commit it and it's real. Then ask me to bind it to a site.` }]);
       return;
@@ -79,14 +80,13 @@ function Chat(): ReactElement {
   };
   return (
     <section className="chat">
-      {log.map((m, i) => m.who === "suggest"
-        ? <nav key={i} className="tabs chips">{m.body.split("|").map((c) => <button key={c} onClick={() => void send(c)}>{c}</button>)}</nav>
-        : <p key={i} className={m.who}><b>{m.who}</b> {m.body}</p>)}
+      {log.map((m, i) => <p key={i} className={m.who}><b>{m.who}</b> {m.body}</p>)}
       {drafts.length > 0 && <div className="card"><b>Draft — nothing is real until you commit</b>
         <pre>{JSON.stringify(drafts, null, 1)}</pre>
         <button onClick={commit}>Commit</button><button className="ghost" onClick={() => setDrafts([])}>Discard</button></div>}
       <form onSubmit={(e) => { e.preventDefault(); void send(); }}>
-        <input ref={input} placeholder={busy ? "Aludel is thinking…" : "Ask Aludel, or tell it what to set up…"} disabled={busy} />
+        <input ref={input} placeholder={busy ? "Aludel is thinking…" : hint || "Ask Aludel, or tell it what to set up…"} disabled={busy}
+          onKeyDown={(e) => { if (e.key === "Tab" && hint && !e.currentTarget.value) { e.preventDefault(); e.currentTarget.value = hint; } }} />
       </form>
     </section>
   );
