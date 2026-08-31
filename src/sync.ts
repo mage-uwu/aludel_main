@@ -36,8 +36,7 @@ class Store {
       if (res.status === 401) { this.me = { email: "", role: null }; this.wake(); return; } // Access let us in but the worker could not verify us
       if (res.ok) { this.me = await res.json(); this.online = true; }
     } catch { /* no server: this phone is the ledger */ }
-    this.wake();
-    if (this.online) { await this.sync(); setInterval(() => void this.sync(), 30_000); }
+    this.wake(); if (this.online) { await this.sync(); setInterval(() => void this.sync(), 30_000); }
     if (this.online && this.me.role === "founder" && !Object.keys(this.state.actors).length)
       this.submit([{ type: "granted", email: this.me.email, role: "admin" }]); // an empty ledger is founded by its first arrival
   }
@@ -46,15 +45,12 @@ class Store {
   submit(payloads: Payload[], via?: "agent"): Refusal[] {
     const refused: Refusal[] = [];
     for (const p of payloads) {
-      const draft: Draft = { ...p, at: Date.now(), actor: this.me.email, ...(via && { via }) };
-      const reason = guard(this.state, draft);
+      const draft: Draft = { ...p, at: Date.now(), actor: this.me.email, ...(via && { via }) }; const reason = guard(this.state, draft);
       if (reason) { refused.push({ draft: p, reason }); continue; }
       apply(this.state, { ...draft, seq: 0 }); // so the next draft in this batch sees it; wake() refolds anyway
       this.online ? this.queue.push(draft) : this.facts.push({ ...draft, seq: this.facts.length + 1 });
     }
-    this.wake();
-    void this.save();
-    if (this.online) void this.sync();
+    this.wake(); void this.save(); if (this.online) void this.sync();
     return refused;
   }
 
@@ -65,8 +61,7 @@ class Store {
       if (this.queue.length) {
         const out = await fetch("/api/t/append", { method: "POST", body: JSON.stringify(this.queue.map(({ at, actor, ...p }) => p)) })
           .then((r) => r.json() as Promise<{ admitted: Fact[]; refused: Refusal[] }>);
-        this.queue = [];
-        this.refusals = [...this.refusals, ...out.refused]; // refused offline work is surfaced, never dropped
+        this.queue = []; this.refusals = [...this.refusals, ...out.refused]; // refused offline work is surfaced, never dropped
       }
       const head = this.facts.at(-1)?.seq ?? 0;
       const fresh = await fetch(`/api/t/pull?since=${head}`).then((r) => r.json() as Promise<Fact[]>);

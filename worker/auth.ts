@@ -14,8 +14,7 @@ const keys = (team: string): Promise<CryptoKey[]> =>
 
 export const session = async (env: Env, req: Request): Promise<{ email: string; team: string } | null> => {
   if (!env.ACCESS_AUD) return env.DEV_USER ? { email: env.DEV_USER, team: "dev" } : null; // DEV_USER only exists while Access does not
-  const jwt = req.headers.get("Cf-Access-Jwt-Assertion");
-  const [head, body, sig] = jwt?.split(".") ?? [];
+  const [head, body, sig] = req.headers.get("Cf-Access-Jwt-Assertion")?.split(".") ?? [];
   if (!head || !body || !sig) return null;
   const claims = JSON.parse(new TextDecoder().decode(b64(body))) as { email?: string; aud?: string[]; exp?: number };
   if (!claims.email || !claims.aud?.includes(env.ACCESS_AUD) || (claims.exp ?? 0) * 1000 < Date.now()) return null;

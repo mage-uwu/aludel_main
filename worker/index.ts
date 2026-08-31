@@ -20,16 +20,13 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const path = new URL(req.url).pathname;
-
-    const who = await session(env, req);
-    if (!who) return json({ error: "signed out" }, 401);
+    const who = await session(env, req); if (!who) return json({ error: "signed out" }, 401);
 
     if (path === "/api/team" && req.method === "POST") {
       if (!env.DIR) return json({ error: "single-team mode: bind the DIR KV namespace first" }, 501); // founding needs the directory
       const team = newId<string>();
       await env.TEAM.get(env.TEAM.idFromName(team)).append(who.email, [{ type: "granted", email: who.email, role: "admin" }]);
-      await env.DIR.put(who.email, team);
-      return json({ team });
+      await env.DIR.put(who.email, team); return json({ team });
     }
     const stub = env.TEAM.get(env.TEAM.idFromName(who.team));
 

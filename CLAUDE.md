@@ -18,6 +18,11 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   the field logger mount the very same control — `set` given makes it live, `set` omitted
   makes it a disabled preview — so what you build is literally what the crew taps. Never
   fork a second "preview" rendering of a block; add the affordance to `Input` instead.
+- The hand: everything Aludel writes onto the stage plays as visible edits under the violet
+  touch-cursor — `acts()` diffs old→new into actions that each name the control they use, and
+  `perform()` glides, taps, applies. The show is presentation only: the final snap sets the
+  exact computed template, so playback can differ from the truth cosmetically, never
+  materially. Input stays `busy` while the hand works so nobody edits under it.
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
 - The look is one committed world (no theme switching, no second layout): a glass **stage**

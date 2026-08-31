@@ -20,31 +20,23 @@ export class Team extends DurableObject<Env> {
 
   // The only write path. Everything—app, agent, scheduler—appends through the same guard.
   append(actor: string, drafts: (Payload & { via?: "agent" })[]): { admitted: Fact[]; refused: { draft: Payload; reason: string }[] } {
-    const admitted: Fact[] = [];
-    const refused: { draft: Payload; reason: string }[] = [];
+    const admitted: Fact[] = []; const refused: { draft: Payload; reason: string }[] = [];
     for (const p of drafts) {
-      const draft: Draft = { ...p, actor, at: Date.now() };
-      const reason = guard(this.s, draft);
+      const draft: Draft = { ...p, actor, at: Date.now() }; const reason = guard(this.s, draft);
       if (reason) { refused.push({ draft: p, reason }); continue; }
       const fact: Fact = { ...draft, seq: ++this.head };
       this.ctx.storage.sql.exec("INSERT INTO facts (seq, body) VALUES (?, ?)", fact.seq, JSON.stringify(fact));
-      apply(this.s, fact);
-      admitted.push(fact);
+      apply(this.s, fact); admitted.push(fact);
     }
     return { admitted, refused };
   }
 
-  pull(since: number): Fact[] {
-    return [...this.ctx.storage.sql.exec<{ body: string }>("SELECT body FROM facts WHERE seq > ? ORDER BY seq", since)].map((r) => JSON.parse(r.body) as Fact);
-  }
-
+  pull(since: number): Fact[] { return [...this.ctx.storage.sql.exec<{ body: string }>("SELECT body FROM facts WHERE seq > ? ORDER BY seq", since)].map((r) => JSON.parse(r.body) as Fact); }
   role(email: string): string | null { return this.s.actors[email]?.role ?? (this.head === 0 ? "founder" : null); }
   check(actor: string, drafts: Payload[]): { refused: { draft: Payload; reason: string }[] } {  // the agent's dry run
-    const ghost = structuredClone(this.s);
-    const refused: { draft: Payload; reason: string }[] = [];
+    const ghost = structuredClone(this.s); const refused: { draft: Payload; reason: string }[] = [];
     for (const p of drafts) {
-      const d = { ...p, actor, at: Date.now() };
-      const reason = guard(ghost, d);
+      const d = { ...p, actor, at: Date.now() }; const reason = guard(ghost, d);
       reason ? refused.push({ draft: p, reason }) : apply(ghost, { ...d, seq: 0 });
     }
     return { refused };

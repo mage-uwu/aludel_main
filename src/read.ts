@@ -32,17 +32,13 @@ export const ask = (s: State, q: Query, now: number): Answer | { error: string }
     const tally: Record<string, number> = {}; for (const l of done) tally[l.outcome] = (tally[l.outcome] ?? 0) + 1;
     if (q.agg === "tally") return { value: tally, n: done.length, of: scoped.length };
     const costs = new Map(scoped.map((r) => taskOf(s, r)).find(Boolean)?.outcomes.map((o) => [o.key, o.cost]) ?? []);
-    return { value: done.reduce((sum, l) => sum + (costs.get(l.outcome) ?? 0), 0), n: done.length, of: scoped.length };
-  }
+    return { value: done.reduce((sum, l) => sum + (costs.get(l.outcome) ?? 0), 0), n: done.length, of: scoped.length }; }
   const vals = done.map((l) => l.values[q.channel]).filter((v): v is Value => v !== undefined);
   const nums = vals.filter((v): v is number => typeof v === "number");
   const value =
-    q.agg === "sum" ? nums.reduce((a, b) => a + b, 0) :
-    q.agg === "avg" ? (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null) :
-    q.agg === "min" ? (nums.length ? Math.min(...nums) : null) :
-    q.agg === "max" ? (nums.length ? Math.max(...nums) : null) :
-    q.agg === "last" ? (vals.at(-1) ?? null) :
-    q.agg === "presence" ? (vals.length ? 1 : 0) : vals.length; // count
+    q.agg === "sum" ? nums.reduce((a, b) => a + b, 0) : q.agg === "avg" ? (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null) :
+    q.agg === "min" ? (nums.length ? Math.min(...nums) : null) : q.agg === "max" ? (nums.length ? Math.max(...nums) : null) :
+    q.agg === "last" ? (vals.at(-1) ?? null) : q.agg === "presence" ? (vals.length ? 1 : 0) : vals.length; // count
   return { value, n: vals.length, of: scoped.length };
 };
 

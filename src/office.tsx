@@ -31,8 +31,7 @@ const STEPS: { q: (t: Template) => string; hint?: (t: Template) => string; refin
     go: (t, a, n) => ((last(t).outcomes = (n?.labels ?? a.split(",").map((x) => x.trim())).map(outcome).filter((o) => o.label)), last(t).outcomes.length ? 3 : 2) },
   { q: () => "Does it repeat? Say how often, or 'no'.", hint: () => "every 1 week", refine: "cadence",
     go: (t, a, n) => { const m = a.match(/(\d+)\s*(day|week|month)/i);
-      if (m) last(t).cadence = { every: +m[1]!, unit: m[2]!.toLowerCase() as Cadence["unit"], withinDays: 7 };
-      else if (n?.every) last(t).cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 7 };
+      if (m) last(t).cadence = { every: +m[1]!, unit: m[2]!.toLowerCase() as Cadence["unit"], withinDays: 7 }; else if (n?.every) last(t).cadence = { every: n.every, unit: n.unit ?? "week", withinDays: 7 };
       return last(t).cadence ? 4 : 5; } }, // repeats → ask the day; one-off → straight to the fields
   { q: (t) => `What day does "${last(t).title}" usually go out? (A site can override when you bind it.)`, hint: () => "Monday", refine: "day",
     go: (t, a, n) => { const d = n?.day ?? DAYS.findIndex((x) => new RegExp(x, "i").test(a)); const c = last(t).cadence; if (c && d >= 0) c.day = d; return 5; } },
@@ -41,11 +40,29 @@ const STEPS: { q: (t: Template) => string; hint?: (t: Template) => string; refin
     go: (t, a, n) => {
       if (/^done\.?$/i.test(a.trim())) return 6;
       const m = a.match(/^(photo|number|text)\s+(.+)/i); // an explicit kind is an instruction, not a hint
-      for (const b of m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : n?.blocks ?? [{ kind: "text", label: a }]) last(t).blocks.push(block(b.kind, b.label));
-      return 5; } },
+      for (const b of m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : n?.blocks ?? [{ kind: "text", label: a }]) last(t).blocks.push(block(b.kind, b.label)); return 5; } },
   { q: () => "Any other tasks on site? Name one, or 'done'.", hint: () => "done", refine: "task",
     go: (t, a, n) => (/^done\.?$/i.test(a.trim()) ? -1 : (t.tasks.push(newTask(n?.title || a)), 2)) },
 ];
+
+const zz = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+// The hand's script: what changed between two drafts, as the edits a person would make. Each
+// action names the control it uses — the + field button, a block's ✕, a pencil — so the cursor
+// can go press it. Reorders and rarities fall through to the final snap; nothing is ever lost.
+type Act = { sel: string; go: (d: Template) => void };
+const acts = (a: Template, b: Template): Act[] => {
+  const out: Act[] = []; const J = JSON.stringify;
+  if (a.name !== b.name) out.push({ sel: ".pencil.name", go: (d) => { d.name = b.name; } });
+  b.tasks.forEach((t, i) => {
+    const p = a.tasks[i] ?? { ...t, cadence: undefined, outcomes: [], blocks: [] }; const S = `.task:nth-of-type(${i + 1})`; const n = Math.min(p.blocks.length, t.blocks.length);
+    if (!a.tasks[i]) out.push({ sel: ".tpl", go: (d) => { d.tasks[i] = { ...t, cadence: undefined, outcomes: [], blocks: [] }; } });
+    else if (p.title !== t.title) out.push({ sel: `${S} > .pencil`, go: (d) => { d.tasks[i]!.title = t.title; } });
+    if (J(p.cadence) !== J(t.cadence)) out.push({ sel: S, go: (d) => { d.tasks[i]!.cadence = t.cadence; } });
+    if (J(p.outcomes) !== J(t.outcomes)) out.push({ sel: `${S} .ends`, go: (d) => { d.tasks[i]!.outcomes = t.outcomes; } });
+    t.blocks.slice(0, n).forEach((k, j) => J(p.blocks[j]) !== J(k) && out.push({ sel: `${S} div:nth-of-type(${j + 1}) .pencil`, go: (d) => { d.tasks[i]!.blocks[j] = k; } }));
+    for (let j = p.blocks.length - 1; j >= n; j--) out.push({ sel: `${S} div:nth-of-type(${j + 1}) [title="Remove"]`, go: (d) => { d.tasks[i]!.blocks.splice(j, 1); } });
+    t.blocks.slice(n).forEach((k) => out.push({ sel: `${S} .add`, go: (d) => { d.tasks[i]!.blocks.push(k); } }));
+  }); return out; };
 
 // The form on the stage. Read-only in the Templates tab; with `edit`, every label is a pencil
 // and every field can be moved or dropped — the same surface Aludel writes into.
@@ -67,10 +84,8 @@ const Form = ({ t, edit }: { t: Template; edit?: (f: (d: Template) => void) => v
 );
 
 const line = (f: Fact): string =>
-  f.type === "granted" ? `${f.email} granted ${f.role}` : f.type === "declared" ? `site declared: ${f.site.client.name}` :
-  f.type === "signed" ? `template signed: ${f.template.name} v${f.template.version}` : f.type === "bound" ? "service bound to site" :
-  f.type === "dispatched" ? `dispatched ${f.entries.length} task(s) → ${f.form.meta.name}` : f.type === "logged" ? `logged — ${f.outcome}` :
-  f.type === "corrected" ? `corrected (${f.reason})` : `due date moved (${f.reason})`;
+  f.type === "granted" ? `${f.email} granted ${f.role}` : f.type === "declared" ? `site declared: ${f.site.client.name}` : f.type === "signed" ? `template signed: ${f.template.name} v${f.template.version}` : f.type === "bound" ? "service bound to site" :
+  f.type === "dispatched" ? `dispatched ${f.entries.length} task(s) → ${f.form.meta.name}` : f.type === "logged" ? `logged — ${f.outcome}` : f.type === "corrected" ? `corrected (${f.reason})` : `due date moved (${f.reason})`;
 
 export default function Office(): ReactElement {
   const [log, setLog] = useState([{ who: "step", body: "Aludel ready. Ask for a new report, or ask about the work." }]); const [tab, setTab] = useState("templates");
@@ -78,34 +93,43 @@ export default function Office(): ReactElement {
   const [step, setStep] = useState(-1); const [busy, setBusy] = useState(false); const [hint, setHint] = useState("");
   const [wide, setWide] = useState(() => localStorage.getItem("wide") ?? "term"); // which pane gets φ's long side
   const previous = useRef<string | undefined>(undefined); // the agent thread lives server-side; the interview lives here
-  const input = useRef<HTMLInputElement>(null); const tail = useRef<HTMLDivElement>(null); const stage = useRef<HTMLDivElement>(null);
-  useEffect(() => { tail.current?.scrollTo({ top: 1e7 }); if (step >= 0) stage.current?.scrollTo({ top: 1e7, behavior: "smooth" }); }, [log, busy, draft, step]); // the stage follows what Aludel just wrote
+  const input = useRef<HTMLInputElement>(null); const tail = useRef<HTMLDivElement>(null); const stage = useRef<HTMLDivElement>(null); const hand = useRef<HTMLDivElement>(null);
+  useEffect(() => { tail.current?.scrollTo({ top: 1e7 }); if (step >= 0 && !busy) stage.current?.scrollTo({ top: 1e7, behavior: "smooth" }); }, [log, busy, draft, step]); // the stage follows what Aludel just wrote
   const edit = (f: (d: Template) => void) => setDraft((d) => { if (!d) return d; const c = structuredClone(d); f(c); return c; });
+  // The hand plays each edit where its control lives — glide, tap, land — busy the whole while so
+  // nobody edits under it. The final snap makes the outcome exact even if a selector misses.
+  const perform = async (list: Act[], final: Template) => {
+    setBusy(true); const h = hand.current;
+    for (const a of matchMedia("(prefers-reduced-motion: reduce)").matches ? [] : list) {
+      const el = stage.current?.querySelector(a.sel) ?? stage.current?.querySelector(".tpl");
+      if (el && h) { el.scrollIntoView({ block: "center", behavior: "smooth" }); await zz(320);
+        const r = el.getBoundingClientRect(), s = stage.current!.parentElement!.getBoundingClientRect();
+        Object.assign(h.style, { opacity: "1", left: `${Math.min(r.left - s.left + Math.min(r.width / 2, 90), s.width - 30)}px`, top: `${Math.max(16, Math.min(r.top - s.top + r.height / 2, s.height - 16))}px` });
+        await zz(420); h.classList.add("tap"); await zz(140); }
+      setDraft((d) => { const c = structuredClone(d ?? final); a.go(c); return c; }); h?.classList.remove("tap"); await zz(300); }
+    if (h) h.style.opacity = "0";
+    setDraft(final); setBusy(false); };
   const say = (i: number, t: Template) => { const st = STEPS[i]!; setLog((l) => [...l, { who: "step", body: st.q(t) }]); setHint(st.hint?.(t) ?? ""); }; // scripted lines speak mint
   const send = async (text?: string) => {
     const ask = (text ?? input.current?.value ?? "").trim() || (step >= 0 ? hint : "");
     if (!ask || busy) return;
-    input.current!.value = "";
-    setLog((l) => [...l, { who: "you", body: ask }]);
+    input.current!.value = ""; setLog((l) => [...l, { who: "you", body: ask }]);
     if (step >= 0 && draft) { // scripted flow; the model only normalizes the answer
-      const st = STEPS[step]!;
-      setBusy(true);
+      const st = STEPS[step]!; setBusy(true);
       const n: Norm = st.refine && !/^done\.?$/i.test(ask) && store.online
         ? await fetch("/api/refine", { method: "POST", body: JSON.stringify({ kind: st.refine, text: ask }) }).then((r) => (r.ok ? r.json() : null)).catch(() => null) : null;
-      setBusy(false);
       const t = structuredClone(draft); const next = st.go(t, ask, n);
-      setDraft(t); setStep(next);
-      if (next >= 0) say(next, t);
+      await perform(acts(draft, t), t); setStep(next); if (next >= 0) say(next, t);
       else { setHint(""); setLog((l) => [...l, { who: "step", body: `"${t.name}" is on the stage — tweak anything, then commit it.` }]); }
       return;
     }
     setBusy(true);
     try {
-      const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current }) })
-        .then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean }>) : Promise.reject(new Error(String(r.status)))));
-      previous.current = res.previous;
-      setLog((l) => [...l, { who: "aludel", body: res.reply }]);
-      setDrafts(res.drafts);
+      const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean }>) : Promise.reject(new Error(String(r.status)))));
+      previous.current = res.previous; setLog((l) => [...l, { who: "aludel", body: res.reply }]);
+      const d0 = res.drafts[0]; const sg = res.drafts.length === 1 && d0?.type === "signed" ? d0.template : null;
+      if (sg) { const from = store.state.latest[sg.id] ? structuredClone(store.state.templates[`${sg.id}@${store.state.latest[sg.id]}`]!) : { ...sg, name: "", tasks: [] }; // an edit plays as the diff from the live version; a new report builds from nothing
+        setDraft({ ...structuredClone(from), id: sg.id, version: sg.version }); await perform(acts(from, sg), sg); } else setDrafts(res.drafts);
       if (res.wizard) { const t: Template = { id: newId<TemplateId>(), version: 1, name: "", tasks: [] }; setDraft(t); setStep(0); say(0, t); }
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false);
@@ -134,6 +158,7 @@ export default function Office(): ReactElement {
           {tab === "ledger" && [...store.facts].reverse().slice(0, 60).map((f) => <p key={f.seq} className="row"><span className="hint">#{f.seq} · {new Date(f.at).toLocaleString()} · {f.actor}{f.via ? " · via agent" : ""}</span><br />{line(f)}</p>)}
           {tab === "ledger" && !store.facts.length && <p className="empty">The ledger is empty.</p>}</>}
         </div>
+        <div className="hand" ref={hand} />
       </section>
       <button className="grip" title={wide === "term" ? "Give the form more room" : "Give the terminal more room"} onClick={() => { const w = wide === "term" ? "stage" : "term"; setWide(w); localStorage.setItem("wide", w); }} />
       <section className="term">
