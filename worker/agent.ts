@@ -47,11 +47,11 @@ const TOOLS = [
 ];
 // The model speaks loosely; the office fills in what a hand-built task would have — slugged
 // keys, spaced labels, block defaults — so a template arrives whole or not at all.
-const slug = (x: string) => x.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "x"; const nice = (x: string) => x.replace(/_+/g, " ").trim();
+const slug = (x: string) => String(x ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "x"; const nice = (x: string) => String(x ?? "").replace(/_+/g, " ").trim();
 type Loose = { key?: string; title: string; cadence?: Task["cadence"]; outcomes: { key?: string; label: string; cost?: number }[]; blocks: { key?: string; kind: string; label: string; required?: boolean; min?: number; max?: number; placeholder?: string }[] };
 const fix = (t: Loose): Task => ({ key: t.key || slug(t.title), title: nice(t.title), ...(t.cadence && { cadence: t.cadence }),
-  outcomes: t.outcomes.map((o) => ({ key: o.key || slug(o.label), label: nice(o.label).toUpperCase(), cost: o.cost ?? (/no.?access|skip/i.test(o.label) ? 0 : 1) })),
-  blocks: t.blocks.map((b) => (b.kind === "number" ? { key: b.key || slug(b.label), kind: "number", label: nice(b.label), required: !!b.required, min: b.min ?? 0, max: b.max ?? 999999 }
+  outcomes: (t.outcomes ?? []).map((o) => ({ key: o.key || slug(o.label), label: nice(o.label).toUpperCase(), cost: o.cost ?? (/no.?access|skip/i.test(o.label) ? 0 : 1) })),
+  blocks: (t.blocks ?? []).map((b) => (b.kind === "number" ? { key: b.key || slug(b.label), kind: "number", label: nice(b.label), required: !!b.required, min: b.min ?? 0, max: b.max ?? 999999 }
     : b.kind === "photo" ? { key: b.key || slug(b.label), kind: "photo", label: nice(b.label), required: !!b.required }
     : b.kind === "button" ? { key: b.key || slug(b.label), kind: "button", label: nice(b.label), action: "submit" }
     : { key: b.key || slug(b.label), kind: "text", label: nice(b.label), required: !!b.required, placeholder: b.placeholder ?? "" })) });
@@ -110,7 +110,7 @@ export const refine = async (env: Env, body: { kind: string; text: string }): Pr
   return new Response(raw ?? "null", { headers: { "Content-Type": "application/json" } }); };
 
 export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string; view?: unknown }): Promise<Response> => {
-  if (!env.OPENAI_API_KEY) return reply("No OPENAI_API_KEY reaches the worker. Add it under Settings → Variables and Secrets (the runtime section, not Build) on this worker, as a Secret, and deploy the change.", [], body.previous);
+  if (!env.OPENAI_API_KEY) return reply("No OPENAI_API_KEY reaches the worker — add it as a Secret under Settings → Variables (runtime, not Build), then deploy.", [], body.previous);
   if (!body.text) return reply("Your device is running an old cached version of the app — close the tab (or pull to refresh) and reopen, then ask again.", [], body.previous);
   const snap = await team.snapshot();
   const instructions = SYSTEM + digest(snap) + (body.view ? `\nThe human's screen right now (you share this tool; an open draft is the working copy, theirs and yours): ${JSON.stringify(body.view)}` : "");
@@ -122,12 +122,12 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
     const calls = r.output.filter((o): o is Call => o.type === "function_call"); const text = textOf(r);
     if (calls.length === 0) return reply(text || "Here's what I put together.", drafts, previous);
     input = []; for (const call of calls) { // next request: only this turn's tool outputs; previous_response_id carries the rest
-      const args = JSON.parse(call.arguments || "{}") as Record<string, unknown>;
+      let args: Record<string, unknown> = {}; try { args = JSON.parse(call.arguments || "{}"); } catch { /* bad JSON from the model is a refusal, not a crash */ }
       if (call.name === "new_template") return reply("One question at a time — watch the stage.", [], body.previous, (args.id as string) || true); // fork the thread from before the call
       const id = args.id as TemplateId, head = snap.latest[id] ?? 0; // version and name come from the ledger, never the model
       const prior = snap.templates[`${id}@${head}`];
       const facts: Payload[] = call.name === "edit_template"
-        ? [{ type: "signed", template: { id, version: head + 1, name: nice((args.name as string) ?? prior?.name ?? ""), tasks: (args.tasks as Loose[]).map(fix) } as Template }]
+        ? [{ type: "signed", template: { id, version: head + 1, name: nice((args.name as string) ?? prior?.name ?? ""), tasks: ((args.tasks ?? []) as Loose[]).map(fix) } as Template }]
         : call.name === "retire_template" ? (prior ? [{ type: "signed", template: { ...prior, version: head + 1, retired: true } }] : [])
         : ((args.facts ?? []) as Payload[]);
       let result: unknown =

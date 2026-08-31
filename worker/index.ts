@@ -39,7 +39,7 @@ export default {
     }
     if (path === "/api/t/find" && req.method === "POST") return json(await stub.find(await req.json()));
     if (path === "/api/t/ask" && req.method === "POST") return json(await stub.ask(await req.json()));
-    if (path === "/api/agent" && req.method === "POST") return chat(env, stub, who.email, await req.json());
+    if (path === "/api/agent" && req.method === "POST") return chat(env, stub, who.email, await req.json()).catch((e: unknown) => json({ reply: `The desk threw: ${e}`, drafts: [] }));
     if (path === "/api/refine" && req.method === "POST") return refine(env, await req.json());
 
     const hash = path.match(/^\/api\/blob\/([a-f0-9]{64})$/)?.[1]; // content-addressed: the ledger only ever holds the hash

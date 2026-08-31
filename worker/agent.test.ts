@@ -65,3 +65,20 @@ test("a retired template plans no new work, and its logged entries still render"
   expect(plan(s, Date.now(), 42)).toEqual([]);
   expect(versioned(s, V1.id, 1)).toEqual(V1); // the version entries pinned is untouched
 });
+
+// The model's shapes are advisory. A tool call that omits a "required" field must degrade to a
+// refusal the human can read, never to an uncaught throw the browser reports as a bare 500.
+test("malformed tool calls do not throw", async () => {
+  const bad = [
+    { name: "edit_template", arguments: JSON.stringify({ id: "tpl1" }) },                          // no tasks
+    { name: "edit_template", arguments: JSON.stringify({ id: "tpl1", tasks: [{ title: "X" }] }) }, // task with no blocks/outcomes
+    { name: "edit_template", arguments: JSON.stringify({ id: "tpl1", tasks: [{ outcomes: [{}], blocks: [{}] }] }) }, // no titles at all
+    { name: "retire_template", arguments: JSON.stringify({}) },                                    // no id
+    { name: "edit_template", arguments: "{not json" },                                             // arguments are not JSON
+  ];
+  for (const [i, call] of bad.entries()) {
+    script([{ type: "function_call", call_id: `c${i}`, name: call.name, arguments: call.arguments }]);
+    const out = await chat(env, team(world()), "boss@x.co", { text: "go" }).then((r) => r.json() as Promise<{ reply: string }>);
+    expect(typeof out.reply).toBe("string");
+  }
+});
