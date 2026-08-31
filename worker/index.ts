@@ -15,8 +15,7 @@ export type Env = {
   DEV_USER?: string;
 };
 
-const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
-  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...headers } });
+const json = (body: unknown, status = 200, headers: Record<string, string> = {}) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...headers } });
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {

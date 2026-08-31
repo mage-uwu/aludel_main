@@ -15,7 +15,8 @@ export class Team extends DurableObject<Env> {
     const rows = [...ctx.storage.sql.exec<{ body: string }>("SELECT body FROM facts ORDER BY seq")];
     this.s = fold(rows.map((r) => JSON.parse(r.body) as Fact));
     this.head = rows.length;
-    void ctx.storage.setAlarm(Date.now() + 60_000); // the scheduler wakes daily; first run soon
+    // one alarm per DO, and setAlarm replaces it — only arm when none is pending
+    ctx.blockConcurrencyWhile(async () => { if ((await ctx.storage.getAlarm()) === null) await ctx.storage.setAlarm(Date.now() + 60_000); });
   }
 
   // The only write path. Everything—app, agent, scheduler—appends through the same guard.
@@ -52,8 +53,8 @@ export class Team extends DurableObject<Env> {
   ask(query: Query) { return ask(this.s, query, Date.now()); }
   snapshot() { return { head: this.head, sites: this.s.sites, templates: this.s.templates, latest: this.s.latest, actors: this.s.actors }; }
 
-  alarm(): void {
+  async alarm(): Promise<void> { // idempotent: plan() only mints what is missing, so retries are safe
     this.append("scheduler", plan(this.s, Date.now(), 42)); // keep six weeks of work materialized
-    void this.ctx.storage.setAlarm(Date.now() + 86_400_000);
+    await this.ctx.storage.setAlarm(Date.now() + 86_400_000);
   }
 }
