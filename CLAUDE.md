@@ -11,8 +11,9 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
 - Field work is allocated and filtered by **lists** (routes/crews): a service binding's
   `list` and `assignee` flow onto every entry it mints, the `steered` fact re-routes one
   entry, and the field UI's chips filter by list. Allocation is writing a name on work.
-- The agent drafts; a human's fact commits (`via: "agent"`). The agent's tool surface is
-  the eight facts + `find` + `ask`, nothing else.
+- The agent is named Aludel. It drafts; a human's fact commits (`via: "agent"`). Its tool
+  surface is the eight facts + `find` + `ask`, nothing else; its model id is config
+  (`OPENAI_MODEL`), never hardcoded.
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
 

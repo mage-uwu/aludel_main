@@ -6,7 +6,7 @@ import { store } from "./sync";
 
 // Office mode: a conversation with the desk, and three lists. The chat is the authoring
 // and dispatch surface — drafts arrive as cards and a tap commits them (via: "agent").
-type Msg = { role: "user" | "assistant"; content: unknown };
+type Msg = { role: string; content: unknown };
 
 function Chat(): ReactElement {
   const [log, setLog] = useState<{ who: string; body: string }[]>([]);
@@ -25,9 +25,9 @@ function Chat(): ReactElement {
       const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ messages: history.current }) })
         .then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; messages: Msg[] }>) : Promise.reject(new Error(String(r.status)))));
       history.current = res.messages;
-      setLog((l) => [...l, { who: "desk", body: res.reply }]);
+      setLog((l) => [...l, { who: "aludel", body: res.reply }]);
       setDrafts(res.drafts);
-    } catch { setLog((l) => [...l, { who: "desk", body: store.online ? "The desk is unreachable right now." : "The desk needs the server — this device is running standalone." }]); }
+    } catch { setLog((l) => [...l, { who: "aludel", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is running standalone." }]); }
     setBusy(false);
   };
   const commit = () => {
@@ -44,7 +44,7 @@ function Chat(): ReactElement {
         <button onClick={commit}>Commit</button><button className="ghost" onClick={() => setDrafts([])}>Discard</button>
       </div>}
       <form onSubmit={(e) => { e.preventDefault(); void send(); }}>
-        <input ref={input} placeholder={busy ? "thinking…" : "Ask, or tell it what to set up…"} disabled={busy} />
+        <input ref={input} placeholder={busy ? "Aludel is thinking…" : "Ask Aludel, or tell it what to set up…"} disabled={busy} />
       </form>
     </section>
   );

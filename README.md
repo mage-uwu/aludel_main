@@ -29,7 +29,7 @@ Tests, CSS, and config are uncounted. Currently exactly 800:
 | shell | `src/App.tsx` `src/main.tsx` `src/demo.ts` | 73 | modes, auth gates, demo team |
 | server | `worker/do.ts` | 68 | the team DO: append through the guard, seq, pull, daily plan alarm |
 | server | `worker/index.ts` `worker/auth.ts` | 112 | routes, founding, Google OIDC, blobs |
-| agent | `worker/agent.ts` | 63 | the desk on claude-opus-5: find/ask mid-loop, drafts to a human tap |
+| agent | `worker/agent.ts` | 67 | Aludel, the desk (OpenAI, model id in config): find/ask mid-loop, drafts to a human tap |
 
 ## Deploying
 
@@ -39,7 +39,7 @@ application's audience tag into `ACCESS_AUD` in `wrangler.jsonc` (with `ACCESS_T
 your Zero Trust team slug), and manage who may enter in Zero Trust → Access →
 Applications. Everyone verified shares the `alpha` team until the optional `DIR` KV
 namespace is bound (uncomment in `wrangler.jsonc`) for multi-team; the optional R2 bucket
-enables photo upload. `ANTHROPIC_API_KEY` (secret) turns on the desk.
+enables photo upload. `OPENAI_API_KEY` (secret) turns on Aludel, the desk; `OPENAI_MODEL` in `wrangler.jsonc` picks the model.
 
 For local work, `DEV_USER` in `wrangler.jsonc` + `npx wrangler dev` — honored only while
 `ACCESS_AUD` is unset. Without any server the app still runs whole: the same guard and

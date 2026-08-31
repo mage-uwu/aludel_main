@@ -8,7 +8,8 @@ export type Env = {
   TEAM: DurableObjectNamespace<Team>;
   DIR?: KVNamespace;           // email → team id; absent until real sign-in needs it
   BLOBS?: R2Bucket;            // photo bytes by content hash; absent = photos stay on-device
-  ANTHROPIC_API_KEY: string;
+  OPENAI_API_KEY: string;      // secret; the desk is down without it
+  OPENAI_MODEL: string;        // exact model id, config not code — swap models by editing a var
   ACCESS_TEAM: string;         // <team>.cloudflareaccess.com, the JWT signer
   ACCESS_AUD?: string;         // the Access application's audience tag; unset = Access not yet enabled
   DEV_USER?: string;           // honored only while ACCESS_AUD is unset
