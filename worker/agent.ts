@@ -3,19 +3,20 @@ import type { Team } from "./do";
 import type { Env } from "./index";
 
 // Aludel, the desk. One agent, two roles: the oracle reads freely — find and ask run right
-// here against the team's ledger — and the hand only drafts: a clean draft ends the turn and
-// goes back to the client as a preview card. Nothing is real until a human's tap appends it.
-// The model is OpenAI, spoken to over plain fetch; the id lives in config, not code.
-type Call = { id: string; function: { name: string; arguments: string } };
-type Msg = { role: string; content: string | null; tool_calls?: Call[]; tool_call_id?: string };
+// here against the team's ledger — and the hand only drafts: a clean draft is staged for the
+// human's tap; nothing is real until their commit appends it. The model is OpenAI's Responses
+// API (reasoning models require it for function tools); conversation state lives server-side
+// via previous_response_id, so each request carries only the new turn and a fresh team digest.
+type Call = { type: "function_call"; call_id: string; name: string; arguments: string };
+type Resp = { id: string; output: ({ type: string } & Record<string, unknown>)[] };
 
 const TOOLS = [
-  { type: "function", function: { name: "find", description: "Look up entries (units of scheduled work). Returns rows with status, window, and what was logged. Statuses: scheduled|pending|overdue|logged. list = the route/crew the work is allocated to.",
-    parameters: { type: "object", properties: { site: { type: "string" }, task: { type: "string" }, actor: { type: "string" }, status: { type: "string" }, list: { type: "string" }, from: { type: "number" }, to: { type: "number" } } } } },
-  { type: "function", function: { name: "ask", description: "Aggregate one channel of history. channel is a block key, or 'outcome'. Legal aggs — number: sum|avg|min|max|last; text: last|count; photo: count|presence; outcome: tally|cost. Answers carry value, n (entries that recorded it), of (entries in scope).",
-    parameters: { type: "object", properties: { template: { type: "string" }, task: { type: "string" }, channel: { type: "string" }, agg: { type: "string" }, site: { type: "string" }, actor: { type: "string" }, from: { type: "number" }, to: { type: "number" } }, required: ["template", "task", "channel", "agg"] } } },
-  { type: "function", function: { name: "draft", description: "Propose facts to append to the ledger (declared|signed|bound|dispatched|granted|steered). They are checked, then shown to the human, who commits or discards them. Call once, with the complete set, after your reads.",
-    parameters: { type: "object", properties: { facts: { type: "array", items: { type: "object" } } }, required: ["facts"] } } },
+  { type: "function", name: "find", description: "Look up entries (units of scheduled work). Returns rows with status, window, and what was logged. Statuses: scheduled|pending|overdue|logged. list = the route/crew the work is allocated to.",
+    parameters: { type: "object", properties: { site: { type: "string" }, task: { type: "string" }, actor: { type: "string" }, status: { type: "string" }, list: { type: "string" }, from: { type: "number" }, to: { type: "number" } } } },
+  { type: "function", name: "ask", description: "Aggregate one channel of history. channel is a block key, or 'outcome'. Legal aggs — number: sum|avg|min|max|last; text: last|count; photo: count|presence; outcome: tally|cost. Answers carry value, n (entries that recorded it), of (entries in scope).",
+    parameters: { type: "object", properties: { template: { type: "string" }, task: { type: "string" }, channel: { type: "string" }, agg: { type: "string" }, site: { type: "string" }, actor: { type: "string" }, from: { type: "number" }, to: { type: "number" } }, required: ["template", "task", "channel", "agg"] } },
+  { type: "function", name: "draft", description: "Propose facts to append to the ledger (declared|signed|bound|dispatched|granted|steered). They are checked and staged for the human, who commits or discards them. Call once, with the complete set, after your reads.",
+    parameters: { type: "object", properties: { facts: { type: "array", items: { type: "object" } } }, required: ["facts"] } },
 ];
 
 const digest = (t: Awaited<ReturnType<Team["snapshot"]>>) => JSON.stringify({
@@ -36,32 +37,40 @@ drafts minimal and complete: new ids as short random strings; template edits are
 version with the same task/block/outcome keys (never retype a key); windows and times are epoch
 ms. If the human's ask is ambiguous, ask back instead of guessing. Team state:\n`;
 
-export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { messages: Msg[] }): Promise<Response> => {
-  const messages: Msg[] = [{ role: "system", content: SYSTEM + digest(await team.snapshot()) }, ...body.messages.filter((m) => m.role !== "system")];
+export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string }): Promise<Response> => {
+  const instructions = SYSTEM + digest(await team.snapshot());
+  let input: unknown[] = [{ role: "user", content: body.text }];
+  let previous = body.previous;
+  let drafts: Payload[] = [];
   for (let turn = 0; turn < 8; turn++) {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch("https://api.openai.com/v1/responses", {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.OPENAI_API_KEY}` },
-      body: JSON.stringify({ model: env.OPENAI_MODEL, messages, tools: TOOLS }),
+      body: JSON.stringify({ model: env.OPENAI_MODEL, instructions, tools: TOOLS, input, ...(previous && { previous_response_id: previous }) }),
     });
-    if (!res.ok) return reply(messages, [], `The model API refused (${res.status}): ${(await res.text()).slice(0, 300)}`); // a wrong model id or key diagnoses itself here
-    const msg = ((await res.json()) as { choices: { message: Msg }[] }).choices[0]!.message;
-    messages.push(msg);
-    if (!msg.tool_calls?.length) break;
-    for (const call of msg.tool_calls) {
-      const input = JSON.parse(call.function.arguments || "{}") as Record<string, unknown>;
-      const result =
-        call.function.name === "find" ? await team.find(input) :
-        call.function.name === "ask" ? await team.ask(input as never) :
-        await team.check(email, (input.facts ?? []) as Payload[]); // draft: dry-run the guard
-      messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
-      if (call.function.name === "draft" && (result as { refused: unknown[] }).refused.length === 0)
-        return reply(messages, (input.facts ?? []) as Payload[]); // clean draft: hand it to the human
+    if (!res.ok) return reply(`The model API refused (${res.status}): ${(await res.text()).slice(0, 300)}`, [], previous); // misconfiguration diagnoses itself in chat
+    const r = (await res.json()) as Resp;
+    previous = r.id;
+    const calls = r.output.filter((o): o is Call => o.type === "function_call");
+    const text = r.output.filter((o) => o.type === "message")
+      .flatMap((m) => (m.content as { type: string; text?: string }[]) ?? [])
+      .filter((c) => c.type === "output_text").map((c) => c.text).join("\n");
+    if (calls.length === 0) return reply(text || "Here's what I put together.", drafts, previous);
+    input = []; // next request: only this turn's tool outputs; previous_response_id carries the rest
+    for (const call of calls) {
+      const args = JSON.parse(call.arguments || "{}") as Record<string, unknown>;
+      let result: unknown =
+        call.name === "find" ? await team.find(args) :
+        call.name === "ask" ? await team.ask(args as never) :
+        await team.check(email, (args.facts ?? []) as Payload[]); // draft: dry-run the guard
+      if (call.name === "draft" && (result as { refused: unknown[] }).refused.length === 0) {
+        drafts = (args.facts ?? []) as Payload[]; // staged; the model gets told and says its closing line
+        result = { staged: drafts.length, note: "presented to the human for commit" };
+      }
+      input.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(result) });
     }
   }
-  return reply(messages, []);
+  return reply("I ran out of turns — try a smaller ask.", drafts, previous);
 };
 
-const reply = (messages: Msg[], drafts: Payload[], error?: string) => {
-  const text = error ?? messages.findLast((m) => m.role === "assistant" && m.content)?.content ?? "Here's what I put together.";
-  return new Response(JSON.stringify({ reply: text, drafts, messages: messages.slice(1) }), { headers: { "Content-Type": "application/json" } });
-};
+const reply = (text: string, drafts: Payload[], previous?: string) =>
+  new Response(JSON.stringify({ reply: text, drafts, previous }), { headers: { "Content-Type": "application/json" } });

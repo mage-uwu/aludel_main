@@ -6,25 +6,22 @@ import { store } from "./sync";
 
 // Office mode: a conversation with the desk, and three lists. The chat is the authoring
 // and dispatch surface — drafts arrive as cards and a tap commits them (via: "agent").
-type Msg = { role: string; content: unknown };
-
 function Chat(): ReactElement {
   const [log, setLog] = useState<{ who: string; body: string }[]>([]);
   const [drafts, setDrafts] = useState<Payload[]>([]);
   const [busy, setBusy] = useState(false);
-  const history = useRef<Msg[]>([]);
+  const previous = useRef<string | undefined>(undefined); // the thread lives server-side, we hold its id
   const input = useRef<HTMLInputElement>(null);
   const send = async () => {
     const ask = input.current?.value.trim();
     if (!ask || busy) return;
     input.current!.value = "";
-    history.current.push({ role: "user", content: ask });
     setLog((l) => [...l, { who: "you", body: ask }]);
     setBusy(true);
     try {
-      const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ messages: history.current }) })
-        .then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; messages: Msg[] }>) : Promise.reject(new Error(String(r.status)))));
-      history.current = res.messages;
+      const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current }) })
+        .then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string }>) : Promise.reject(new Error(String(r.status)))));
+      previous.current = res.previous;
       setLog((l) => [...l, { who: "aludel", body: res.reply }]);
       setDrafts(res.drafts);
     } catch { setLog((l) => [...l, { who: "aludel", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is running standalone." }]); }
