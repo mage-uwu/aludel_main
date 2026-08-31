@@ -80,21 +80,24 @@ because a template cannot know which weekday a route runs. Read it before touchi
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
 - The look is one committed world (no theme switching, no second layout): in the office the
-  app **is** the terminal — one jet-black slab whose title bar carries only the centred
+  app **is** the terminal — one flat black slab whose title bar carries only the centred
   wordmark and a `[ ]` menu (the office/field switch and who you are live in it) — the slab
-  runs edge to edge, no gutter and no page behind it, and both panes use its full width — no
-  phone-width column on a desktop — with the
-  glass **stage** — the tool — docked inside it as a window that minimizes and maximizes,
-  pinned above the conversation; the field keeps its solo glass sheet. The window is always on
+  takes the whole page bar a hair of white margin, just enough that its rounded corners read
+  as a screen sitting on a desk, and both panes use its full width — no
+  phone-width column on a desktop — with the white **stage** — the tool — docked inside it as
+  a window that minimizes and maximizes, pinned above the conversation; the field is the same
+  white sheet, alone on the page. The window is always on
   top and the prompt always at the bottom: what a big screen buys is room, not rearrangement.
   The tool holds φ's long side by default, and **maximise** gives it the screen with the
   conversation kept to a few lines — which is what a big zoom actually needs. No fake window
   ornaments in the chrome: no traffic lights, no corner glare — the app is not pretending
   to be a window, it is the window. The session speaks in **sigils, not captions** — `$` for
   what you typed, `#` for what the machine or the model said, `✓` for the ledger — because a
-  shell prompts, it does not label who is talking; colour still carries provenance. The screen
-  is lit slate with scanlines and a vignette, never flat black, and it signs itself in a status
-  strip at the foot. Type is sized for a gloved thumb in daylight: nothing the
+  shell prompts, it does not label who is talking; colour still carries provenance. Nothing is
+  textured, lit, or frosted: no scanlines, no vignette, no gradient mesh, no grain, no
+  backdrop blur, no gloss inset — black is `#000`, paper is `#fff`, and every division on the
+  screen is a hairline or plain space, because the only things that should carry weight are
+  the words and the controls. The terminal signs itself in a status strip at the foot. Type is sized for a gloved thumb in daylight: nothing the
   crew reads is under ~0.8rem and nothing they tap is under ~40px — legibility outranks density. One arrangement at
   every width — a wide screen is the phone, wider. The stage-to-conversation split is always
   golden (1.618 : 1); the grip only chooses which side gets φ's long side. Never reuse a
