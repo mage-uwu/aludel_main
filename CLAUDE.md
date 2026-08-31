@@ -79,21 +79,24 @@ because a template cannot know which weekday a route runs. Read it before touchi
   that shows and hides it, and it will sit there blinking at 0,0 forever. Blink the colour.
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
-- The look is one committed world (no theme switching, no second layout): in the office the
+- The look is one committed world (no theme switching, no second palette): in the office the
   app **is** the terminal — one flat black slab whose title bar carries only the centred
   wordmark and a `[ ]` menu (the office/field switch and who you are live in it) — the slab
   takes the whole page bar a hair of white margin, just enough that its rounded corners read
-  as a screen sitting on a desk — with the white **stage** — the tool — docked inside it as
-  a window that minimizes and maximizes, pinned above the conversation; the field is the same
-  white sheet, alone on the page. A wide screen is a **workstation**, not a wide phone: the
-  conversation is a terminal and takes the room, but the tool is a preview of a phone screen,
-  so past 720px it holds a handset's proportions (9:19.5, driven off its height and floored at
-  400px, so a short screen gives a squat phone rather than a slit) and sits centred in the
-  black; under that the screen already is a phone and the tool takes all of it. The thing the
-  crew taps is never rendered wider than the phone it will be tapped on. The window is always on
-  top and the prompt always at the bottom: what a big screen buys is room, not rearrangement.
-  The tool holds φ's long side by default, and **maximise** gives it the screen with the
-  conversation kept to a few lines — which is what a big zoom actually needs. No fake window
+  as a screen sitting on a desk — with the white **stage** — the tool — docked inside it as a
+  window that minimizes; the field is the same white sheet, alone on the page. The tool is a
+  preview of a phone screen, so it is **always drawn at a phone's size**: what the crew taps
+  is never rendered wider than the thing they will tap it on. That gives the app its **two
+  arrangements, one per device class, and there are only ever two**. On a phone (under 900px)
+  the tool is on top at full width, the conversation under it, the prompt at the foot, and the
+  stage-to-conversation split is golden — the grip chooses which side gets φ's long side and
+  **maximise** gives the tool the screen with the conversation kept to a few lines. Past 900px
+  it is a **workstation**: the conversation takes the left column and the tool stands in a
+  column of its own on the **right**, wearing a handset's bezel. The column is the point — with
+  the full height of the slab rather than a share of it, the ratio (9:19.5, width driven off
+  the height, floored at 360px and capped at 480px) comes out true at every desktop size
+  instead of squat. There is nothing to maximise into there, so that button is hidden rather
+  than left to lie, and the grip goes with it; minimise still docks the tool to a bar. No fake window
   ornaments in the chrome: no traffic lights, no corner glare — the app is not pretending
   to be a window, it is the window. The session speaks in **sigils, not captions** — `$` for
   what you typed, `#` for what the machine or the model said, `✓` for the ledger — because a
@@ -102,10 +105,9 @@ because a template cannot know which weekday a route runs. Read it before touchi
   backdrop blur, no gloss inset — black is `#000`, paper is `#fff`, and every division on the
   screen is a hairline or plain space, because the only things that should carry weight are
   the words and the controls. The terminal signs itself in a status strip at the foot. Type is sized for a gloved thumb in daylight: nothing the
-  crew reads is under ~0.8rem and nothing they tap is under ~40px — legibility outranks density. One arrangement at
-  every width — what a wide screen changes is the room around the tool, never where anything
-  sits. The stage-to-conversation split is always
-  golden (1.618 : 1); the grip only chooses which side gets φ's long side. Never reuse a
+  crew reads is under ~0.8rem and nothing they tap is under ~40px — legibility outranks density.
+  Two arrangements, never three: a third breakpoint is a layout nobody can hold in their head.
+  Never reuse a
   component's class name as a state modifier — `pane ${wide}` once painted the whole pane
   with the terminal's styling — and because the stage lives inside the terminal, terminal
   chrome selects children (`.term > form input`), never descendants, or it repaints the tool. Colour encodes provenance and nothing else — violet = a model wrote this,

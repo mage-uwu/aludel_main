@@ -70,18 +70,36 @@ main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; 
 .stage { position:relative; width:calc(100% - 1.2rem); margin:.6rem auto .25rem; font:16px/1.55 var(--sans); color:var(--ink);
   background:#fff; border:none; border-radius:12px; overflow:hidden; min-height:0;
   display:grid; grid-template-rows:auto minmax(0,1fr); }
-/* A wide screen is a workstation, not a wide phone. The conversation takes the room — it is
-   a terminal and it wants the width — but the tool is a preview of a phone screen, so on a
-   workstation it holds a phone's proportions and sits centred in the black. The ratio drives
-   the width off the height, and the floor is a real handset: never narrower than the thing
-   it is previewing, so a short screen gives a squat phone rather than a slit. Under the
-   breakpoint the screen already is a phone and the tool takes all of it. */
-@media (min-width:720px) {
-  .stage { justify-self:center; align-self:stretch; height:100%; width:auto; aspect-ratio:9 / 19.5; min-width:400px; max-width:480px; }
-  /* minimised, the window is only its own bar: a phone ratio applied to an auto row has no
-     height to work from and inflates it back open */
-  .wide-min .stage { height:auto; aspect-ratio:auto; }
+/* A wide screen is a workstation, not a wide phone, so it gets the one rearrangement in the
+   app: the conversation takes the left, the tool stands on the right as a phone. That is the
+   whole point of the width — given a column of its own the preview gets the FULL height of
+   the slab instead of a share of it, which is the only way its proportions come out right.
+   It wears a handset's bezel because that is what it is. The ratio drives the width off the
+   height, floored at a real handset and capped so a tall screen cannot stretch it into a
+   ribbon. Under the breakpoint the screen already is a phone: one column, tool on top,
+   conversation under it, exactly as the field sees it. */
+@media (min-width:900px) {
+  /* every window state has to be restated — .term.wide-stage outranks a bare .term here */
+  .term, .term.wide-stage, .term.wide-max, .term.wide-min {
+    grid-template-columns:minmax(0,1fr) auto; grid-template-rows:minmax(0,1fr) auto auto;
+    grid-template-areas:"log stage" "form stage" "sig stage"; }
+  .log { grid-area:log; } .term > form { grid-area:form; } .term::after { grid-area:sig; }
+  .grip { display:none; }  /* the split is a column now; the window's own buttons still size it */
+  .stage { grid-area:stage; justify-self:center; align-self:center; margin:.85rem .85rem .85rem .4rem;
+    height:calc(100% - 1.7rem); max-height:1040px; width:auto; aspect-ratio:9 / 19.5; min-width:360px; max-width:480px;
+    /* the bezel: a ring of black around the screen and a hairline where a handset's edge
+       catches light. Drawn outside the box, so the phone is framed without losing a pixel
+       of form to it. */
+    border-radius:26px; box-shadow:0 0 0 9px #000, 0 0 0 10px rgba(255,255,255,.22); }
+  /* nothing left to maximise into: the phone already has the full height of the slab, and
+     widening it past the ratio would make it stop being a phone. The button goes rather than
+     lie — minimise still docks it, and both still work under the breakpoint. */
+  .tabs .win:last-child { display:none; }
+  /* minimised, the window is only its own bar, docked at the top of its column: a phone ratio
+     applied to an auto height has nothing to work from and inflates it back open */
+  .wide-min .stage { height:auto; max-height:none; aspect-ratio:auto; align-self:start; width:360px; border-radius:14px; }
 }
+
 /* the window's own buttons, at the end of its bar */
 .tabs .win { margin-left:.1rem; padding:.34rem .5rem; font-size:.85rem; line-height:1; color:var(--dim); border-radius:8px; letter-spacing:0; }
 .tabs > .win:nth-last-child(2) { margin-left:auto; }  /* :first-of-type matches by element, not class — the tabs are buttons too */
