@@ -47,7 +47,9 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
 - The look is one committed world (no theme switching, no second layout): in the office the
   app **is** the terminal — one jet-black slab whose title bar carries only the centred
-  wordmark and a `[ ]` menu (the office/field switch and who you are live in it), with the
+  wordmark and a `[ ]` menu (the office/field switch and who you are live in it) — the slab
+  runs edge to edge, no gutter and no page behind it, while the stage and the log keep a
+  readable measure inside it — with the
   glass **stage** — the tool — docked inside it as a window that minimizes and maximizes,
   pinned above the conversation; the field keeps its solo glass sheet. No fake window
   ornaments in the chrome: no traffic lights, no corner glare — the app is not pretending
