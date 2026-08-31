@@ -28,8 +28,15 @@ main { height:100dvh; max-width:52rem; margin:0 auto; padding:.5rem; display:gri
 
 /* the two panes */
 /* One layout at every size: stage on top, terminal at the bottom. A wide screen is the
-   phone, wider — never a second arrangement to learn. */
-.pane { display:grid; gap:.5rem; grid-template-rows:minmax(0,.9fr) minmax(0,1.1fr); min-height:0; }
+   phone, wider — never a second arrangement to learn. The split is always golden; the grip
+   only chooses which pane gets φ's long side (1.618 : 1 ≈ two thirds against one). */
+.pane { display:grid; min-height:0; grid-template-rows:minmax(0,.618fr) auto minmax(0,1fr);
+  transition:grid-template-rows .4s cubic-bezier(.2,.8,.25,1); }
+.pane.wide-stage { grid-template-rows:minmax(0,1.618fr) auto minmax(0,1fr); }
+.grip { border:none; background:none; padding:.32rem 0; display:grid; place-items:center; cursor:ns-resize; touch-action:manipulation; }
+.grip::after { content:""; width:2.4rem; height:4px; border-radius:99px; background:rgba(20,22,40,.16); transition:background .2s, width .2s; }
+.grip:hover::after, .grip:focus-visible::after { background:#8b6cf0; width:3.4rem; }
+.grip:focus-visible { outline:none; }
 
 /* stage — glass */
 .stage, .solo { background:var(--glass); backdrop-filter:blur(26px) saturate(1.6); -webkit-backdrop-filter:blur(26px) saturate(1.6);

@@ -76,6 +76,7 @@ export default function Office(): ReactElement {
   const [log, setLog] = useState([{ who: "step", body: "Aludel ready. Ask for a new report, or ask about the work." }]); const [tab, setTab] = useState("templates");
   const [draft, setDraft] = useState<Template | null>(null); const [drafts, setDrafts] = useState<Payload[]>([]);
   const [step, setStep] = useState(-1); const [busy, setBusy] = useState(false); const [hint, setHint] = useState("");
+  const [wide, setWide] = useState(() => localStorage.getItem("wide") ?? "term"); // which pane gets φ's long side
   const previous = useRef<string | undefined>(undefined); // the agent thread lives server-side; the interview lives here
   const input = useRef<HTMLInputElement>(null); const tail = useRef<HTMLDivElement>(null); const stage = useRef<HTMLDivElement>(null);
   useEffect(() => { tail.current?.scrollTo({ top: 1e7 }); if (step >= 0) stage.current?.scrollTo({ top: 1e7, behavior: "smooth" }); }, [log, busy, draft, step]); // the stage follows what Aludel just wrote
@@ -109,31 +110,32 @@ export default function Office(): ReactElement {
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false);
   };
+  const clear = () => { setDraft(null); setDrafts([]); setStep(-1); setHint(""); };
   const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent");
-    setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]);
-    if (!no.length) { setDraft(null); setDrafts([]); setStep(-1); setHint(""); } };
+    setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]); if (!no.length) clear(); };
   const s = store.state; const now = Date.now(); const live = draft || drafts.length > 0;
   return (
-    <div className="pane">
+    <div className={`pane wide-${wide}`}>
       <section className="stage">
         <nav className="tabs">{live // while a draft is live the bar belongs to it: the commit is never scrolled away
           ? <><b>{step >= 0 ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit}>Commit</button>
-            <button className="ghost" onClick={() => { setDraft(null); setDrafts([]); setStep(-1); setHint(""); }}>Discard</button></>
+            <button className="ghost" onClick={clear}>Discard</button></>
           : ["templates", "sites", "ledger"].map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}</nav>
         <div className="scroll" ref={stage}>
           {live ? <div className="draft">
             {draft && <Form t={draft} edit={edit} />}
             {drafts.map((d, i) => <pre key={i} className="card">{JSON.stringify(d, null, 1)}</pre>)}</div> : <>
           {tab === "templates" && (Object.keys(s.latest).length ? Object.entries(s.latest).map(([id, v]) => <Form key={id} t={s.templates[`${id}@${v}`]!} />) : <p className="empty">No reports yet. Ask Aludel below for a new one.</p>)}
-          {tab === "sites" && Object.values(s.sites).map((site) => <div key={site.id} className="card"><b>{site.client.name}</b>
+          {tab === "sites" && (Object.keys(s.sites).length ? Object.values(s.sites).map((site) => <div key={site.id} className="card"><b>{site.client.name}</b>
             <span>{site.client.address}{site.services[0]?.list && ` · ${site.services[0].list}`}</span>
-            {site.services.flatMap((svc) => Object.keys(svc.allotments).map((k) => { const b = balance(s, site.id, svc.template, k, now); return b && <span key={k} className={b.left < 0 ? "bad" : ""}>{k}: {b.left} of {b.of} left</span>; }))}</div>)}
+            {site.services.flatMap((svc) => Object.keys(svc.allotments).map((k) => { const b = balance(s, site.id, svc.template, k, now); return b && <span key={k} className={b.left < 0 ? "bad" : ""}>{k}: {b.left} of {b.of} left</span>; }))}</div>)
+            : <p className="empty">No sites yet. Ask Aludel to add one.</p>)}
           {tab === "ledger" && store.refusals.map((r, i) => <p key={i} className="row bad">refused: {r.reason}</p>)}
           {tab === "ledger" && [...store.facts].reverse().slice(0, 60).map((f) => <p key={f.seq} className="row"><span className="hint">#{f.seq} · {new Date(f.at).toLocaleString()} · {f.actor}{f.via ? " · via agent" : ""}</span><br />{line(f)}</p>)}
-          {tab === "ledger" && !store.facts.length && <p className="empty">The ledger is empty.</p>}
-          {tab === "sites" && !Object.keys(s.sites).length && <p className="empty">No sites yet. Ask Aludel to add one.</p>}</>}
+          {tab === "ledger" && !store.facts.length && <p className="empty">The ledger is empty.</p>}</>}
         </div>
       </section>
+      <button className="grip" title={wide === "term" ? "Give the form more room" : "Give the terminal more room"} onClick={() => { const w = wide === "term" ? "stage" : "term"; setWide(w); localStorage.setItem("wide", w); }} />
       <section className="term">
         <div className="log" ref={tail}>
           {log.map((m, i) => <p key={i} className={m.who}><b>{m.who}</b><span>{m.body}</span></p>)}

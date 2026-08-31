@@ -174,10 +174,9 @@ export const plan = (s: State, now: number, horizonDays: number): Extract<Payloa
           ...(svc.list && { list: svc.list }), ...(svc.assignee && { assignee: svc.assignee }) }]);
       }
     }
-    for (const [, entries] of batch) {
+    for (const [, entries] of batch) { // occurrences that share a date share one piece of paperwork
       const form: Form = { id: newId(), template: tpl.id, version: tpl.version, site: site.id, meta: { name: site.client.name, address: site.client.address } };
-      out.push({ type: "dispatched", form, entries: entries.map((e) => ({ ...e, form: form.id })) });
-    }
+      out.push({ type: "dispatched", form, entries: entries.map((e) => ({ ...e, form: form.id })) }); }
   }
   return out;
 };

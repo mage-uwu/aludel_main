@@ -29,8 +29,7 @@ export const ask = (s: State, q: Query, now: number): Answer | { error: string }
   if (!kind || kind === "button") return { error: `no channel ${q.channel} on task ${q.task}` };
   if (!(LEGAL[kind as keyof typeof LEGAL] as readonly string[]).includes(q.agg)) return { error: `${q.agg} is not legal on ${kind}` };
   if (kind === "outcome") {
-    const tally: Record<string, number> = {};
-    for (const l of done) tally[l.outcome] = (tally[l.outcome] ?? 0) + 1;
+    const tally: Record<string, number> = {}; for (const l of done) tally[l.outcome] = (tally[l.outcome] ?? 0) + 1;
     if (q.agg === "tally") return { value: tally, n: done.length, of: scoped.length };
     const costs = new Map(scoped.map((r) => taskOf(s, r)).find(Boolean)?.outcomes.map((o) => [o.key, o.cost]) ?? []);
     return { value: done.reduce((sum, l) => sum + (costs.get(l.outcome) ?? 0), 0), n: done.length, of: scoped.length };

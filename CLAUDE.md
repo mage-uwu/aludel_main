@@ -17,7 +17,10 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
 - The look is one committed world (no theme switching, no second layout): a glass **stage**
-  over a black **terminal**, stacked at every width — a wide screen is the phone, wider. Colour encodes provenance and nothing else — violet = a model wrote this,
+  over a black **terminal**, stacked at every width — a wide screen is the phone, wider. The
+  split is always golden (1.618 : 1); the grip between the panes only chooses which one gets
+  φ's long side. Never reuse a component's class name as a state modifier — `pane ${wide}`
+  once painted the whole pane with the terminal's styling. Colour encodes provenance and nothing else — violet = a model wrote this,
   mint = the machine is certain (script, ledger, guard), white = you. Keep it true: never
   paint a model's words mint. Styling lives in `src/index.css` (uncounted by the LOC gate),
   so pay for polish there, not in TSX. No webfonts — the field runs offline.
