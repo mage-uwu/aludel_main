@@ -149,13 +149,35 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .ends > .hint { width:100%; font-size:.7rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
 .ends .outcome { padding:.62rem 1.1rem; font-size:.86rem; }
 .outcome.pencil { flex:0 1 auto; width:auto; min-width:5.5rem; field-sizing:content; text-align:center; }
-/* the model's hand: a violet touch-cursor that presses the same controls a human would.
-   Violet because a model is acting — the same provenance the terminal speaks. */
-.hand { position:absolute; z-index:6; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%; opacity:0; pointer-events:none;
-  background:radial-gradient(circle at 36% 30%, rgba(255,255,255,.95) 0 2.5px, transparent 3.5px), radial-gradient(circle, rgba(151,116,255,.42), rgba(151,116,255,.10) 62%, transparent 70%);
-  border:1.5px solid rgba(140,104,244,.75); box-shadow:0 2px 12px rgba(120,90,240,.4), 0 0 0 5px rgba(151,116,255,.12);
-  transition:left .42s cubic-bezier(.3,.9,.3,1), top .42s cubic-bezier(.3,.9,.3,1), opacity .25s, transform .12s; }
-.hand.tap { transform:scale(.66); }
+/* THE TWO PRIMITIVES. Every visible thing Aludel does is one of these, or both in sequence:
+   the pointer glides to a control and presses it, and the caret types into what it pressed.
+   Violet because a model is acting — the same provenance the terminal speaks. Compose them
+   anywhere: they only need a position, so any surface can borrow the same show. */
+.hand, .caret { position:absolute; z-index:9; opacity:0; pointer-events:none;
+  transition:left .43s cubic-bezier(.3,.9,.3,1), top .43s cubic-bezier(.3,.9,.3,1), opacity .25s, transform .13s; }
+
+/* 1 — the pointer. A real arrow, big enough to read across a room, white-edged so it stays
+   legible on the form's own white and on the terminal's black alike. */
+.hand { width:30px; height:36px; margin:-3px 0 0 -4px; filter:drop-shadow(0 4px 8px rgba(50,30,120,.45)); }
+.hand::before, .hand::after { content:""; position:absolute; inset:0;
+  clip-path:polygon(6% 2%, 6% 80%, 27% 62%, 42% 96%, 60% 88%, 45% 55%, 72% 53%); }
+.hand::before { background:#fff; transform:scale(1.28); transform-origin:6% 2%; }   /* the outline */
+.hand::after { background:linear-gradient(155deg, #b79aff, #6f4de0 70%); }
+.hand.tap { transform:scale(.78); }
+/* the press itself: a ring that blooms out of the tip */
+.hand i { position:absolute; left:2px; top:0; width:12px; height:12px; margin:-6px 0 0 -6px; border-radius:50%;
+  border:2px solid rgba(151,116,255,.85); opacity:0; transform:scale(.3); }
+.hand.tap i { animation:press .42s ease-out; }
+@keyframes press { from { opacity:.9; transform:scale(.3); } to { opacity:0; transform:scale(3.4); } }
+
+/* 2 — the caret. A fat blinking bar that sits in the field the pointer just pressed, and the
+   letters arrive to the left of it, one at a time. */
+.caret { width:3px; height:1.5rem; margin-top:-.75rem; border-radius:2px; background:var(--violet);
+  box-shadow:0 0 12px rgba(151,116,255,.9), 0 0 3px rgba(151,116,255,1); animation:blink .9s steps(1, end) infinite; }
+/* blink the colour, never the opacity — an animated opacity outranks the inline one that
+   shows and hides it, and the caret would sit there blinking at 0,0 forever. */
+@keyframes blink { 50% { background:transparent; box-shadow:none; } }
+
 /* new rows arrive: what Aludel just wrote announces itself */
 @keyframes pop { from { opacity:0; transform:translateY(-5px) scale(.985); } }
 .wrap, .task { animation:pop .3s cubic-bezier(.2,.85,.3,1); }

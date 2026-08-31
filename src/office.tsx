@@ -86,24 +86,27 @@ const ROUTINE: Cue[] = [
 ];
 const pending = (t: Template, shut: string[]) => ROUTINE.find((c) => !shut.includes(`${c.key}@${at(t)}`) && c.need(t)); // per job: a new one reopens them
 
-const zz = (ms: number) => new Promise((ok) => setTimeout(ok, ms)); type Act = { sel: string; go: (d: Template) => void };
+const zz = (ms: number) => new Promise((ok) => setTimeout(ok, ms)); type Act = { sel: string; text?: string; go: (d: Template, s?: string) => void }; // text set = the caret types it in
 // The hand's script: what changed between two drafts, as the edits a person would make. Each
 // action names the control it uses — the + field button, a block's ✕, a pencil — so the cursor
 // can go press it. Reorders and rarities fall through to the final snap; nothing is ever lost.
 const acts = (a: Template, b: Template): Act[] => {
   const out: Act[] = []; const J = JSON.stringify;
-  if (a.name !== b.name) out.push({ sel: ".pencil.name", go: (d) => { d.name = b.name; } });
+  if (a.name !== b.name) out.push({ sel: ".pencil.name", text: b.name, go: (d, s) => { d.name = s ?? b.name; } });
   b.tasks.forEach((t, i) => {
     const p = a.tasks[i] ?? { ...t, cadence: undefined, outcomes: [], blocks: [] }; const S = `.task:nth-of-type(${i + 1})`; const n = Math.min(p.blocks.length, t.blocks.length);
     if (!a.tasks[i]) out.push({ sel: ".tpl", go: (d) => { d.tasks[i] = { ...t, cadence: undefined, outcomes: [], blocks: [] }; } });
-    else if (p.title !== t.title) out.push({ sel: `${S} > .pencil`, go: (d) => { d.tasks[i]!.title = t.title; } });
+    else if (p.title !== t.title) out.push({ sel: `${S} > .pencil`, text: t.title, go: (d, s) => { d.tasks[i]!.title = s ?? t.title; } });
     if (J(p.cadence) !== J(t.cadence)) out.push({ sel: S, go: (d) => { d.tasks[i]!.cadence = t.cadence; } });
     if (J(p.outcomes) !== J(t.outcomes)) out.push({ sel: `${S} .ends`, go: (d) => { d.tasks[i]!.outcomes = t.outcomes; } });
     const perm = p.blocks.length === t.blocks.length && p.blocks.every((b) => t.blocks.some((x) => x.key === b.key)) && t.blocks.some((b, j) => p.blocks[j]?.key !== b.key);
     if (perm) out.push({ sel: `${S} div:nth-of-type(${t.blocks.findIndex((b, j) => p.blocks[j]?.key !== b.key) + 1}) [title="Move up"]`, go: (d) => { d.tasks[i]!.blocks = structuredClone(t.blocks); } });
-    t.blocks.slice(0, perm ? 0 : n).forEach((k, j) => J(p.blocks[j]) !== J(k) && out.push({ sel: `${S} div:nth-of-type(${j + 1}) .pencil`, go: (d) => { d.tasks[i]!.blocks[j] = k; } }));
+    t.blocks.slice(0, perm ? 0 : n).forEach((k, j) => J(p.blocks[j]) !== J(k) && out.push({ sel: `${S} div:nth-of-type(${j + 1}) .pencil`, text: k.label,
+      go: (d, s) => { d.tasks[i]!.blocks[j] = s === undefined ? k : { ...k, label: s }; } }));
     for (let j = p.blocks.length - 1; j >= n; j--) out.push({ sel: `${S} div:nth-of-type(${j + 1}) [title="Remove"]`, go: (d) => { d.tasks[i]!.blocks.splice(j, 1); } });
-    t.blocks.slice(n).forEach((k) => out.push({ sel: `${S} .add`, go: (d) => { d.tasks[i]!.blocks.push(k); } }));
+    t.blocks.slice(n).forEach((k, j) => { const at = n + j; // press + field, then name it
+      out.push({ sel: `${S} .add`, go: (d) => { d.tasks[i]!.blocks.push({ ...k, label: "" }); } });
+      out.push({ sel: `${S} div:nth-of-type(${at + 1}) .pencil`, text: k.label, go: (d, s) => { const x = d.tasks[i]!.blocks[at]; if (x) x.label = s ?? k.label; } }); });
   }); return out; };
 
 // The form on the stage. Read-only in the Templates tab; with `edit`, every label is a pencil
@@ -143,20 +146,32 @@ export default function Office(): ReactElement {
   const [wide, setWide] = useState(() => localStorage.getItem("wide") ?? "stage"); // which pane gets φ's long side
   const win = (w: string) => { setWide(w); localStorage.setItem("wide", w); };
   const previous = useRef<string | undefined>(undefined); // the agent thread lives server-side; the interview lives here
-  const input = useRef<HTMLInputElement>(null); const tail = useRef<HTMLDivElement>(null); const stage = useRef<HTMLDivElement>(null); const hand = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null); const tail = useRef<HTMLDivElement>(null); const stage = useRef<HTMLDivElement>(null); const hand = useRef<HTMLDivElement>(null); const caret = useRef<HTMLDivElement>(null);
   useEffect(() => { tail.current?.scrollTo({ top: 1e7 }); if (shut && !busy) stage.current?.scrollTo({ top: 1e7, behavior: "smooth" }); }, [log, busy, draft, shut]); // the stage follows what Aludel just wrote
   const edit = (f: (d: Template) => void) => setDraft((d) => { if (!d) return d; const c = structuredClone(d); f(c); return c; });
   // The hand plays each edit where its control lives — glide, tap, land — busy the whole while so
   // nobody edits under it. The final snap makes the outcome exact even if a selector misses.
   const perform = async (list: Act[], final: Template) => {
-    setBusy(true); const h = hand.current;
+    setBusy(true); const h = hand.current, bar = caret.current;
+    const put = (e: HTMLElement, x: number, y: number) => { const s = stage.current!.parentElement!.getBoundingClientRect();
+      Object.assign(e.style, { opacity: "1", left: `${Math.min(x - s.left, s.width - 24)}px`, top: `${Math.max(16, Math.min(y - s.top, s.height - 16))}px` }); };
     for (const a of matchMedia("(prefers-reduced-motion: reduce)").matches ? [] : list) {
-      const el = stage.current?.querySelector(a.sel) ?? stage.current?.querySelector(".tpl");
+      const el = (stage.current?.querySelector(a.sel) ?? stage.current?.querySelector(".tpl")) as HTMLElement | null;
       if (el && h) { el.scrollIntoView({ block: "center", behavior: "smooth" }); await zz(320);
-        const r = el.getBoundingClientRect(), s = stage.current!.parentElement!.getBoundingClientRect();
-        Object.assign(h.style, { opacity: "1", left: `${Math.min(r.left - s.left + Math.min(r.width / 2, 90), s.width - 30)}px`, top: `${Math.max(16, Math.min(r.top - s.top + r.height / 2, s.height - 16))}px` });
-        await zz(420); h.classList.add("tap"); await zz(140); }
-      setDraft((d) => { const c = structuredClone(d ?? final); a.go(c); return c; }); h?.classList.remove("tap"); await zz(300); }
+        const r = el.getBoundingClientRect();
+        put(h, r.left + Math.min(r.width / 2, 90), r.top + r.height / 2);
+        await zz(430); h.classList.add("tap"); await zz(150); h.classList.remove("tap"); }
+      if (a.text !== undefined && el && bar) { // the caret takes over where the pointer just clicked
+        const f = getComputedStyle(el), pad = parseFloat(f.paddingLeft) + parseFloat(f.borderLeftWidth);
+        const ctx = document.createElement("canvas").getContext("2d")!; ctx.font = f.font;
+        const r = el.getBoundingClientRect(), pace = a.text.length > 22 ? 22 : 38;
+        if (h) h.style.opacity = ".28"; // the hand moves aside so the letters it is typing stay readable
+        for (let j = 1; j <= a.text.length; j++) {
+          setDraft((d) => { const c = structuredClone(d ?? final); a.go(c, a.text!.slice(0, j)); return c; });
+          put(bar, r.left + pad + ctx.measureText(a.text.slice(0, j)).width, r.top + r.height / 2); await zz(pace); }
+        await zz(220); bar.style.opacity = "0";
+      } else setDraft((d) => { const c = structuredClone(d ?? final); a.go(c); return c; });
+      await zz(300); }
     if (h) h.style.opacity = "0";
     setDraft(final); setBusy(false); };
   const say = (t: Template, sh: string[]) => { const c = pending(t, sh); setHint(c?.hint ?? ""); if (!c) setShut(null); // scripted lines speak mint
@@ -215,7 +230,8 @@ export default function Office(): ReactElement {
           {tab === "ledger" && [...store.facts].reverse().slice(0, 60).map((f) => <p key={f.seq} className="row"><span className="hint">#{f.seq} · {new Date(f.at).toLocaleString()} · {f.actor}{f.via ? " · via agent" : ""}</span><br />{line(f)}</p>)}
           {tab === "ledger" && !store.facts.length && <p className="empty">The ledger is empty.</p>}</>}
         </div>
-        <div className="hand" ref={hand} />
+        <div className="hand" ref={hand}><i /></div>
+        <div className="caret" ref={caret} />
       </section>
       <button className="grip" title={wide === "term" ? "Give the form more room" : "Give the conversation more room"} onClick={() => win(wide === "term" ? "stage" : "term")} />
       <div className="log" ref={tail}>

@@ -53,11 +53,18 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   `acts()` already knows which control each verb uses, so a verb is an animation for free.
   Target a named item exact → whole-word → loose, never plain `includes` ("delete ph" must
   not hit "Photos").
-- The hand: everything Aludel writes onto the stage plays as visible edits under the violet
-  touch-cursor — `acts()` diffs old→new into actions that each name the control they use, and
-  `perform()` glides, taps, applies. The show is presentation only: the final snap sets the
-  exact computed template, so playback can differ from the truth cosmetically, never
-  materially. Input stays `busy` while the hand works so nobody edits under it.
+- The hand is **two primitives, and everything composes from them**: a big violet **pointer**
+  that glides to a control and presses it, and a blinking **caret** that types into what it
+  pressed, letter by letter. `acts()` diffs old→new into actions that each name the control
+  they use; an action carrying `text` is a typing act, and its `go(draft, partial)` takes the
+  partial string so the letters can actually arrive one at a time. Adding a field presses
+  `+ field` and then names it, the way a person would. Both primitives only need a position,
+  so any future surface borrows the same show. The show is presentation only: the final snap
+  sets the exact computed template, so playback can differ from the truth cosmetically, never
+  materially. Input stays `busy` while the hand works so nobody edits under it, and
+  `prefers-reduced-motion` skips straight to the result.
+- Never blink a caret by animating `opacity` — an animated property outranks the inline style
+  that shows and hides it, and it will sit there blinking at 0,0 forever. Blink the colour.
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
 - The look is one committed world (no theme switching, no second layout): in the office the
