@@ -6,8 +6,8 @@ export { Team };
 
 export type Env = {
   TEAM: DurableObjectNamespace<Team>;
-  DIR: KVNamespace;            // email → team id; identity's forwarding address
-  BLOBS: R2Bucket;             // photo bytes, addressed by content hash
+  DIR?: KVNamespace;           // email → team id; absent until real sign-in needs it
+  BLOBS?: R2Bucket;            // photo bytes by content hash; absent = photos stay on-device
   SESSION_SECRET: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
@@ -26,7 +26,7 @@ export default {
     if (path === "/api/auth/callback") {
       const email = await callback(env, req);
       if (!email) return json({ error: "sign-in failed" }, 401);
-      const team = (await env.DIR.get(email)) ?? "";
+      const team = (await env.DIR?.get(email)) ?? "";
       return new Response(null, { status: 302, headers: { Location: "/", "Set-Cookie": await seal(env, email, team) } });
     }
 
@@ -38,7 +38,7 @@ export default {
       const team = newId<string>();
       const stub = env.TEAM.get(env.TEAM.idFromName(team));
       await stub.append(who.email, [{ type: "granted", email: who.email, role: "admin" }]);
-      await env.DIR.put(who.email, team);
+      await env.DIR?.put(who.email, team);
       return json({ team }, 200, { "Set-Cookie": await seal(env, who.email, team) });
     }
     if (!who.team) return json({ error: "no team yet" }, 428);
@@ -48,7 +48,7 @@ export default {
     if (path === "/api/t/pull") return json(await stub.pull(Number(new URL(req.url).searchParams.get("since") ?? 0)));
     if (path === "/api/t/append" && req.method === "POST") {
       const out = await stub.append(who.email, await req.json());
-      for (const f of out.admitted) if (f.type === "granted") await env.DIR.put(f.email, who.team); // new teammate can now log in
+      for (const f of out.admitted) if (f.type === "granted") await env.DIR?.put(f.email, who.team); // new teammate can now log in
       return json(out);
     }
     if (path === "/api/t/find" && req.method === "POST") return json(await stub.find(await req.json()));
@@ -56,8 +56,8 @@ export default {
     if (path === "/api/agent" && req.method === "POST") return chat(env, stub, who.email, await req.json());
 
     const hash = path.match(/^\/api\/blob\/([a-f0-9]{64})$/)?.[1];
-    if (hash && req.method === "PUT") { await env.BLOBS.put(hash, req.body); return json({ ok: true }); }
-    if (hash) return env.BLOBS.get(hash).then((b) => (b ? new Response(b.body) : json({ error: "no such blob" }, 404)));
+    if (hash && req.method === "PUT") { await env.BLOBS?.put(hash, req.body); return json({ ok: !!env.BLOBS }); }
+    if (hash) return env.BLOBS ? env.BLOBS.get(hash).then((b) => (b ? new Response(b.body) : json({ error: "no such blob" }, 404))) : json({ error: "no blob store yet" }, 501);
     return json({ error: "no such route" }, 404);
   },
 };
