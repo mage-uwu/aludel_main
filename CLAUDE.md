@@ -57,11 +57,13 @@ because a template cannot know which weekday a route runs. Read it before touchi
   `acts()` already knows which control each verb uses, so a verb is an animation for free.
   Target a named item exact → whole-word → loose, never plain `includes` ("delete ph" must
   not hit "Photos").
-- The hand is **two primitives, and everything composes from them**: a big black-and-white
-  **pixel cursor** that drives to a control and presses it, and a blinking violet **caret**
-  that types into what it pressed, letter by letter. The cursor is a 13x20 bitmap blown up
-  with `shape-rendering:crispEdges`, so its stair steps stay sharp at any size; it carries no
-  colour, because it is the machine's hand and not its voice. It enters from below the stage
+- The hand is **two primitives, and everything composes from them**: a black-and-white
+  **pointer** that drives to a control and presses it, and a blinking violet **caret**
+  that types into what it pressed, letter by letter. The pointer is the system arrow — one
+  smooth path, black fill with a white edge and a soft shadow so it reads on the form's white
+  and the terminal's black alike — and it is drawn at a real pointer's size, ~26px, never
+  scaled up into a prop: the eye follows a cursor because it moves, not because it is large.
+  It carries no colour, because it is the machine's hand and not its voice. It enters from below the stage
   once and then **stays** — a person does not put the mouse away between two edits, and the
   chain of moves is what makes it read as one mind working; only the routine ending sends it
   home. Motion is driven frame by frame, never CSS-tweened: a far target takes longer than a

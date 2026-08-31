@@ -173,22 +173,22 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .hand { transition:opacity .25s, transform .13s; }  /* left/top are driven frame by frame, not tweened */
 .caret { transition:left .07s linear, top .12s, opacity .2s; }
 
-/* 1 — the pointer. A real arrow, big enough to read across a room, white-edged so it stays
-   legible on the form's own white and on the terminal's black alike. */
-/* The classic cursor, drawn on a 12x19 pixel grid and blown up: black outline, white fill,
-   stair-stepped edges kept crisp by an integer viewBox and shape-rendering. No colour at all —
-   it is the machine's hand, not its voice; violet stays in the caret and the terminal. */
-.hand { width:44px; height:68px; margin:-4px 0 0 -4px; transform-origin:5% 3%;
-  filter:drop-shadow(3px 4px 0 rgba(20,22,40,.20));
+/* 1 — the pointer. The system arrow, drawn as one path rather than a pixel grid: black fill
+   with a white edge so it stays legible on the form's own white and on the terminal's black
+   alike, and a soft shadow to lift it off both. No colour at all — it is the machine's hand,
+   not its voice; violet stays in the caret and the terminal. Sized like a real pointer, not a
+   prop: the eye follows a cursor because it moves, never because it is large. */
+.hand { width:26px; height:41px; margin:-1px 0 0 -1px; transform-origin:4% 2%;
+  filter:drop-shadow(1px 2px 2.5px rgba(0,0,0,.42));
   background:no-repeat left top/contain url("data:image/svg+xml,\
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 20' shape-rendering='crispEdges'>\
-<path d='M1 2h1v1h-1zM1 3h2v1h-2zM1 4h3v1h-3zM1 5h4v1h-4zM1 6h5v1h-5zM1 7h6v1h-6zM1 8h7v1h-7zM1 9h8v1h-8zM1 10h9v1h-9zM1 11h10v1h-10zM1 12h6v1h-6zM1 13h3v1h-3zM5 13h3v1h-3zM1 14h2v1h-2zM5 14h3v1h-3zM1 15h1v1h-1zM6 15h3v1h-3zM6 16h3v1h-3zM7 17h3v1h-3zM7 18h3v1h-3z' fill='%23fff'/>\
-<path d='M0 0h1v1h-1zM0 1h2v1h-2zM0 2h1v1h-1zM2 2h1v1h-1zM0 3h1v1h-1zM3 3h1v1h-1zM0 4h1v1h-1zM4 4h1v1h-1zM0 5h1v1h-1zM5 5h1v1h-1zM0 6h1v1h-1zM6 6h1v1h-1zM0 7h1v1h-1zM7 7h1v1h-1zM0 8h1v1h-1zM8 8h1v1h-1zM0 9h1v1h-1zM9 9h1v1h-1zM0 10h1v1h-1zM10 10h1v1h-1zM0 11h1v1h-1zM11 11h1v1h-1zM0 12h1v1h-1zM7 12h6v1h-6zM0 13h1v1h-1zM4 13h1v1h-1zM8 13h1v1h-1zM0 14h1v1h-1zM3 14h2v1h-2zM8 14h1v1h-1zM0 15h1v1h-1zM2 15h1v1h-1zM5 15h1v1h-1zM9 15h1v1h-1zM0 16h2v1h-2zM5 16h1v1h-1zM9 16h1v1h-1zM0 17h1v1h-1zM6 17h1v1h-1zM10 17h1v1h-1zM6 18h1v1h-1zM10 18h1v1h-1zM7 19h4v1h-4z' fill='%230d0f14'/>\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='-.7 -.7 12.4 19'>\
+<path d='M0 0 L0 15.6 L3.85 12.05 L6.15 17.3 L8.6 16.2 L6.35 11.1 L11.1 11.1 Z' \
+fill='%230d0f14' stroke='%23fff' stroke-width='1.15' stroke-linejoin='round' paint-order='stroke'/>\
 </svg>"); }
-.hand.tap { transform:scale(.82); }
+.hand.tap { transform:scale(.86); }
 /* the press itself: a ring that blooms out of the tip */
-.hand i { position:absolute; left:3px; top:2px; width:14px; height:14px; margin:-7px 0 0 -7px;
-  border:3px solid rgba(20,22,40,.55); opacity:0; transform:scale(.3); }
+.hand i { position:absolute; left:0; top:0; width:11px; height:11px; margin:-5.5px 0 0 -5.5px;
+  border:2px solid rgba(20,22,40,.5); border-radius:50%; opacity:0; transform:scale(.3); }
 .hand.tap i { animation:press .42s ease-out; }
 @keyframes press { from { opacity:.9; transform:scale(.3); } to { opacity:0; transform:scale(3.4); } }
 
