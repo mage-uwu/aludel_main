@@ -20,12 +20,7 @@ export const find = (s: State, f: Filter, now: number): Hit[] =>
 
 // The calculator. The block's kind decides which aggregations are legal, so an invalid
 // question cannot be expressed. Every answer carries its denominator (law 7).
-export const LEGAL = {
-  number: ["sum", "avg", "min", "max", "last"],
-  text: ["last", "count"],
-  photo: ["count", "presence"],
-  outcome: ["tally", "cost"],
-} as const;
+export const LEGAL = { number: ["sum", "avg", "min", "max", "last"], text: ["last", "count"], photo: ["count", "presence"], outcome: ["tally", "cost"] } as const;
 export type Agg = (typeof LEGAL)[keyof typeof LEGAL][number];
 export type Query = { template: TemplateId; task: string; channel: string; agg: Agg } & Omit<Filter, "task">;
 export type Answer = { value: number | string | Record<string, number> | null; n: number; of: number };
@@ -59,7 +54,6 @@ export const ask = (s: State, q: Query, now: number): Answer | { error: string }
 // Balance: what remains of a site's allotment for one task. allotment − Σ cost(outcome).
 export const balance = (s: State, site: SiteId, template: TemplateId, task: string, now: number): { left: number; spent: number; of: number } | null => {
   const allotted = s.sites[site]?.services.find((x) => x.template === template)?.allotments[task];
-  if (allotted === undefined) return null;
-  const spent = ask(s, { template, task, channel: "outcome", agg: "cost", site }, now);
-  return "error" in spent ? null : { left: allotted - (spent.value as number), spent: spent.value as number, of: allotted };
+  const spent = allotted === undefined ? null : ask(s, { template, task, channel: "outcome", agg: "cost", site }, now);
+  return spent === null || "error" in spent ? null : { left: allotted! - (spent.value as number), spent: spent.value as number, of: allotted! };
 };

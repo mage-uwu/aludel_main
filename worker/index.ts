@@ -8,8 +8,8 @@ export type Env = {
   TEAM: DurableObjectNamespace<Team>;
   DIR?: KVNamespace;           // email → team id; absent until real sign-in needs it
   BLOBS?: R2Bucket;            // photo bytes by content hash; absent = photos stay on-device
-  OPENAI_API_KEY: string;      // secret; the desk is down without it
-  OPENAI_MODEL: string;        // exact model id, config not code — swap models by editing a var
+  OPENAI_API_KEY: string;      // secret; Aludel is down without it
+  OPENAI_MODEL: string;        // exact model id: config, not code
   ACCESS_TEAM: string;         // <team>.cloudflareaccess.com, the JWT signer
   ACCESS_AUD?: string;         // the Access application's audience tag; unset = Access not yet enabled
   DEV_USER?: string;           // honored only while ACCESS_AUD is unset
@@ -24,8 +24,8 @@ export default {
     const who = await session(env, req);
     if (!who) return json({ error: "signed out" }, 401);
 
-    if (path === "/api/team" && req.method === "POST") { // founding a second team needs the directory
-      if (!env.DIR) return json({ error: "single-team mode: bind the DIR KV namespace first" }, 501);
+    if (path === "/api/team" && req.method === "POST") {
+      if (!env.DIR) return json({ error: "single-team mode: bind the DIR KV namespace first" }, 501); // founding needs the directory
       const team = newId<string>();
       await env.TEAM.get(env.TEAM.idFromName(team)).append(who.email, [{ type: "granted", email: who.email, role: "admin" }]);
       await env.DIR.put(who.email, team);

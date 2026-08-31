@@ -1,10 +1,8 @@
 // The kernel: five nouns, eight facts, one guard, one fold. Everything here is pure.
 // The ledger is an ordered list of facts; every view is fold(facts) seen through a lens at `now`.
 type Id<B extends string> = string & { readonly __brand: B };
-export type SiteId = Id<"site">;
-export type TemplateId = Id<"template">;
-export type FormId = Id<"form">;
-export type EntryId = Id<"entry">;
+export type SiteId = Id<"site">; export type TemplateId = Id<"template">;
+export type FormId = Id<"form">; export type EntryId = Id<"entry">;
 export const newId = <I extends string>(): I =>
   ((globalThis as { crypto?: Crypto }).crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`) as I;
 
@@ -54,7 +52,7 @@ export type State = {
   entries: Record<EntryId, Rec>;
 };
 export const empty = (): State => ({ actors: {}, sites: {}, templates: {}, latest: {}, forms: {}, entries: {} });
-export const versioned = (s: State, id: TemplateId, version: number): Template | undefined => s.templates[`${id}@${version}`];
+export const versioned = (s: State, id: TemplateId, v: number): Template | undefined => s.templates[`${id}@${v}`];
 export const taskOf = (s: State, r: Entry): Task | undefined =>
   s.forms[r.form] && versioned(s, s.forms[r.form]!.template, s.forms[r.form]!.version)?.tasks.find((t) => t.key === r.task);
 
@@ -82,8 +80,7 @@ export const fold = (facts: readonly Fact[]): State => { const s = empty(); for 
 
 // -- the four lenses ----------------------------------------------------------------------
 export type Status = "scheduled" | "pending" | "overdue" | "logged";
-export const status = (r: Rec, now: number): Status =>
-  r.logged ? "logged" : now < r.window.from ? "scheduled" : now <= r.window.due ? "pending" : "overdue";
+export const status = (r: Rec, now: number): Status => (r.logged ? "logged" : now < r.window.from ? "scheduled" : now <= r.window.due ? "pending" : "overdue");
 export const late = (r: Rec): boolean => !!r.logged && r.logged.at > r.window.due;
 export const effective = (r: Rec): Logged | undefined => r.trail.at(-1) ?? r.logged; // latest correction wins
 
@@ -92,9 +89,8 @@ export const effective = (r: Rec): Logged | undefined => r.trail.at(-1) ?? r.log
 const GATE: Record<Payload["type"], Role> = { granted: "admin", declared: "office", signed: "office", bound: "office", dispatched: "office", logged: "field", corrected: "field", steered: "office" };
 const sameDay = (a: number, b: number) => new Date(a).toISOString().slice(0, 10) === new Date(b).toISOString().slice(0, 10);
 const badValue = (task: Task, key: string, v: Value): boolean => {
-  const b = task.blocks.find((x) => x.key === key);
-  if (!b || b.kind === "button") return true; // a value for a block that isn't there, or can't hold one
-  return b.kind === "number" ? typeof v !== "number" : typeof v !== "string";
+  const b = task.blocks.find((x) => x.key === key); // no such block, a button, or the wrong shape
+  return !b || b.kind === "button" || (b.kind === "number" ? typeof v !== "number" : typeof v !== "string");
 };
 const badKeys = (tpl: Template, prior: Template[]): string | null => {
   const kinds = new Map<string, string>();

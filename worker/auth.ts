@@ -10,8 +10,7 @@ let jwks: Promise<CryptoKey[]> | undefined; // per-isolate cache; Access rotates
 const keys = (team: string): Promise<CryptoKey[]> =>
   (jwks ??= fetch(`https://${team}.cloudflareaccess.com/cdn-cgi/access/certs`)
     .then((r) => r.json() as Promise<{ keys: JsonWebKey[] }>)
-    .then((body) => Promise.all(body.keys.map((k) =>
-      crypto.subtle.importKey("jwk", k, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"])))));
+    .then((body) => Promise.all(body.keys.map((k) => crypto.subtle.importKey("jwk", k, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["verify"])))));
 
 export const session = async (env: Env, req: Request): Promise<{ email: string; team: string } | null> => {
   if (!env.ACCESS_AUD) return env.DEV_USER ? { email: env.DEV_USER, team: "dev" } : null; // DEV_USER only exists while Access does not

@@ -15,14 +15,13 @@ const TOOLS = [
     parameters: { type: "object", properties: { site: { type: "string" }, task: { type: "string" }, actor: { type: "string" }, status: { type: "string" }, list: { type: "string" }, from: { type: "number" }, to: { type: "number" } } } },
   { type: "function", name: "ask", description: "Aggregate one channel of history. channel is a block key, or 'outcome'. Legal aggs — number: sum|avg|min|max|last; text: last|count; photo: count|presence; outcome: tally|cost. Answers carry value, n (entries that recorded it), of (entries in scope).",
     parameters: { type: "object", properties: { template: { type: "string" }, task: { type: "string" }, channel: { type: "string" }, agg: { type: "string" }, site: { type: "string" }, actor: { type: "string" }, from: { type: "number" }, to: { type: "number" } }, required: ["template", "task", "channel", "agg"] } },
+  { type: "function", name: "new_template", description: "Start the structured new-report interview. Call this whenever the human wants to create a new report or template — do not interrogate them yourself.", parameters: { type: "object", properties: {} } },
   { type: "function", name: "draft", description: "Propose facts to append to the ledger (declared|signed|bound|dispatched|granted|steered). They are checked and staged for the human, who commits or discards them. Call once, with the complete set, after your reads.",
     parameters: { type: "object", properties: { facts: { type: "array", items: { type: "object" } } }, required: ["facts"] } },
 ];
 
 const digest = (t: Awaited<ReturnType<Team["snapshot"]>>) => JSON.stringify({
-  now: Date.now(),
-  actors: Object.values(t.actors),
-  sites: Object.values(t.sites),
+  now: Date.now(), actors: Object.values(t.actors), sites: Object.values(t.sites),
   templates: Object.entries(t.latest).map(([id, v]) => t.templates[`${id}@${v}`]),
 });
 
@@ -35,7 +34,8 @@ Answer questions with find/ask and cite what you read — say the numbers' denom
 ("3 tabs across 1 of 4 visits"), never a bare figure. Make changes only via draft, and keep
 drafts minimal and complete: new ids as short random strings; template edits are a whole new
 version with the same task/block/outcome keys (never retype a key); windows and times are epoch
-ms. If the human's ask is ambiguous, ask back instead of guessing. Team state:\n`;
+ms. To create a new report or template, call new_template — never collect the details in chat.
+If the human's ask is otherwise ambiguous, ask back instead of guessing. Team state:\n`;
 
 export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string }): Promise<Response> => {
   if (!env.OPENAI_API_KEY) return reply("No OPENAI_API_KEY reaches the worker. Add it under Settings → Variables and Secrets (the runtime section, not Build) on this worker, as a Secret, and deploy the change.", [], body.previous);
@@ -59,6 +59,7 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
     if (calls.length === 0) return reply(text || "Here's what I put together.", drafts, previous);
     input = []; // next request: only this turn's tool outputs; previous_response_id carries the rest
     for (const call of calls) {
+      if (call.name === "new_template") return reply("Let's build it properly — quick questions, one at a time.", [], body.previous, true); // fork the thread from before the call
       const args = JSON.parse(call.arguments || "{}") as Record<string, unknown>;
       let result: unknown =
         call.name === "find" ? await team.find(args) :
@@ -74,5 +75,5 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
   return reply("I ran out of turns — try a smaller ask.", drafts, previous);
 };
 
-const reply = (text: string, drafts: Payload[], previous?: string) =>
-  new Response(JSON.stringify({ reply: text, drafts, previous }), { headers: { "Content-Type": "application/json" } });
+const reply = (text: string, drafts: Payload[], previous?: string, wizard?: boolean) =>
+  new Response(JSON.stringify({ reply: text, drafts, previous, wizard }), { headers: { "Content-Type": "application/json" } });

@@ -24,8 +24,7 @@ export type Me = { email: string; role: string | null; team?: string };
 export type Refusal = { draft: Payload; reason: string };
 
 class Store {
-  facts: Fact[] = [];
-  queue: Draft[] = [];
+  facts: Fact[] = []; queue: Draft[] = [];
   state: State = empty();
   me: Me = { email: "you@this.phone", role: "admin" };
   online = false; // true = a Team DO holds the canonical ledger; false = this phone is it

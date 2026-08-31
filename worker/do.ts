@@ -44,8 +44,9 @@ export class Team extends DurableObject<Env> {
     const ghost = structuredClone(this.s);
     const refused: { draft: Payload; reason: string }[] = [];
     for (const p of drafts) {
-      const reason = guard(ghost, { ...p, actor, at: Date.now() });
-      reason ? refused.push({ draft: p, reason }) : apply(ghost, { ...p, actor, at: Date.now(), seq: 0 });
+      const d = { ...p, actor, at: Date.now() };
+      const reason = guard(ghost, d);
+      reason ? refused.push({ draft: p, reason }) : apply(ghost, { ...d, seq: 0 });
     }
     return { refused };
   }

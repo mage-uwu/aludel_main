@@ -24,8 +24,7 @@ function BlockRow({ b, value, set }: { b: Block; value: Value | undefined; set: 
 
 function Logger({ hit, done }: { hit: Rec; done: () => void }): ReactElement {
   const [values, setValues] = useState<Record<string, Value>>({});
-  const task = taskOf(store.state, hit)!;
-  const form = store.state.forms[hit.form]!;
+  const [task, form] = [taskOf(store.state, hit)!, store.state.forms[hit.form]!];
   const missing = task.blocks.filter((b) => b.kind !== "button" && b.required && values[b.key] === undefined);
   const log = (outcome: string) => {
     const refused = store.submit([{ type: "logged", entry: hit.id, values, outcome }]);
@@ -55,6 +54,7 @@ export default function Field(): ReactElement {
   const lists = [...new Set(find(store.state, {}, now).map((h) => h.list ?? "unrouted"))].sort();
   const open = openId && store.state.entries[openId];
   if (open) return <Logger hit={open} done={() => setOpen(null)} />;
+
   const row = (h: Hit, cls = "") => {
     const task = taskOf(store.state, h);
     return <button key={h.id} className={`entry ${cls}`} onClick={() => setOpen(h.id)}>
