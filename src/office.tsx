@@ -138,7 +138,7 @@ export default function Office(): ReactElement {
   const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent"); setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]); if (!no.length) clear(); };
   const s = store.state; const now = Date.now(); const live = draft || drafts.length > 0;
   return (
-    <div className={`pane wide-${wide}`}>
+    <section className={`term wide-${wide}`}>
       <section className="stage">
         <nav className="tabs">{live // while a draft is live the bar belongs to it: the commit is never scrolled away
           ? <><b>{step >= 0 ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit} disabled={busy}>Commit</button>
@@ -159,17 +159,15 @@ export default function Office(): ReactElement {
         </div>
         <div className="hand" ref={hand} />
       </section>
-      <button className="grip" title={wide === "term" ? "Give the form more room" : "Give the terminal more room"} onClick={() => { const w = wide === "term" ? "stage" : "term"; setWide(w); localStorage.setItem("wide", w); }} />
-      <section className="term">
-        <div className="log" ref={tail}>
-          {log.map((m, i) => <p key={i} className={m.who}><b>{m.who}</b><span>{m.body}</span></p>)}
-          {busy && <p className="step"><b>aludel</b><span>…</span></p>}
-        </div>
-        <form onSubmit={(e) => { e.preventDefault(); void send(); }}>
-          <input ref={input} placeholder={hint || "Ask Aludel, or tell it what to set up…"} disabled={busy}
-            onKeyDown={(e) => { if (e.key === "Tab" && hint && !e.currentTarget.value) { e.preventDefault(); e.currentTarget.value = hint; } }} />
-        </form>
-      </section>
-    </div>
+      <button className="grip" title={wide === "term" ? "Give the form more room" : "Give the conversation more room"} onClick={() => { const w = wide === "term" ? "stage" : "term"; setWide(w); localStorage.setItem("wide", w); }} />
+      <div className="log" ref={tail}>
+        {log.map((m, i) => <p key={i} className={m.who}><b>{m.who}</b><span>{m.body}</span></p>)}
+        {busy && <p className="step"><b>aludel</b><span>…</span></p>}
+      </div>
+      <form onSubmit={(e) => { e.preventDefault(); void send(); }}>
+        <input ref={input} placeholder={hint || "Ask Aludel, or tell it what to set up…"} disabled={busy}
+          onKeyDown={(e) => { if (e.key === "Tab" && hint && !e.currentTarget.value) { e.preventDefault(); e.currentTarget.value = hint; } }} />
+      </form>
+    </section>
   );
 }

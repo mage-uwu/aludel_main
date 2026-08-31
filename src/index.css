@@ -40,19 +40,24 @@ main { height:100dvh; max-width:52rem; margin:0 auto; padding:.5rem; display:gri
 /* One layout at every size: stage on top, terminal at the bottom. A wide screen is the
    phone, wider — never a second arrangement to learn. The split is always golden; the grip
    only chooses which pane gets φ's long side (1.618 : 1 ≈ two thirds against one). */
-.pane { display:grid; min-height:0; grid-template-rows:minmax(0,.618fr) auto minmax(0,1fr);
-  transition:grid-template-rows .4s cubic-bezier(.2,.8,.25,1); }
-.pane.wide-stage { grid-template-rows:minmax(0,1.618fr) auto minmax(0,1fr); }
+/* rows: title bar · stage · grip · conversation · prompt. The stage-to-conversation split
+   is still golden; the grip still only chooses which side gets φ's long side. */
+.term { grid-template-rows:auto minmax(0,.618fr) auto minmax(0,1fr) auto; transition:grid-template-rows .4s cubic-bezier(.2,.8,.25,1); }
+.term.wide-stage { grid-template-rows:auto minmax(0,1.618fr) auto minmax(0,1fr) auto; }
 .grip { border:none; background:none; padding:.32rem 0; display:grid; place-items:center; cursor:ns-resize; touch-action:manipulation; }
-.grip::after { content:""; width:2.4rem; height:4px; border-radius:99px; background:rgba(21,23,28,.18); transition:background .2s, width .2s; }
-.grip:hover::after, .grip:focus-visible::after { background:var(--ink); width:3.4rem; }
+.grip::after { content:""; width:2.4rem; height:4px; border-radius:99px; background:rgba(255,255,255,.22); transition:background .2s, width .2s; }
+.grip:hover::after, .grip:focus-visible::after { background:#fff; width:3.4rem; }
 .grip:focus-visible { outline:none; }
 
 /* stage — white-grey glass */
-.stage, .solo { position:relative; background:linear-gradient(118deg, rgba(255,255,255,.78), rgba(255,255,255,.46) 46%, rgba(255,255,255,.62));
+.solo { position:relative; background:linear-gradient(118deg, rgba(255,255,255,.78), rgba(255,255,255,.46) 46%, rgba(255,255,255,.62));
   backdrop-filter:blur(30px) saturate(1.7); -webkit-backdrop-filter:blur(30px) saturate(1.7);
   border:1px solid rgba(255,255,255,.75); border-radius:var(--r); overflow:hidden; min-height:0;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.95), 0 1px 2px rgba(21,23,28,.06), 0 24px 56px -28px rgba(40,45,80,.42);
+  display:grid; grid-template-rows:auto minmax(0,1fr); }
+.stage { position:relative; margin:.65rem .65rem .2rem; font:15px/1.55 var(--sans); color:var(--ink); background:linear-gradient(118deg, #ffffff, #f2f3f8 55%, #fafbfe);
+  border:1px solid rgba(255,255,255,.22); border-radius:14px; overflow:hidden; min-height:0;
+  box-shadow:inset 0 1px 0 #fff, 0 14px 44px -14px rgba(0,0,0,.85);
   display:grid; grid-template-rows:auto minmax(0,1fr); }
 .solo { grid-template-rows:minmax(0,1fr); }
 .scroll { overflow-y:auto; overscroll-behavior:contain; padding:.85rem; display:grid; gap:.55rem; align-content:start; }
@@ -190,12 +195,12 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .step b, .ledger b, .ledger { text-shadow:0 0 9px rgba(74,222,128,.3); }
 .ledger b { color:var(--mint); } .ledger { color:var(--mint); }
 .err b, .err { color:var(--amber); }
-.term form { display:flex; align-items:center; gap:.5rem; padding:.65rem .9rem; border-top:1px solid rgba(255,255,255,.08);
+.term > form { display:flex; align-items:center; gap:.5rem; padding:.65rem .9rem; border-top:1px solid rgba(255,255,255,.08);
   background:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.015)); box-shadow:inset 0 1px 0 rgba(255,255,255,.07); }
-.term form::before { content:"❯"; color:var(--mint); font-weight:700; line-height:1; text-shadow:0 0 8px rgba(74,222,128,.55); }
-.term input { flex:1; border:none; background:none; color:#e6edf3; font:inherit; caret-color:var(--mint); padding:0; border-radius:0; }
-.term input:focus-visible { outline:none; }
-.term input::placeholder { color:#565e6b; }
+.term > form::before { content:"❯"; color:var(--mint); font-weight:700; line-height:1; text-shadow:0 0 8px rgba(74,222,128,.55); }
+.term > form input { flex:1; border:none; background:none; color:#e6edf3; font:inherit; caret-color:var(--mint); padding:0; border-radius:0; }
+.term > form input:focus-visible { outline:none; }
+.term > form input::placeholder { color:#565e6b; }
 .log::-webkit-scrollbar, .scroll::-webkit-scrollbar { width:6px; }
 .log::-webkit-scrollbar-thumb { background:rgba(255,255,255,.12); border-radius:99px; }
 .scroll::-webkit-scrollbar-thumb { background:rgba(21,23,28,.16); border-radius:99px; }
