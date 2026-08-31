@@ -25,7 +25,7 @@ Tests, CSS, and config are uncounted. Currently exactly 800:
 | reads | `src/read.ts` | 64 | `find`, `ask` (per-kind legality, denominators), `balance` |
 | store | `src/sync.ts` | 90 | IndexedDB mirror + queue; offline work reconciles by union |
 | field | `src/field.tsx` | 68 | past due / open / logged lists, the logger, photo capture |
-| office | `src/office.tsx` | 84 | chat with the desk, draft cards, sites / templates / ledger |
+| office | `src/office.tsx` | 118 | the stage (drafts, templates, sites, ledger) over the terminal |
 | shell | `src/App.tsx` `src/main.tsx` `src/demo.ts` | 73 | modes, auth gates, demo team |
 | server | `worker/do.ts` | 68 | the team DO: append through the guard, seq, pull, daily plan alarm |
 | server | `worker/index.ts` `worker/auth.ts` | 112 | routes, founding, Google OIDC, blobs |

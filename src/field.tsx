@@ -31,7 +31,7 @@ function Logger({ hit, done }: { hit: Rec; done: () => void }): ReactElement {
     if (refused.length) alert(refused[0]!.reason); else done();
   };
   return (
-    <section className="sheet">
+    <section className="solo sheet">
       <header><button className="ghost" onClick={done}>← back</button><h2>{task.title}</h2><p>{form.meta.name} · {form.meta.address} · due {fmt(hit.window.due)}</p></header>
       {task.blocks.map((b) => <BlockRow key={b.key} b={b} value={values[b.key]}
         set={(v) => setValues(({ [b.key]: _, ...rest }) => (v === undefined ? rest : { ...rest, [b.key]: v }))} />)}
@@ -54,19 +54,18 @@ export default function Field(): ReactElement {
   const lists = [...new Set(find(store.state, {}, now).map((h) => h.list ?? "unrouted"))].sort();
   const open = openId && store.state.entries[openId];
   if (open) return <Logger hit={open} done={() => setOpen(null)} />;
-
   const row = (h: Hit, cls = "") => {
     const task = taskOf(store.state, h);
     return <button key={h.id} className={`entry ${cls}`} onClick={() => setOpen(h.id)}>
       <b>{task?.title ?? h.task}</b><span>{store.state.forms[h.form]?.meta.name} · due {fmt(h.window.due)}</span></button>;
   };
   return (
-    <section>
+    <section className="solo"><div className="scroll">
       {lists.length > 1 && <nav className="tabs chips">{[null, ...lists].map((l) => <button key={l ?? "all"} className={l === list ? "on" : ""} onClick={() => setList(l)}>{l ?? "all lists"}</button>)}</nav>}
       {overdue.length > 0 && <><h2 className="bad">Past due · {overdue.length}</h2>{overdue.map((h) => row(h, "bad"))}</>}
       <h2>Open · {pending.length}</h2>
       {pending.length ? pending.map((h) => row(h)) : <p className="hint">Nothing pending. The schedule will bring more.</p>}
       {today.length > 0 && <><h2>Logged in the last day · {today.length}</h2>{today.map((h) => <div key={h.id} className="entry done"><b>{taskOf(store.state, h)?.title}</b><span>{h.logged && new Date(h.logged.at).toLocaleTimeString()} · {h.logged?.actor}</span></div>)}</>}
-    </section>
+    </div></section>
   );
 }

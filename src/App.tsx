@@ -11,11 +11,9 @@ export default function App(): ReactElement {
     return <main className="gate"><h1>Aludel</h1><p>Couldn't verify your session — refresh, or check the Access setup.</p></main>;
   return (
     <main>
-      <header className="top">
-        <h1>Aludel</h1>
+      <header className="top"><h1>Aludel</h1>
         {canOffice && <nav>{(["office", "field"] as const).map((m) => <button key={m} className={m === mode ? "on" : ""} onClick={() => { setMode(m); localStorage.setItem("mode", m); }}>{m}</button>)}</nav>}
-        <span className="hint">{store.online ? store.me.email : "standalone"}{store.queue.length > 0 && ` · ${store.queue.length} queued`}</span>
-      </header>
+        <span className="hint">{store.online ? store.me.email : "standalone"}{store.queue.length > 0 && ` · ${store.queue.length} queued`}</span></header>
       {mode === "office" && canOffice ? <Office /> : <Field />}
     </main>
   );
