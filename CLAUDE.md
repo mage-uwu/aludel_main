@@ -13,7 +13,10 @@ The spec is SPEC.md — five nouns, eight facts, eight laws. Read it before touc
   entry, and the field UI's chips filter by list. Allocation is writing a name on work.
 - The agent is named Aludel. It drafts; a human's fact commits (`via: "agent"`). Its tool
   surface is the eight facts + `find` + `ask`, nothing else; its model id is config
-  (`OPENAI_MODEL`), never hardcoded.
+  (`OPENAI_MODEL`), never hardcoded. The office is one shared tool with two operators:
+  every `/api/agent` call carries the screen (`view: { tab, draft, drafts }`), so whatever
+  is open to the human is open to the agent — and an agent edit to an open draft plays
+  from that draft, never from the ledger, so it can't stomp the human's pencil work.
 - One renderer for a block, everywhere: `Input` in `src/field.tsx`. The office preview and
   the field logger mount the very same control — `set` given makes it live, `set` omitted
   makes it a disabled preview — so what you build is literally what the crew taps. Never

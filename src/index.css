@@ -82,10 +82,12 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .pencil:focus { border-color:var(--ink); background:#fff; outline:none; }
 .pencil.name { font-size:1.05rem; font-weight:800; letter-spacing:-.015em; padding:.25rem .4rem; }
 .task > .pencil { font-size:.92rem; font-weight:750; }
-.fld > b, .fld > .pencil { font-size:.72rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--lab); }
+.fld > b { font-size:.72rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--lab); }
+.fld > b:has(.pencil) { display:flex; align-items:center; }
 .fld > b i { font-style:normal; color:#c0392f; }
-.fld > .pencil { padding:.14rem .3rem; margin:-.14rem 0 -.14rem -.3rem; background:none; border-color:transparent; }  /* .fld input paints a well; the label pencil is not a well */
-.fld > .pencil:hover { border-color:var(--hair); }
+.fld b .pencil { field-sizing:content; min-width:5rem; max-width:calc(100% - 1rem); font:inherit; letter-spacing:inherit; text-transform:inherit; color:inherit;
+  padding:.14rem .3rem; margin:-.14rem .1rem -.14rem -.3rem; background:none; border-color:transparent; }  /* .fld input paints a well; the label pencil is not a well */
+.fld b .pencil:hover { border-color:var(--hair); }
 .fld input { padding:.65rem .7rem; font-size:16px; font-weight:600; border-radius:9px; border-color:transparent; background:var(--well); }  /* 16px keeps iOS from zooming the page */
 .fld input:focus-visible { background:#fff; border-color:var(--ink); outline:none; }
 .fld input::placeholder { color:#9aa0ab; font-weight:450; }
@@ -102,7 +104,7 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .cta:disabled { color:var(--dim); background:var(--well); border-color:transparent; }
 /* office only: the same field, wearing handles */
 .wrap { position:relative; }
-.wrap:has(.tools) .fld > b, .wrap:has(.tools) .fld > .pencil { padding-right:4.4rem; }
+.wrap:has(.tools) .fld > b { padding-right:4.4rem; }
 .tools { position:absolute; top:.42rem; right:.42rem; display:flex; gap:.1rem; opacity:.4; transition:opacity .15s; }
 .wrap:hover .tools, .wrap:focus-within .tools { opacity:1; }
 .tools button { border:none; background:var(--well); color:var(--dim); font-size:.72rem; line-height:1; padding:.3rem .34rem; border-radius:6px; }

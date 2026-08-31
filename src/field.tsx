@@ -15,7 +15,7 @@ const shoot = async (f: File, set: (v?: Value) => void) => {
   await putBlob(hash, f); void fetch(`/api/blob/${hash}`, { method: "PUT", body: f }).catch(() => undefined); // bytes follow when the network allows
   set(hash); };
 export function Input({ b, value, set, label }: { b: Block; value?: Value; set?: (v?: Value) => void; label?: ReactElement }): ReactElement {
-  const head = label ?? <b>{b.label.replace(/_+/g, " ")}{b.kind !== "button" && b.required && <i> *</i>}</b>; // keys are slugs; labels never are
+  const head = <b>{label ?? b.label.replace(/_+/g, " ")}{b.kind !== "button" && b.required && <i> *</i>}</b>; // keys are slugs; labels never are
   switch (b.kind) {
     case "text": return <label className="fld">{head}<input value={(value as string) ?? ""} placeholder={b.placeholder || "Their answer"} disabled={!set} onChange={(e) => set?.(e.target.value || undefined)} /></label>;
     case "number": return <label className="fld">{head}<input type="text" inputMode="decimal" value={(value as number)?.toString() ?? ""} placeholder={b.max >= 999999 ? "Number" : `${b.min} – ${b.max}`} disabled={!set}

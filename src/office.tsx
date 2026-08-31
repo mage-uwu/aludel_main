@@ -125,10 +125,10 @@ export default function Office(): ReactElement {
     }
     setBusy(true);
     try {
-      const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean }>) : Promise.reject(new Error(String(r.status)))));
+      const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current, view: { tab, draft, drafts } }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean }>) : Promise.reject(new Error(String(r.status)))));
       previous.current = res.previous; setLog((l) => [...l, { who: "aludel", body: res.reply }]);
       const d0 = res.drafts[0]; const sg = res.drafts.length === 1 && d0?.type === "signed" ? d0.template : null;
-      if (sg) { const from = store.state.latest[sg.id] ? structuredClone(store.state.templates[`${sg.id}@${store.state.latest[sg.id]}`]!) : { ...sg, name: "", tasks: [] }; // an edit plays as the diff from the live version; a new report builds from nothing
+      if (sg) { const from = draft?.id === sg.id ? draft : store.state.latest[sg.id] ? structuredClone(store.state.templates[`${sg.id}@${store.state.latest[sg.id]}`]!) : { ...sg, name: "", tasks: [] }; // an edit plays as the diff from the stage draft if one is open, else the live version; a new report builds from nothing
         setDraft({ ...structuredClone(from), id: sg.id, version: sg.version }); await perform(acts(from, sg), sg); } else setDrafts(res.drafts);
       if (res.wizard) { const t: Template = { id: newId<TemplateId>(), version: 1, name: "", tasks: [] }; setDraft(t); setStep(0); say(0, t); }
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }

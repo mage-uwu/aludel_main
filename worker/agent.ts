@@ -17,10 +17,8 @@ const TOOLS = [
   { type: "function", name: "draft", description: "Propose facts to append (declared|signed|bound|dispatched|granted|steered). They are checked and staged for the human, who commits or discards. Call once, complete, after your reads.", parameters: { type: "object", properties: { facts: { type: "array", items: { type: "object" } } }, required: ["facts"] } },
 ];
 
-const digest = (t: Awaited<ReturnType<Team["snapshot"]>>) => JSON.stringify({
-  now: Date.now(), actors: Object.values(t.actors), sites: Object.values(t.sites),
-  templates: Object.entries(t.latest).map(([id, v]) => t.templates[`${id}@${v}`]),
-});
+const digest = (t: Awaited<ReturnType<Team["snapshot"]>>) => JSON.stringify({ now: Date.now(), actors: Object.values(t.actors), sites: Object.values(t.sites),
+  templates: Object.entries(t.latest).map(([id, v]) => t.templates[`${id}@${v}`]) });
 
 const SYSTEM = `You are Aludel, the office desk of a trades team. Their world: a Site is a place with a client;
 a Template (versioned) declares Tasks, each with typed blocks, outcomes, and a cadence; dispatching mints a
@@ -32,10 +30,12 @@ keep drafts minimal and complete: new ids as short random strings; template edit
 the same task/block/outcome keys (never retype a key); windows and times are epoch ms. Labels are for humans —
 words with spaces (Title Case; outcomes UPPERCASE), never underscores; only keys are snake_case slugs. To create
 a new report or template, call new_template — never collect the details in chat; for anything else ambiguous,
-ask back instead of guessing. Team state:\n`;
+ask back instead of guessing. The office is collaborative: the screen context shows the tab the human has open
+and any uncommitted draft on the stage, including their hand edits — treat that draft as the working copy. To
+change it, draft one signed fact reusing its id and version verbatim; your edit will play out on their stage
+for their commit. Team state:\n`;
 
-const oai = (env: Env, body: unknown) => fetch("https://api.openai.com/v1/responses",
-  { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.OPENAI_API_KEY}` }, body: JSON.stringify(body) });
+const oai = (env: Env, body: unknown) => fetch("https://api.openai.com/v1/responses", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.OPENAI_API_KEY}` }, body: JSON.stringify(body) });
 const textOf = (r: Resp) => r.output.filter((o) => o.type === "message").flatMap((m) => (m.content as { type: string; text?: string }[]) ?? []).filter((c) => c.type === "output_text").map((c) => c.text).join("\n");
 
 // The interview's parser: the flow is deterministic, the model normalizes each answer into
@@ -55,10 +55,10 @@ export const refine = async (env: Env, body: { kind: string; text: string }): Pr
   return new Response(raw ?? "null", { headers: { "Content-Type": "application/json" } });
 };
 
-export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string }): Promise<Response> => {
+export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string; view?: unknown }): Promise<Response> => {
   if (!env.OPENAI_API_KEY) return reply("No OPENAI_API_KEY reaches the worker. Add it under Settings → Variables and Secrets (the runtime section, not Build) on this worker, as a Secret, and deploy the change.", [], body.previous);
   if (!body.text) return reply("Your device is running an old cached version of the app — close the tab (or pull to refresh) and reopen, then ask again.", [], body.previous);
-  const instructions = SYSTEM + digest(await team.snapshot());
+  const instructions = SYSTEM + digest(await team.snapshot()) + (body.view ? `\nThe human's screen right now (you share this tool; an open draft is the working copy, theirs and yours): ${JSON.stringify(body.view)}` : "");
   let input: unknown[] = [{ role: "user", content: body.text }];
   let previous = body.previous;
   let drafts: Payload[] = [];
