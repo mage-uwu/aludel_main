@@ -38,6 +38,7 @@ version with the same task/block/outcome keys (never retype a key); windows and 
 ms. If the human's ask is ambiguous, ask back instead of guessing. Team state:\n`;
 
 export const chat = async (env: Env, team: DurableObjectStub<Team>, email: string, body: { text: string; previous?: string }): Promise<Response> => {
+  if (!env.OPENAI_API_KEY) return reply("No OPENAI_API_KEY reaches the worker. Add it under Settings → Variables and Secrets (the runtime section, not Build) on this worker, as a Secret, and deploy the change.", [], body.previous);
   const instructions = SYSTEM + digest(await team.snapshot());
   let input: unknown[] = [{ role: "user", content: body.text }];
   let previous = body.previous;
