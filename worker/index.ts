@@ -43,8 +43,7 @@ export default {
     if (path === "/api/refine" && req.method === "POST") return refine(env, await req.json());
 
     const hash = path.match(/^\/api\/blob\/([a-f0-9]{64})$/)?.[1]; // content-addressed: the ledger only ever holds the hash
-    if (hash && req.method === "PUT") { await env.BLOBS?.put(hash, req.body); return json({ ok: !!env.BLOBS }); }
-    if (hash) return env.BLOBS ? env.BLOBS.get(hash).then((b) => (b ? new Response(b.body) : json({ error: "no such blob" }, 404))) : json({ error: "no blob store yet" }, 501);
+    if (hash && req.method === "PUT") { await env.BLOBS?.put(hash, req.body); return json({ ok: !!env.BLOBS }); } if (hash) return env.BLOBS ? env.BLOBS.get(hash).then((b) => (b ? new Response(b.body) : json({ error: "no such blob" }, 404))) : json({ error: "no blob store yet" }, 501);
     return json({ error: "no such route" }, 404);
   },
 };

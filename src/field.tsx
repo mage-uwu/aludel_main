@@ -47,8 +47,7 @@ export default function Field(): ReactElement {
   const mine = (h: Hit) => (!h.assignee || h.assignee === store.me.email) && (!list || (h.list ?? "unrouted") === list);
   const overdue = find(store.state, { status: "overdue" }, now).filter(mine); const pending = find(store.state, { status: "pending" }, now).filter(mine);
   const today = find(store.state, { status: "logged", from: now - 86_400_000 }, now).filter(mine); const lists = [...new Set(find(store.state, {}, now).map((h) => h.list ?? "unrouted"))].sort();
-  const open = openId && store.state.entries[openId];
-  if (open) return <Logger hit={open} done={() => setOpen(null)} />;
+  const open = openId && store.state.entries[openId]; if (open) return <Logger hit={open} done={() => setOpen(null)} />;
   const row = (h: Hit, cls = "") => <button key={h.id} className={`entry ${cls}`} onClick={() => setOpen(h.id)}>
     <b>{taskOf(store.state, h)?.title ?? h.task}</b><span>{store.state.forms[h.form]?.meta.name} · due {fmt(h.window.due)}</span></button>;
   return (<section className="solo"><div className="scroll">

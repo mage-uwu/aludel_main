@@ -35,18 +35,16 @@ const STEPS: { q: (t: Template) => string; hint?: (t: Template) => string; refin
   { q: (t) => last(t).blocks.length ? "More? Or 'done'." : "What gets recorded on the job? Photos, numbers, notes — list it all, then 'done'.",
     hint: (t) => (last(t).blocks.length ? "done" : "Before photos, Notes"), refine: "blocks",
     go: (t, a, n) => {
-      if (/^done\.?$/i.test(a.trim())) return 6;
-      const m = a.match(/^(photo|number|text)\s+(.+)/i); // an explicit kind is an instruction, not a hint
+      if (/^done\.?$/i.test(a.trim())) return 6; const m = a.match(/^(photo|number|text)\s+(.+)/i); // an explicit kind is an instruction, not a hint
       for (const b of m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : n?.blocks ?? [{ kind: "text", label: a }]) last(t).blocks.push(block(b.kind, b.label)); return 5; } },
   { q: () => "Any other tasks on site? Name one, or 'done'.", hint: () => "done", refine: "task",
     go: (t, a, n) => (/^done\.?$/i.test(a.trim()) ? -1 : (t.tasks.push(newTask(n?.title || a)), 2)) },
 ];
 
-const zz = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+const zz = (ms: number) => new Promise((ok) => setTimeout(ok, ms)); type Act = { sel: string; go: (d: Template) => void };
 // The hand's script: what changed between two drafts, as the edits a person would make. Each
 // action names the control it uses — the + field button, a block's ✕, a pencil — so the cursor
 // can go press it. Reorders and rarities fall through to the final snap; nothing is ever lost.
-type Act = { sel: string; go: (d: Template) => void };
 const acts = (a: Template, b: Template): Act[] => {
   const out: Act[] = []; const J = JSON.stringify;
   if (a.name !== b.name) out.push({ sel: ".pencil.name", go: (d) => { d.name = b.name; } });
@@ -107,6 +105,9 @@ export default function Office(): ReactElement {
     if (h) h.style.opacity = "0";
     setDraft(final); setBusy(false); };
   const say = (i: number, t: Template) => { const st = STEPS[i]!; setLog((l) => [...l, { who: "step", body: st.q(t) }]); setHint(st.hint?.(t) ?? ""); }; // scripted lines speak mint
+  const wizard = (id?: string) => { const v = id ? store.state.latest[id as TemplateId] : undefined; // an id means: add a task to that template, as its next version
+    const t: Template = v ? { ...structuredClone(store.state.templates[`${id}@${v}`]!), version: v + 1 } : { id: newId<TemplateId>(), version: 1, name: "", tasks: [] };
+    const at = t.version > 1 ? 1 : 0; setDraft(t); setStep(at); say(at, t); };
   const send = async (text?: string) => {
     const ask = (text ?? input.current?.value ?? "").trim() || (step >= 0 ? hint : "");
     if (!ask || busy) return;
@@ -120,6 +121,8 @@ export default function Office(): ReactElement {
       else { setHint(""); setLog((l) => [...l, { who: "step", body: `"${t.name}" is on the stage — tweak anything, then commit it.` }]); }
       return;
     }
+    if (/\b(?:new|add|another|next)\b.*\btask\b/i.test(ask) && (draft || Object.keys(store.state.latest).length < 2)) {
+      if (draft) { setStep(1); say(1, draft); } else wizard(Object.keys(store.state.latest)[0]); return; }
     setBusy(true);
     try {
       const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current, view: { tab, draft, drafts } }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean | string }>) : Promise.reject(new Error(String(r.status)))));
@@ -127,9 +130,7 @@ export default function Office(): ReactElement {
       const d0 = res.drafts[0]; const sg = res.drafts.length === 1 && d0?.type === "signed" ? d0.template : null;
       if (sg) { const from = draft?.id === sg.id ? draft : store.state.latest[sg.id] ? structuredClone(store.state.templates[`${sg.id}@${store.state.latest[sg.id]}`]!) : { ...sg, name: "", tasks: [] }; // an edit plays as the diff from the stage draft if one is open, else the live version; a new report builds from nothing
         setDraft({ ...structuredClone(from), id: sg.id, version: sg.version }); await perform(acts(from, sg), sg); } else setDrafts(res.drafts);
-      if (res.wizard) { const w = res.wizard; const v = typeof w === "string" ? store.state.latest[w as TemplateId] : undefined; // an id means: add a task to that template, as its next version
-        const t: Template = v ? { ...structuredClone(store.state.templates[`${w as string}@${v}`]!), version: v + 1 } : { id: newId<TemplateId>(), version: 1, name: "", tasks: [] };
-        const at = t.version > 1 ? 1 : 0; setDraft(t); setStep(at); say(at, t); }
+      if (res.wizard) wizard(typeof res.wizard === "string" ? res.wizard : undefined);
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false);
   };
@@ -140,8 +141,8 @@ export default function Office(): ReactElement {
     <div className={`pane wide-${wide}`}>
       <section className="stage">
         <nav className="tabs">{live // while a draft is live the bar belongs to it: the commit is never scrolled away
-          ? <><b>{step >= 0 ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit}>Commit</button>
-            <button className="ghost" onClick={clear}>Discard</button></>
+          ? <><b>{step >= 0 ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit} disabled={busy}>Commit</button>
+            <button className="ghost" onClick={clear} disabled={busy}>Discard</button></>
           : ["templates", "sites", "ledger"].map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}</nav>
         <div className="scroll" ref={stage}>
           {live ? <div className="draft">

@@ -148,6 +148,7 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .go { border:none; border-radius:11px; padding:.55rem 1.1rem; font-size:.85rem; font-weight:700; color:#fff;
   background:linear-gradient(180deg,#2b2f3a,#15171c); box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 2px 6px rgba(21,23,28,.3); }
 .go:active { transform:translateY(1px); }
+.go:disabled, .tabs .ghost:disabled { opacity:.45; cursor:default; }
 .ghost { border:1px solid rgba(255,255,255,.8); background:rgba(255,255,255,.6); border-radius:11px; padding:.55rem .9rem; font-size:.85rem; font-weight:600; color:var(--dim);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9); }
 
