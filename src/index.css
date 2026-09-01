@@ -6,49 +6,73 @@
    borders are ink on paper, never a brand tint.
    No webfont, by choice: instant paint and no network on a phone in a basement. */
 :root {
-  --ink:#15171c; --dim:#636a76; --lab:#40454f;
-  --hair:rgba(21,23,28,.12); --well:rgba(21,23,28,.05); --sunk:#f1f2f4;
-  /* the form's one rhythm: a field to its label, a field to the next, a job to the next */
-  --y1:.55rem; --y2:1.15rem; --y3:1.9rem;
-  --tty:#c9d1d9; --violet:#b794ff; --mint:#4ade80; --green:#187a48; --amber:#e3b341;
+  /* ONE WORLD, TWO SKINS. The relationship carries the design, not the absolute values: paper
+     always sits a step brighter than the slab it lies on, every division is a hairline, and
+     colour still means provenance and nothing else. Follow the device — a phone in a basement
+     and a phone in June are not the same screen, and the crew already told their OS which one
+     they are holding. Never write a colour below this block; add a token here instead. */
+  --page:#fff; --slab:#eef0f3; --slab2:#fff; --paper:#fff; --sunk:#f1f2f4;
+  --ink:#15171c; --dim:#636a76; --lab:#40454f; --faded:#8b919d;
+  --hair:rgba(21,23,28,.13); --well:rgba(21,23,28,.05); --dead:rgba(21,23,28,.04); --stroke:rgba(21,23,28,.22);
+  --tty:#2b2f36; --tty2:#0d0f13; --faint:#697180; --fainter:#98a0ac; --glint:#000;
+  --edge:rgba(21,23,28,.11); --edge2:rgba(21,23,28,.2); --edge3:rgba(21,23,28,.4); --sheen:rgba(21,23,28,.08);
+  --act:#15171c; --onact:#fff; --onink:#fff; --onmint:#fff;
+  --violet:#6338c6; --violet2:#4d2ba3; --mint:#12793c; --mint2:#166534; --green:#166534; --amber:#8a5a00;
+  --bad:#b3271e; --badline:rgba(179,39,30,.45); --okfill:rgba(22,101,52,.08); --okline:rgba(22,101,52,.4);
+  --you:#15171c; --youb:#8a919c; --draftline:rgba(99,56,198,.4);
+  --bezel:#c9ccd2; --bezeledge:rgba(21,23,28,.22);
   --sans:-apple-system, "SF Pro Text", "Segoe UI Variable Text", Inter, system-ui, sans-serif;
   --mono:ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-  --r:18px; color-scheme:light;
+  --r:18px; color-scheme:light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page:#000; --slab:#000; --slab2:#141416; --paper:#17181c; --sunk:#232529;
+    --ink:#e8eaee; --dim:#98a1af; --lab:#c3c9d3; --faded:#767e8b;
+    --hair:rgba(255,255,255,.14); --well:rgba(255,255,255,.07); --dead:rgba(255,255,255,.04); --stroke:rgba(255,255,255,.24);
+    --tty:#c9d1d9; --tty2:#e6edf3; --faint:#8b949e; --fainter:#565e6b; --glint:#fff;
+    --edge:rgba(255,255,255,.07); --edge2:rgba(255,255,255,.2); --edge3:rgba(255,255,255,.45); --sheen:rgba(255,255,255,.12);
+    --act:#fff; --onact:#000; --onink:#000; --onmint:#000;
+    --violet:#b794ff; --violet2:#cdbcf5; --mint:#4ade80; --mint2:#a9dcbd; --green:#4ade80; --amber:#e3b341;
+    --bad:#ff8f85; --badline:rgba(255,143,133,.45); --okfill:rgba(74,222,128,.12); --okline:rgba(74,222,128,.45);
+    --you:#e9eef5; --youb:#7d8590; --draftline:rgba(183,148,255,.4);
+    --bezel:#000; --bezeledge:rgba(255,255,255,.22);
+  }
 }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 /* The document never scrolls or bounces — only .log and .scroll do. On iOS a scrollable
    document is what lets the keyboard drag the whole app around, so it is pinned. */
 html, body { height:100%; overflow:hidden; overscroll-behavior:none; }
-body { position:fixed; inset:0; margin:0; background:#fff; color:var(--ink); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
+body { position:fixed; inset:0; margin:0; background:var(--page); color:var(--ink); font:16px/1.55 var(--sans); -webkit-font-smoothing:antialiased; }
 /* --vvh is the visual viewport, published by the shell script in index.html: the only height
    that shrinks for a keyboard and stays put for a toolbar. svh, not dvh, is the fallback —
    dvh changes as the browser chrome slides and reflows the whole app mid-scroll. */
 main { height:var(--vvh, 100svh); max-width:52rem; margin:0 auto; padding:.5rem; display:grid; grid-template-rows:auto minmax(0,1fr); gap:.5rem; }
 main.office { height:calc(var(--vvh, 100svh) - .8rem); max-width:none; margin:.4rem; padding:0; gap:0; overflow:hidden;
-  border:none; border-radius:16px; background:#000; }
+  border:1px solid var(--edge); border-radius:16px; background:var(--slab); }  /* the hairline is what draws the corner when the page and the slab are both black */
 
 /* header */
 .top { position:relative; display:flex; align-items:center; justify-content:center; padding:.3rem .55rem; }
 .top h1 { font-size:1.05rem; font-weight:800; letter-spacing:-.01em; margin:0; }
 /* the one control in the bar: a bracket that opens who-you-are and where-you-are */
 .kit { position:absolute; right:.5rem; top:50%; transform:translateY(-50%); font:inherit; font-size:.9rem; letter-spacing:.06em;
-  border:1px solid var(--hair); background:#fff; color:var(--dim); border-radius:9px; padding:.35rem .6rem; line-height:1; }
+  border:1px solid var(--hair); background:var(--paper); color:var(--dim); border-radius:9px; padding:.35rem .6rem; line-height:1; }
 .kit:hover { color:var(--ink); }
 .kit-menu { position:absolute; right:.5rem; top:calc(100% + .35rem); z-index:30; display:grid; gap:.55rem; justify-items:end; padding:.6rem;
-  background:#fff; border:1px solid var(--hair); border-radius:13px; }
-main.office .kit { border-color:rgba(255,255,255,.14); background:none; color:#8b949e; }
-main.office .kit:hover { color:#fff; background:rgba(255,255,255,.12); }
-main.office .kit-menu { background:#141416; border-color:rgba(255,255,255,.14); box-shadow:none; }
-.top nav { display:flex; gap:.15rem; padding:.15rem; background:#fff; border:1px solid var(--hair); border-radius:999px; }
+  background:var(--slab2); border:1px solid var(--hair); border-radius:13px; }
+main.office .kit { border-color:var(--hair); background:none; color:var(--faint); }
+main.office .kit:hover { color:var(--glint); background:var(--sheen); }
+main.office .kit-menu { background:var(--slab2); border-color:var(--hair); box-shadow:none; }
+.top nav { display:flex; gap:.15rem; padding:.15rem; background:var(--paper); border:1px solid var(--hair); border-radius:999px; }
 .top nav button { border:none; background:none; border-radius:999px; padding:.45rem 1.1rem; font-size:.85rem; font-weight:700; color:var(--dim); text-transform:capitalize; }
 .top nav button.on { background:var(--well); color:var(--ink); }
 .top .hint { font-size:.8rem; white-space:nowrap; }
-main.office .top { padding:.65rem 1rem; padding-top:max(.65rem, env(safe-area-inset-top)); font-family:var(--mono); border-bottom:1px solid rgba(255,255,255,.07); }
-main.office .top h1 { font-size:.95rem; font-weight:700; letter-spacing:.06em; color:#e6edf3; }
-main.office .top nav { background:none; border-color:rgba(255,255,255,.12); }
-main.office .top nav button { font-size:.75rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.45rem 1rem; color:#8b949e; }
-main.office .top nav button.on { background:rgba(255,255,255,.11); color:#fff; box-shadow:none; }
-main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; }
+main.office .top { padding:.65rem 1rem; padding-top:max(.65rem, env(safe-area-inset-top)); font-family:var(--mono); border-bottom:1px solid var(--edge); }
+main.office .top h1 { font-size:.95rem; font-weight:700; letter-spacing:.06em; color:var(--tty2); }
+main.office .top nav { background:none; border-color:var(--sheen); }
+main.office .top nav button { font-size:.75rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.45rem 1rem; color:var(--faint); }
+main.office .top nav button.on { background:var(--sheen); color:var(--glint); box-shadow:none; }
+main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:var(--faint); }
 .hint { color:var(--dim); }
 
 /* the two panes */
@@ -70,21 +94,21 @@ main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; 
 .wide-min .stage { grid-template-rows:auto; }
 .wide-min .stage .scroll, .wide-min .hand { display:none; }
 .grip { border:none; background:none; padding:.32rem 0; display:grid; place-items:center; cursor:ns-resize; touch-action:manipulation; }
-.grip::after { content:""; width:2.4rem; height:4px; border-radius:99px; background:rgba(255,255,255,.22); transition:background .2s, width .2s; }
-.grip:hover::after, .grip:focus-visible::after { background:#fff; width:3.4rem; }
+.grip::after { content:""; width:2.4rem; height:4px; border-radius:99px; background:var(--bezeledge); transition:background .2s, width .2s; }
+.grip:hover::after, .grip:focus-visible::after { background:var(--glint); width:3.4rem; }
 .grip:focus-visible { outline:none; }
 
 /* stage — white-grey glass */
-.solo { position:relative; background:#fff; border:1px solid var(--hair); border-radius:14px; overflow:hidden; min-height:0;
+.solo { position:relative; background:var(--paper); border:1px solid var(--hair); border-radius:14px; overflow:hidden; min-height:0;
   display:grid; grid-template-rows:auto minmax(0,1fr); }
 .stage { position:relative; width:calc(100% - 1.2rem); margin:.6rem auto .25rem; font:16px/1.55 var(--sans); color:var(--ink);
-  background:#fff; border:none; border-radius:12px; overflow:hidden; min-height:0;
+  background:var(--paper); border:none; border-radius:12px; overflow:hidden; min-height:0;
   display:grid; grid-template-rows:auto minmax(0,1fr); }
 
 /* the window's own buttons, at the end of its bar */
 .tabs .win { margin-left:.1rem; padding:.34rem .5rem; font-size:.85rem; line-height:1; color:var(--dim); border-radius:8px; letter-spacing:0; }
 .tabs > .win:nth-last-child(2) { margin-left:auto; }  /* :first-of-type matches by element, not class — the tabs are buttons too */
-.tabs .win:hover { background:rgba(21,23,28,.10); color:var(--ink); }
+.tabs .win:hover { background:var(--sheen); color:var(--ink); }
 .solo { grid-template-rows:minmax(0,1fr); }
 .scroll { overflow-y:auto; overscroll-behavior:contain; padding:1.05rem .95rem 2rem; display:grid; gap:.9rem; align-content:start; }
 .tabs { display:flex; align-items:center; gap:.2rem; padding:.45rem .5rem; border-bottom:1px solid var(--hair); }
@@ -92,7 +116,7 @@ main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; 
 .tabs button.on { color:var(--ink); background:var(--well); }
 
 /* cards, templates, entries */
-.card { background:#fff; border:1px solid var(--hair); border-radius:12px; padding:.85rem .95rem; display:grid; gap:.3rem; }
+.card { background:var(--paper); border:1px solid var(--hair); border-radius:12px; padding:.85rem .95rem; display:grid; gap:.3rem; }
 .card b { font-size:1.15rem; font-weight:750; margin:0; letter-spacing:-.015em; }
 .card span { font-size:.9rem; color:var(--dim); }
 pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
@@ -115,34 +139,34 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
   font-size:16px; font-weight:400; letter-spacing:0; text-transform:none; color:var(--ink); }
 /* a pencil is a label you can just type over — invisible until you reach for it */
 .pencil { min-width:0; border:1px solid transparent; background:none; border-radius:8px; padding:.2rem .4rem; font-size:16px; font-weight:500; width:auto; }
-.pencil:hover { border-color:var(--hair); background:#fff; }
-.pencil:focus { border-color:var(--ink); background:#fff; outline:none; }
+.pencil:hover { border-color:var(--hair); background:var(--paper); }
+.pencil:focus { border-color:var(--ink); background:var(--paper); outline:none; }
 .pencil.name { font-size:1.55rem; font-weight:800; letter-spacing:-.025em; padding:.25rem .45rem; margin-left:-.45rem; }
 .task > .pencil { font-size:1.2rem; font-weight:800; letter-spacing:-.015em; margin:0 0 calc(var(--y2) * -1 + .3rem) -.4rem; }
 /* the label reads at a glance and in daylight: real words, real size, no tracking. Uppercase
    throws away the word shapes that make a glance work — and 13px throws away the glance. */
 .fld > b { font-size:16px; font-weight:700; letter-spacing:0; text-transform:none; color:var(--ink); }
 .fld > b:has(.pencil) { display:flex; align-items:center; }
-.fld > b i { font-style:normal; color:#c0392f; }
+.fld > b i { font-style:normal; color:var(--bad); }
 .fld b .pencil { field-sizing:content; min-width:5rem; max-width:calc(100% - 1rem); font:inherit; letter-spacing:inherit; text-transform:inherit; color:inherit;
   padding:.14rem .3rem; margin:-.14rem .1rem -.14rem -.3rem; background:none; border-color:transparent; }  /* .fld input paints a well; the label pencil is not a well */
 .fld b .pencil:hover { border-color:var(--hair); }
 /* every target on the form is a thumb in a glove: 56px of input, 60px of decision, 104px of
    shutter. Nothing here is sized for a mouse. */
 .fld input { min-height:56px; padding:.9rem 1rem; font-size:17px; font-weight:600; border-radius:13px; border:1.5px solid transparent; background:var(--sunk); }  /* never under 16px: iOS zooms the page */
-.fld input:focus-visible { background:#fff; border-color:var(--ink); outline:none; }
+.fld input:focus-visible { background:var(--paper); border-color:var(--ink); outline:none; }
 .fld input:disabled { cursor:default; }
-.fld input::placeholder { color:#9aa0ab; font-weight:450; }
-.fld input:disabled { background:rgba(21,23,28,.035); color:#868c98; -webkit-text-fill-color:#868c98; opacity:1; }
+.fld input::placeholder { color:var(--faded); font-weight:450; }
+.fld input:disabled { background:var(--dead); color:var(--faded); -webkit-text-fill-color:var(--faded); opacity:1; }
 /* the photo tile: the whole card is the shutter, the file input rides invisibly on top */
 .shot { position:relative; display:grid; place-items:center; gap:.45rem; min-height:104px; padding:1.1rem; text-align:center;
-  border:1.5px dashed rgba(21,23,28,.2); border-radius:13px; background:var(--sunk); color:var(--lab); font-size:1rem; font-weight:650; }
+  border:1.5px dashed var(--stroke); border-radius:13px; background:var(--sunk); color:var(--lab); font-size:1rem; font-weight:650; }
 .shot::before { content:"◎"; font-size:1.8rem; line-height:1; opacity:.4; }
 .shot input { position:absolute; inset:0; width:100%; height:100%; padding:0; margin:0; border:none; background:none; opacity:0; cursor:pointer; }
-.shot.has { border-style:solid; border-color:rgba(24,122,72,.45); background:rgba(74,222,128,.10); color:var(--green); }
+.shot.has { border-style:solid; border-color:var(--okline); background:var(--okfill); color:var(--green); }
 .shot.has::before { content:"✓"; opacity:1; font-weight:800; }
 /* a button block stands alone: full width, thumb-sized */
-.cta { width:100%; min-height:56px; border:1.5px solid var(--hair); border-radius:13px; padding:.85rem 1rem; font-size:1rem; font-weight:750; background:#fff; }
+.cta { width:100%; min-height:56px; border:1.5px solid var(--hair); border-radius:13px; padding:.85rem 1rem; font-size:1rem; font-weight:750; background:var(--paper); }
 .cta:disabled { color:var(--dim); background:var(--well); border-color:transparent; }
 /* office only: the same field, wearing handles */
 .wrap { position:relative; }
@@ -150,9 +174,9 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .tools { position:absolute; top:-.15rem; right:0; display:flex; gap:.15rem; opacity:.45; transition:opacity .15s; }
 .wrap:hover .tools, .wrap:focus-within .tools { opacity:1; }
 .tools button { border:none; background:var(--well); color:var(--dim); font-size:.95rem; line-height:1; min-width:38px; min-height:34px; padding:.4rem .5rem; border-radius:9px; }
-.tools button:hover:not(:disabled) { background:var(--ink); color:#fff; }
+.tools button:hover:not(:disabled) { background:var(--ink); color:var(--onink); }
 .tools button:disabled { opacity:.3; }
-.add { border:1.5px dashed rgba(21,23,28,.22); background:none; color:var(--dim); border-radius:13px; min-height:48px; padding:.6rem 1.1rem; font-size:.95rem; font-weight:700; justify-self:stretch; }
+.add { border:1.5px dashed var(--stroke); background:none; color:var(--dim); border-radius:13px; min-height:48px; padding:.6rem 1.1rem; font-size:.95rem; font-weight:700; justify-self:stretch; }
 .add:hover { border-color:var(--ink); color:var(--ink); }
 /* how the task ends — the outcome buttons, editable in place */
 /* The decision is the biggest thing on the sheet: a two-up grid of slabs, so four outcomes are
@@ -202,23 +226,23 @@ fill='%230d0f14' stroke='%23fff' stroke-width='1.15' stroke-linejoin='round' pai
 .wrap, .task { animation:pop .3s cubic-bezier(.2,.85,.3,1); }
 .row { font-size:.8rem; margin:0; padding:.4rem 0; border-bottom:1px solid var(--hair); font-variant-numeric:tabular-nums; }
 .row .hint { font-size:.65rem; letter-spacing:.01em; }
-.bad { color:#b3271e; }
+.bad { color:var(--bad); }
 .empty { color:var(--dim); font-size:.95rem; padding:2rem 1rem; text-align:center; text-wrap:balance; }
 .scroll:has(> .empty:only-child) { align-content:center; }
 
 /* draft: the stage's headline state. The frame stays neutral; the violet word is the
    provenance — a model is writing this — and it is the only violet on the glass. */
-.draft { border:1px solid rgba(130,98,230,.35); background:none; border-radius:12px; padding:.7rem; display:grid; gap:.5rem; }
+.draft { border:1px solid var(--draftline); background:none; border-radius:12px; padding:.7rem; display:grid; gap:.5rem; }
 .tabs b { margin-right:auto; font-size:.74rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:#7a5cd6; padding-left:.4rem; }
 /* .tabs button is more specific than .go, so these must restate what they need */
 .tabs .go, .tabs .ghost { padding:.45rem .95rem; font-size:.84rem; font-weight:700; border-radius:9px; text-transform:none; letter-spacing:0; }
-.tabs .go { background:var(--ink); color:#fff; box-shadow:none; }
-.tabs .ghost { border:1px solid var(--hair); background:#fff; color:var(--dim); }
+.tabs .go { background:var(--ink); color:var(--onink); box-shadow:none; }
+.tabs .ghost { border:1px solid var(--hair); background:var(--paper); color:var(--dim); }
 button { font:inherit; color:inherit; cursor:pointer; }
-.go { border:none; border-radius:10px; padding:.55rem 1.1rem; font-size:.85rem; font-weight:700; color:#fff; background:var(--ink); }
+.go { border:none; border-radius:10px; padding:.55rem 1.1rem; font-size:.85rem; font-weight:700; color:var(--onink); background:var(--ink); }
 .go:active { transform:translateY(1px); }
 .go:disabled, .tabs .ghost:disabled { opacity:.45; cursor:default; }
-.ghost { border:1px solid var(--hair); background:#fff; border-radius:10px; padding:.55rem .9rem; font-size:.85rem; font-weight:600; color:var(--dim); }
+.ghost { border:1px solid var(--hair); background:var(--paper); border-radius:10px; padding:.55rem .9rem; font-size:.85rem; font-weight:600; color:var(--dim); }
 
 /* terminal — flat, dark, and honest about being one. Violet and green live here. */
 /* The heart is jet black and opaque — no frost in the body. Glass exists only at the
@@ -236,10 +260,10 @@ button { font:inherit; color:inherit; cursor:pointer; }
    ties go to whichever comes last. */
 .term::before, .term::after { grid-row:5; grid-column:1; align-self:center; font-family:var(--sans); }
 .term::before { content:"(=^w^=)"; justify-self:start; width:calc(7.5rem + clamp(1.1rem, 4vw, 2.6rem)); z-index:1;
-  padding:.42rem 0 .42rem clamp(1.1rem, 4vw, 2.6rem); font-size:.85rem; font-weight:500; color:#8b949e; white-space:nowrap;
+  padding:.42rem 0 .42rem clamp(1.1rem, 4vw, 2.6rem); font-size:.85rem; font-weight:500; color:var(--faint); white-space:nowrap;
   animation:hop 7s ease-in-out infinite; }
 .term::after { content:"ready"; padding:.42rem clamp(1.1rem, 4vw, 2.6rem) .42rem calc(7.5rem + clamp(1.1rem, 4vw, 2.6rem));
-  font-size:.7rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:#565e6b; border-top:1px solid rgba(255,255,255,.06);
+  font-size:.7rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--fainter); border-top:1px solid var(--edge);
   background-image:radial-gradient(circle 3.5px at center, var(--mint) 99%, transparent 100%);
   background-repeat:no-repeat; background-size:9px 9px;  /* without a size the gradient fills the row and the dot sits dead centre */
   background-position:right clamp(1.1rem, 4vw, 2.6rem) center; }
@@ -263,22 +287,22 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .log b::before { font-size:13.5px; opacity:.75; }
 .you b::before { content:"$"; } .step b::before { content:"#"; } .aludel b::before { content:"#"; }
 .ledger b::before { content:"\2713"; } .err b::before { content:"!"; }
-.you b { color:#7d8590; } .you { color:#e9eef5; }
-.aludel b { color:var(--violet); } .aludel { color:#cdbcf5; }      /* a model wrote this */
-.step b { color:var(--mint); } .step { color:#a9dcbd; }            /* the script is certain */
+.you b { color:var(--youb); } .you { color:var(--you); }
+.aludel b { color:var(--violet); } .aludel { color:var(--violet2); }      /* a model wrote this */
+.step b { color:var(--mint); } .step { color:var(--mint2); }            /* the script is certain */
 .ledger b { color:var(--mint); } .ledger { color:var(--mint); }
 .err b, .err { color:var(--amber); }
 /* the deck: what the human does about the draft, at the desk where they do it. White is the
    colour of the human's own hand here — the same law the conversation speaks. */
 .deck { display:flex; align-items:center; gap:.55rem; padding:.7rem clamp(1.1rem, 4vw, 2.6rem) .1rem; font-family:var(--mono); }
-.deck::before { content:"uncommitted"; margin-right:auto; font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:#8b949e; }
-.deck .go { min-height:44px; background:#fff; color:#000; border:none; border-radius:10px; padding:.5rem 1.2rem; font:inherit; font-size:.85rem; font-weight:700; }
-.deck .ghost { min-height:44px; background:none; color:#8b949e; border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:.5rem 1.2rem; font:inherit; font-size:.85rem; font-weight:700; }
-.deck .ghost:hover:not(:disabled) { color:#fff; border-color:rgba(255,255,255,.45); }
+.deck::before { content:"uncommitted"; margin-right:auto; font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+.deck .go { min-height:44px; background:var(--act); color:var(--onact); border:none; border-radius:10px; padding:.5rem 1.2rem; font:inherit; font-size:.85rem; font-weight:700; }
+.deck .ghost { min-height:44px; background:none; color:var(--faint); border:1px solid var(--edge2); border-radius:10px; padding:.5rem 1.2rem; font:inherit; font-size:.85rem; font-weight:700; }
+.deck .ghost:hover:not(:disabled) { color:var(--glint); border-color:var(--edge3); }
 .deck .go:disabled, .deck .ghost:disabled { opacity:.4; cursor:default; }
-.term > form { grid-row:6; display:flex; align-items:center; gap:.7rem; padding:1rem clamp(1.1rem, 4vw, 2.6rem); padding-bottom:max(1rem, env(safe-area-inset-bottom)); border-top:1px solid rgba(255,255,255,.07); }
+.term > form { grid-row:6; display:flex; align-items:center; gap:.7rem; padding:1rem clamp(1.1rem, 4vw, 2.6rem); padding-bottom:max(1rem, env(safe-area-inset-bottom)); border-top:1px solid var(--edge); }
 .term > form::before { content:"\203A"; color:var(--mint); font-weight:700; font-size:1.15rem; line-height:1; }
-.term > form input { flex:1; border:none; background:none; color:#e6edf3; font:inherit; caret-color:var(--mint); padding:0; border-radius:0; }
+.term > form input { flex:1; border:none; background:none; color:var(--tty2); font:inherit; caret-color:var(--mint); padding:0; border-radius:0; }
 /* iOS zooms the page whenever it focuses a field under 16px, and the zoom is the jitter. The
    prompt is the field a phone opens its keyboard for, so it never goes under. */
 @media (max-width:899px) { .term > form input { font-size:16px; } }
@@ -295,33 +319,33 @@ button { font:inherit; color:inherit; cursor:pointer; }
   html[data-keys] .stage { margin-top:.35rem; }
 }
 .term > form input:focus-visible { outline:none; }
-.term > form input::placeholder { color:#565e6b; }
+.term > form input::placeholder { color:var(--fainter); }
 /* the ear: press it and Aludel listens instead of reading. Mint because a live microphone is
    the machine's own certainty about its own state, never a model's words. */
-.term > form .ear { min-width:44px; min-height:44px; padding:0 .7rem; border:1px solid rgba(255,255,255,.2); border-radius:10px;
-  background:none; color:#8b949e; font-size:1rem; line-height:1; }
-.term > form .ear:hover { color:#fff; border-color:rgba(255,255,255,.45); }
-.term > form .ear.on { color:#000; background:var(--mint); border-color:var(--mint); animation:listening 1.6s ease-in-out infinite; }
+.term > form .ear { min-width:44px; min-height:44px; padding:0 .7rem; border:1px solid var(--edge2); border-radius:10px;
+  background:none; color:var(--faint); font-size:1rem; line-height:1; }
+.term > form .ear:hover { color:var(--glint); border-color:var(--edge3); }
+.term > form .ear.on { color:var(--onmint); background:var(--mint); border-color:var(--mint); animation:listening 1.6s ease-in-out infinite; }
 @keyframes listening { 50% { opacity:.5; } }
 @media (prefers-reduced-motion: reduce) { .term > form .ear.on { animation:none; } }
 .log::-webkit-scrollbar, .scroll::-webkit-scrollbar { width:6px; }
-.log::-webkit-scrollbar-thumb { background:rgba(255,255,255,.12); border-radius:99px; }
-.scroll::-webkit-scrollbar-thumb { background:rgba(21,23,28,.16); border-radius:99px; }
+.log::-webkit-scrollbar-thumb { background:var(--sheen); border-radius:99px; }
+.scroll::-webkit-scrollbar-thumb { background:var(--hair); border-radius:99px; }
 
 /* field */
-.entry { display:grid; gap:.2rem; width:100%; min-height:76px; align-content:center; text-align:left; background:#fff; border:1px solid var(--hair);
+.entry { display:grid; gap:.2rem; width:100%; min-height:76px; align-content:center; text-align:left; background:var(--paper); border:1px solid var(--hair);
   border-radius:14px; padding:.95rem 1.05rem; }
 .entry:active { transform:scale(.995); }
 .entry b { font-size:1.08rem; font-weight:750; }
 .entry span { font-size:.86rem; color:var(--dim); }
-.entry.bad { border-color:rgba(179,39,30,.4); }
-.entry.bad b { color:#b3271e; }
+.entry.bad { border-color:var(--badline); }
+.entry.bad b { color:var(--bad); }
 .entry.done { opacity:.55; }
 .scroll h2 { font-size:.76rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); margin:.6rem 0 -.1rem; }
-.scroll h2.bad { color:#b3271e; }
+.scroll h2.bad { color:var(--bad); }
 .chips { display:flex; gap:.3rem; flex-wrap:wrap; }
-.chips button { border:1px solid var(--hair); background:#fff; border-radius:999px; min-height:42px; padding:.5rem 1.05rem; font-size:.92rem; font-weight:650; color:var(--dim); }
-.chips button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+.chips button { border:1px solid var(--hair); background:var(--paper); border-radius:999px; min-height:42px; padding:.5rem 1.05rem; font-size:.92rem; font-weight:650; color:var(--dim); }
+.chips button.on { background:var(--ink); color:var(--onink); border-color:var(--ink); }
 
 /* the logger sheet */
 .sheet { display:grid; grid-template-rows:none; align-content:start; gap:var(--y2); padding:1.1rem 1rem 2rem; overflow-y:auto; }
@@ -329,14 +353,14 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .sheet header button { justify-self:start; min-height:44px; margin-bottom:.25rem; padding:.5rem .9rem; border-radius:11px; font-size:.92rem; }
 .sheet header h2 { margin:0; font-size:1.5rem; font-weight:800; letter-spacing:-.02em; text-transform:none; color:var(--ink); line-height:1.15; }
 .sheet header p { margin:0; font-size:.92rem; color:var(--dim); }
-input, select { font:inherit; color:var(--ink); background:#fff; border:1px solid var(--hair); border-radius:11px; padding:.6rem .7rem; width:100%; }
+input, select { font:inherit; color:var(--ink); background:var(--paper); border:1px solid var(--hair); border-radius:11px; padding:.6rem .7rem; width:100%; }
 input:focus-visible, select:focus-visible, button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
 
-.outcome { display:grid; place-items:center; width:100%; min-height:82px; border:1.5px solid rgba(21,23,28,.2); background:#fff; border-radius:15px; padding:.85rem .7rem;
+.outcome { display:grid; place-items:center; width:100%; min-height:82px; border:1.5px solid var(--stroke); background:var(--paper); border-radius:15px; padding:.85rem .7rem;
   font-size:1rem; font-weight:800; letter-spacing:.01em; line-height:1.2; text-align:center; text-wrap:balance; }
 .outcome:disabled { opacity:.4; }
 .outcome:not(:disabled) { color:var(--ink); }
-.outcome:not(:disabled):active { background:var(--ink); color:#fff; }
+.outcome:not(:disabled):active { background:var(--ink); color:var(--onink); }
 .gate { display:grid; place-content:center; text-align:center; gap:.6rem; height:var(--vvh, 100svh); }
 @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } .entry:active, .go:active { transform:none; } }
 
@@ -363,7 +387,7 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline:2px so
     /* the bezel: a ring of black around the screen and a hairline where a handset's edge
        catches light. Drawn outside the box, so the phone is framed without losing a pixel
        of form to it. */
-    border-radius:26px; box-shadow:0 0 0 9px #000, 0 0 0 10px rgba(255,255,255,.22); }
+    border-radius:26px; box-shadow:0 0 0 9px var(--bezel), 0 0 0 10px var(--bezeledge); }
   /* nothing left to maximise into: the phone already has the full height of the slab, and
      widening it past the ratio would make it stop being a phone. The button goes rather than
      lie — minimise still docks it, and both still work under the breakpoint. */

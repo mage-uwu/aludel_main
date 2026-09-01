@@ -123,8 +123,16 @@ because a template cannot know which weekday a route runs. Read it before touchi
   that shows and hides it, and it will sit there blinking at 0,0 forever. Blink the colour.
 - Auth is Cloudflare Access in front of the Worker (JWT verified in worker/auth.ts);
   the app has no login flow of its own. DEV_USER works only while ACCESS_AUD is unset.
-- The look is one committed world (no theme switching, no second palette): in the office the
-  app **is** the terminal — one flat black slab whose title bar carries only the centred
+- The look is **one world in two skins**, following the device: `prefers-color-scheme` alone,
+  no in-app switch — a phone in a basement and a phone in June are not the same screen, and the
+  crew already told their OS which one they are holding. The whole world turns, not the chrome:
+  a light terminal in daylight, a dark form at night. What carries the design is the
+  **relationship**, never the absolute values — paper always sits a step brighter than the slab
+  it lies on, every division is a hairline, and colour still means provenance. Every colour is a
+  token defined once in the two `:root` blocks at the top of `src/index.css`; **never write a
+  literal below them** (the two `#000` in the `.log` mask are alpha, not colour, and the
+  pointer's own black-with-a-white-edge is deliberately the same on both grounds). In the office the
+  app **is** the terminal — one flat slab whose title bar carries only the centred
   wordmark and a `[ ]` menu (the office/field switch and who you are live in it) — the slab
   takes the whole page bar a hair of white margin, just enough that its rounded corners read
   as a screen sitting on a desk — with the white **stage** — the tool — docked inside it as a
@@ -146,9 +154,10 @@ because a template cannot know which weekday a route runs. Read it before touchi
   what you typed, `#` for what the machine or the model said, `✓` for the ledger — because a
   shell prompts, it does not label who is talking; colour still carries provenance. Nothing is
   textured, lit, or frosted: no scanlines, no vignette, no gradient mesh, no grain, no
-  backdrop blur, no gloss inset — black is `#000`, paper is `#fff`, and every division on the
-  screen is a hairline or plain space, because the only things that should carry weight are
-  the words and the controls. The line above the prompt carries Aludel's face and what it is
+  backdrop blur, no gloss inset — every division on the screen is a hairline or plain space,
+  because the only things that should carry weight are the words and the controls. The slab
+  wears that hairline itself, or in the dark skin the page and the slab are both `#000` and its
+  rounded corner disappears. The line above the prompt carries Aludel's face and what it is
   doing, not a serial number: a machine that larps at being hardware is the one ornament this
   app cannot afford. In the terminal grid **every child names its own row**, because once one
   is placed by hand the auto-flow cursor fights the explicit rows — the stage and the grip
@@ -175,7 +184,7 @@ because a template cannot know which weekday a route runs. Read it before touchi
   component's class name as a state modifier — `pane ${wide}` once painted the whole pane
   with the terminal's styling — and because the stage lives inside the terminal, terminal
   chrome selects children (`.term > form input`), never descendants, or it repaints the tool. Colour encodes provenance and nothing else — violet = a model wrote this,
-  mint = the machine is certain (script, ledger, guard), white = you. Keep it true: never
+  mint = the machine is certain (script, ledger, guard), the plain reading colour = you. Keep it true: never
   paint a model's words mint. Styling lives in `src/index.css` (uncounted by the LOC gate),
   so pay for polish there, not in TSX. No webfonts — the field runs offline.
 
