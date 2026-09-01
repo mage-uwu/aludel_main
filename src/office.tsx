@@ -227,7 +227,7 @@ export default function Office(): ReactElement {
       pc.createDataChannel("oai-events").onmessage = (e: MessageEvent<string>) => { const m = JSON.parse(e.data) as { type: string; transcript?: string };
         if (m.type === "conversation.item.input_audio_transcription.completed" && m.transcript?.trim()) void send(m.transcript.trim()); };
       await pc.setLocalDescription(await pc.createOffer());
-      const a = await fetch("https://api.openai.com/v1/realtime/calls", { method: "POST", body: pc.localDescription!.sdp, // ?model= here is a 400; the session knows
+      const a = await fetch("https://api.openai.com/v1/realtime/calls", { method: "POST", body: pc.localDescription!.sdp, // ?model= here is a 400
         headers: { Authorization: `Bearer ${k.secret}`, "Content-Type": "application/sdp" } });
       await pc.setRemoteDescription({ type: "answer", sdp: await a.text() });
     } catch (e) { ear.current = null; setMic(false); setLog((l) => [...l, { who: "err", body: `The ear did not open: ${e}` }]); } };

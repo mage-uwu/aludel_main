@@ -10,8 +10,8 @@ export type Env = {
   BLOBS?: R2Bucket;            // photo bytes by content hash; absent = photos stay on-device
   OPENAI_API_KEY: string;      // secret; Aludel is down without it
   OPENAI_MODEL: string;        // exact model id: config, not code
-  OPENAI_VOICE_MODEL?: string; // the model that holds the mic open, and the one that turns
-  OPENAI_HEAR_MODEL?: string;  // its audio into words — config, like OPENAI_MODEL
+  OPENAI_VOICE_MODEL?: string; // holds the mic open; and the one that turns its audio
+  OPENAI_HEAR_MODEL?: string;  // into words — both config, both required
   ACCESS_TEAM: string;         // <team>.cloudflareaccess.com, the JWT signer
   ACCESS_AUD?: string;         // the Access application's audience tag; unset = Access not yet enabled
   DEV_USER?: string;           // honored only while ACCESS_AUD is unset

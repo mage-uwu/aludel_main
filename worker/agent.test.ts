@@ -126,10 +126,14 @@ test("voice: the worker hands out an ephemeral key, never its own", async () => 
   expect(JSON.stringify(out)).not.toContain("real-key");
 });
 
-test("voice: no configured model is a refusal that says so, never a guessed one", async () => {
-  const res = await ear({}, new Response("{}"));
-  expect(res.status).toBe(501);
-  expect((await res.json() as { error: string }).error).toMatch(/OPENAI_VOICE_MODEL/);
+test("voice: a missing model id refuses by name, rather than sailing on as undefined", async () => {
+  const no = await ear({ OPENAI_HEAR_MODEL: undefined }, new Response("{}"));
+  expect(no.status).toBe(501);
+  expect((await no.json() as { error: string }).error).toMatch(/OPENAI_VOICE_MODEL/);
+  // the one that actually bit: unset, it stringified away and OpenAI answered with its own 400
+  const deaf = await ear({ OPENAI_VOICE_MODEL: "gpt-realtime-mini", OPENAI_HEAR_MODEL: undefined }, new Response("{}"));
+  expect(deaf.status).toBe(501);
+  expect((await deaf.json() as { error: string }).error).toMatch(/OPENAI_HEAR_MODEL/);
 });
 
 test("voice: an upstream refusal reaches the human as words", async () => {
