@@ -210,7 +210,7 @@ export default function Office(): ReactElement {
       const d0 = res.drafts[0]; const sg = res.drafts.length === 1 && d0?.type === "signed" && !d0.template.retired ? d0.template : null;
       if (sg) { const from = draft?.id === sg.id ? draft : store.state.latest[sg.id] ? structuredClone(store.state.templates[`${sg.id}@${store.state.latest[sg.id]}`]!) : { ...sg, name: "", tasks: [] }; // an edit plays as the diff from the stage draft if one is open, else the live version; a new report builds from nothing
         setDraft({ ...structuredClone(from), id: sg.id, version: sg.version }); await perform(acts(from, sg), sg); } else setDrafts(res.drafts);
-      if (res.wizard) wizard(typeof res.wizard === "string" ? res.wizard : undefined, res.named);
+      if (res.wizard && !shut) wizard(typeof res.wizard === "string" ? res.wizard : undefined, res.named); // an interview already running is never torn down and restarted
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false); };
   // Hands free: what it hears is typed into the prompt and submitted from there, never handed
