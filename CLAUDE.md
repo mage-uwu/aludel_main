@@ -128,7 +128,12 @@ because a template cannot know which weekday a route runs. Read it before touchi
   crew already told their OS which one they are holding. The whole world turns, not the chrome:
   a light terminal in daylight, a dark form at night. What carries the design is the
   **relationship**, never the absolute values — paper always sits a step brighter than the slab
-  it lies on, every division is a hairline, and colour still means provenance. Every colour is a
+  it lies on, every division is a hairline, and colour still means provenance. Depth is value,
+  not colour and never a shadow: `--page → --slab → --paper → --raise` steps up, and a well
+  (`--sunk`) steps **down**, because a recess reads by going darker than the surface it is cut
+  into. In the light skin `--raise` is the same white as the paper and a hairline does the
+  lifting; in the dark skin nothing lifts by a border alone, so it takes a real step. The dark
+  ramp is cool, not neutral — flat grey is what makes a dark app look unfinished. Every colour is a
   token defined once in the two `:root` blocks at the top of `src/index.css`; **never write a
   literal below them** (the two `#000` in the `.log` mask are alpha, not colour, and the
   pointer's own black-with-a-white-edge is deliberately the same on both grounds). In the office the

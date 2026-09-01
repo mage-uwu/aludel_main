@@ -11,7 +11,7 @@
      colour still means provenance and nothing else. Follow the device — a phone in a basement
      and a phone in June are not the same screen, and the crew already told their OS which one
      they are holding. Never write a colour below this block; add a token here instead. */
-  --page:#fff; --slab:#eef0f3; --slab2:#fff; --paper:#fff; --sunk:#f1f2f4;
+  --page:#fff; --slab:#eef0f3; --slab2:#fff; --paper:#fff; --raise:#fff; --sunk:#f1f2f4;
   --ink:#15171c; --dim:#636a76; --lab:#40454f; --faded:#8b919d;
   --hair:rgba(21,23,28,.13); --well:rgba(21,23,28,.05); --dead:rgba(21,23,28,.04); --stroke:rgba(21,23,28,.22);
   --tty:#2b2f36; --tty2:#0d0f13; --faint:#697180; --fainter:#98a0ac; --glint:#000;
@@ -27,10 +27,13 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --page:#000; --slab:#000; --slab2:#141416; --paper:#17181c; --sunk:#232529;
-    --ink:#e8eaee; --dim:#98a1af; --lab:#c3c9d3; --faded:#767e8b;
-    --hair:rgba(255,255,255,.14); --well:rgba(255,255,255,.07); --dead:rgba(255,255,255,.04); --stroke:rgba(255,255,255,.24);
-    --tty:#c9d1d9; --tty2:#e6edf3; --faint:#8b949e; --fainter:#565e6b; --glint:#fff;
+    /* Depth, not more colour: a cool near-black ramp with real steps between page, slab, paper
+       and the controls on it — and a well that goes DARKER than the paper it is cut into, the
+       way a recess actually reads. Neutral grey is what makes a dark app look unfinished. */
+    --page:#000; --slab:#0a0c10; --slab2:#151920; --paper:#161a21; --raise:#1e242e; --sunk:#0e1116;
+    --ink:#e7eaf0; --dim:#98a2b3; --lab:#c4cbd8; --faded:#6d7686;
+    --hair:rgba(255,255,255,.11); --well:rgba(255,255,255,.06); --dead:rgba(255,255,255,.035); --stroke:rgba(255,255,255,.16);
+    --tty:#c3ccd8; --tty2:#e9eef6; --faint:#8791a1; --fainter:#4f5866; --glint:#fff;
     --edge:rgba(255,255,255,.07); --edge2:rgba(255,255,255,.2); --edge3:rgba(255,255,255,.45); --sheen:rgba(255,255,255,.12);
     --act:#fff; --onact:#000; --onink:#000; --onmint:#000;
     --violet:#b794ff; --violet2:#cdbcf5; --mint:#4ade80; --mint2:#a9dcbd; --green:#4ade80; --amber:#e3b341;
@@ -40,6 +43,9 @@
   }
 }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+/* the browser's default selection blue is the one thing that always reads as unfinished; this
+   is an inversion, not a colour, so it spends none of the provenance vocabulary */
+::selection { background:var(--ink); color:var(--paper); }
 /* The document never scrolls or bounces — only .log and .scroll do. On iOS a scrollable
    document is what lets the keyboard drag the whole app around, so it is pinned. */
 html, body { height:100%; overflow:hidden; overscroll-behavior:none; }
@@ -166,7 +172,7 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .shot.has { border-style:solid; border-color:var(--okline); background:var(--okfill); color:var(--green); }
 .shot.has::before { content:"✓"; opacity:1; font-weight:800; }
 /* a button block stands alone: full width, thumb-sized */
-.cta { width:100%; min-height:56px; border:1.5px solid var(--hair); border-radius:13px; padding:.85rem 1rem; font-size:1rem; font-weight:750; background:var(--paper); }
+.cta { width:100%; min-height:56px; border:1.5px solid var(--hair); border-radius:13px; padding:.85rem 1rem; font-size:1rem; font-weight:750; background:var(--raise); }
 .cta:disabled { color:var(--dim); background:var(--well); border-color:transparent; }
 /* office only: the same field, wearing handles */
 .wrap { position:relative; }
@@ -237,12 +243,12 @@ fill='%230d0f14' stroke='%23fff' stroke-width='1.15' stroke-linejoin='round' pai
 /* .tabs button is more specific than .go, so these must restate what they need */
 .tabs .go, .tabs .ghost { padding:.45rem .95rem; font-size:.84rem; font-weight:700; border-radius:9px; text-transform:none; letter-spacing:0; }
 .tabs .go { background:var(--ink); color:var(--onink); box-shadow:none; }
-.tabs .ghost { border:1px solid var(--hair); background:var(--paper); color:var(--dim); }
+.tabs .ghost { border:1px solid var(--hair); background:var(--raise); color:var(--dim); }
 button { font:inherit; color:inherit; cursor:pointer; }
 .go { border:none; border-radius:10px; padding:.55rem 1.1rem; font-size:.85rem; font-weight:700; color:var(--onink); background:var(--ink); }
 .go:active { transform:translateY(1px); }
 .go:disabled, .tabs .ghost:disabled { opacity:.45; cursor:default; }
-.ghost { border:1px solid var(--hair); background:var(--paper); border-radius:10px; padding:.55rem .9rem; font-size:.85rem; font-weight:600; color:var(--dim); }
+.ghost { border:1px solid var(--hair); background:var(--raise); border-radius:10px; padding:.55rem .9rem; font-size:.85rem; font-weight:600; color:var(--dim); }
 
 /* terminal — flat, dark, and honest about being one. Violet and green live here. */
 /* The heart is jet black and opaque — no frost in the body. Glass exists only at the
@@ -333,7 +339,7 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .scroll::-webkit-scrollbar-thumb { background:var(--hair); border-radius:99px; }
 
 /* field */
-.entry { display:grid; gap:.2rem; width:100%; min-height:76px; align-content:center; text-align:left; background:var(--paper); border:1px solid var(--hair);
+.entry { display:grid; gap:.2rem; width:100%; min-height:76px; align-content:center; text-align:left; background:var(--raise); border:1px solid var(--hair);
   border-radius:14px; padding:.95rem 1.05rem; }
 .entry:active { transform:scale(.995); }
 .entry b { font-size:1.08rem; font-weight:750; }
@@ -344,7 +350,7 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .scroll h2 { font-size:.76rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); margin:.6rem 0 -.1rem; }
 .scroll h2.bad { color:var(--bad); }
 .chips { display:flex; gap:.3rem; flex-wrap:wrap; }
-.chips button { border:1px solid var(--hair); background:var(--paper); border-radius:999px; min-height:42px; padding:.5rem 1.05rem; font-size:.92rem; font-weight:650; color:var(--dim); }
+.chips button { border:1px solid var(--hair); background:var(--raise); border-radius:999px; min-height:42px; padding:.5rem 1.05rem; font-size:.92rem; font-weight:650; color:var(--dim); }
 .chips button.on { background:var(--ink); color:var(--onink); border-color:var(--ink); }
 
 /* the logger sheet */
@@ -356,7 +362,7 @@ button { font:inherit; color:inherit; cursor:pointer; }
 input, select { font:inherit; color:var(--ink); background:var(--paper); border:1px solid var(--hair); border-radius:11px; padding:.6rem .7rem; width:100%; }
 input:focus-visible, select:focus-visible, button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
 
-.outcome { display:grid; place-items:center; width:100%; min-height:82px; border:1.5px solid var(--stroke); background:var(--paper); border-radius:15px; padding:.85rem .7rem;
+.outcome { display:grid; place-items:center; width:100%; min-height:82px; border:1.5px solid var(--stroke); background:var(--raise); border-radius:15px; padding:.85rem .7rem;
   font-size:1rem; font-weight:800; letter-spacing:.01em; line-height:1.2; text-align:center; text-wrap:balance; }
 .outcome:disabled { opacity:.4; }
 .outcome:not(:disabled) { color:var(--ink); }
