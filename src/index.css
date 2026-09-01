@@ -7,7 +7,9 @@
    No webfont, by choice: instant paint and no network on a phone in a basement. */
 :root {
   --ink:#15171c; --dim:#636a76; --lab:#40454f;
-  --hair:rgba(21,23,28,.12); --well:rgba(21,23,28,.05);
+  --hair:rgba(21,23,28,.12); --well:rgba(21,23,28,.05); --sunk:#f1f2f4;
+  /* the form's one rhythm: a field to its label, a field to the next, a job to the next */
+  --y1:.55rem; --y2:1.15rem; --y3:1.9rem;
   --tty:#c9d1d9; --violet:#b794ff; --mint:#4ade80; --green:#187a48; --amber:#e3b341;
   --sans:-apple-system, "SF Pro Text", "Segoe UI Variable Text", Inter, system-ui, sans-serif;
   --mono:ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
@@ -111,66 +113,78 @@ main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; 
 .tabs > .win:nth-last-child(2) { margin-left:auto; }  /* :first-of-type matches by element, not class — the tabs are buttons too */
 .tabs .win:hover { background:rgba(21,23,28,.10); color:var(--ink); }
 .solo { grid-template-rows:minmax(0,1fr); }
-.scroll { overflow-y:auto; overscroll-behavior:contain; padding:.85rem; display:grid; gap:.55rem; align-content:start; }
+.scroll { overflow-y:auto; overscroll-behavior:contain; padding:1.05rem .95rem 2rem; display:grid; gap:.9rem; align-content:start; }
 .tabs { display:flex; align-items:center; gap:.2rem; padding:.45rem .5rem; border-bottom:1px solid var(--hair); }
 .tabs button { border:none; background:none; color:var(--dim); font-size:.82rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:.45rem .7rem; border-radius:8px; }
 .tabs button.on { color:var(--ink); background:var(--well); }
 
 /* cards, templates, entries */
-.card, .tpl { background:#fff; border:1px solid var(--hair); border-radius:12px; padding:.85rem .95rem; display:grid; gap:.3rem; }
-.card b, .tpl h3 { font-size:1.15rem; font-weight:750; margin:0; letter-spacing:-.015em; }
+.card { background:#fff; border:1px solid var(--hair); border-radius:12px; padding:.85rem .95rem; display:grid; gap:.3rem; }
+.card b { font-size:1.15rem; font-weight:750; margin:0; letter-spacing:-.015em; }
 .card span { font-size:.9rem; color:var(--dim); }
 pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
-.tpl .v { font-size:.7rem; color:var(--dim); font-weight:500; }
-.task { border-top:1px solid var(--hair); padding-top:.55rem; margin-top:.4rem; display:grid; gap:.3rem; }
-.task b { font-size:1.02rem; font-weight:750; }
-.task em { font-style:normal; font-size:.78rem; font-weight:600; color:var(--dim); background:var(--well); border-radius:999px; padding:.12rem .55rem; justify-self:start; }
-.task p { margin:0; font-size:.78rem; color:var(--dim); }
+/* A REPORT IS NOT A CARD. Three nested boxes around one input — sheet, job, field — is three
+   borders saying nothing. The report and the job are type and space; the control is the only
+   thing on the form with edges, because it is the only thing you touch. */
+.tpl { display:grid; gap:0; padding:.15rem .1rem; }
+.tpl + .tpl { border-top:1px solid var(--hair); margin-top:1.4rem; padding-top:1.4rem; }
+.tpl h3 { font-size:1.55rem; font-weight:800; margin:0 0 .1rem; letter-spacing:-.025em; line-height:1.15; }
+.tpl .v { font-size:.8rem; color:var(--dim); font-weight:600; }
+.task { display:grid; gap:var(--y2); margin-top:var(--y3); }
+.tpl > .task:first-of-type { margin-top:var(--y2); }
+.task + .task { border-top:1px solid var(--hair); padding-top:var(--y3); }
+.task > b { font-size:1.2rem; font-weight:800; letter-spacing:-.015em; margin-bottom:calc(var(--y2) * -1 + .3rem); } /* the cadence chip belongs to the title, not to the next field */
+.task em { font-style:normal; font-size:.88rem; font-weight:650; color:var(--lab); background:var(--well); border-radius:999px; padding:.3rem .8rem; justify-self:start; }
+.task p { margin:0; font-size:.88rem; color:var(--dim); }
 /* a field on the form — the real control, not a description of one. The office previews the
    very same input the field will tap, so what you build is literally what they get. */
-.fld { display:grid; gap:.3rem; background:#fff; border:1px solid var(--hair); border-radius:10px; padding:.6rem .65rem .65rem;
-  font-size:15px; font-weight:400; letter-spacing:0; text-transform:none; color:var(--ink); }
+.fld { display:grid; gap:var(--y1); background:none; border:none; border-radius:0; padding:0;
+  font-size:16px; font-weight:400; letter-spacing:0; text-transform:none; color:var(--ink); }
 /* a pencil is a label you can just type over — invisible until you reach for it */
-.pencil { min-width:0; border:1px solid transparent; background:none; border-radius:7px; padding:.2rem .35rem; font-size:.82rem; font-weight:500; width:auto; }
+.pencil { min-width:0; border:1px solid transparent; background:none; border-radius:8px; padding:.2rem .4rem; font-size:16px; font-weight:500; width:auto; }
 .pencil:hover { border-color:var(--hair); background:#fff; }
 .pencil:focus { border-color:var(--ink); background:#fff; outline:none; }
-.pencil.name { font-size:1.25rem; font-weight:800; letter-spacing:-.02em; padding:.3rem .45rem; }
-.task > .pencil { font-size:1.02rem; font-weight:750; }
-.fld > b { font-size:.82rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--lab); }
+.pencil.name { font-size:1.55rem; font-weight:800; letter-spacing:-.025em; padding:.25rem .45rem; margin-left:-.45rem; }
+.task > .pencil { font-size:1.2rem; font-weight:800; letter-spacing:-.015em; margin:0 0 calc(var(--y2) * -1 + .3rem) -.4rem; }
+/* the label reads at a glance and in daylight: real words, real size, no tracking. Uppercase
+   throws away the word shapes that make a glance work — and 13px throws away the glance. */
+.fld > b { font-size:16px; font-weight:700; letter-spacing:0; text-transform:none; color:var(--ink); }
 .fld > b:has(.pencil) { display:flex; align-items:center; }
 .fld > b i { font-style:normal; color:#c0392f; }
 .fld b .pencil { field-sizing:content; min-width:5rem; max-width:calc(100% - 1rem); font:inherit; letter-spacing:inherit; text-transform:inherit; color:inherit;
   padding:.14rem .3rem; margin:-.14rem .1rem -.14rem -.3rem; background:none; border-color:transparent; }  /* .fld input paints a well; the label pencil is not a well */
 .fld b .pencil:hover { border-color:var(--hair); }
-.fld input { padding:.82rem .75rem; font-size:17px; font-weight:600; border-radius:9px; border-color:transparent; background:var(--well); }  /* 16px keeps iOS from zooming the page */
+/* every target on the form is a thumb in a glove: 56px of input, 60px of decision, 104px of
+   shutter. Nothing here is sized for a mouse. */
+.fld input { min-height:56px; padding:.9rem 1rem; font-size:17px; font-weight:600; border-radius:13px; border:1.5px solid transparent; background:var(--sunk); }  /* never under 16px: iOS zooms the page */
 .fld input:focus-visible { background:#fff; border-color:var(--ink); outline:none; }
+.fld input:disabled { cursor:default; }
 .fld input::placeholder { color:#9aa0ab; font-weight:450; }
 .fld input:disabled { background:rgba(21,23,28,.035); color:#868c98; -webkit-text-fill-color:#868c98; opacity:1; }
 /* the photo tile: the whole card is the shutter, the file input rides invisibly on top */
-.shot { position:relative; display:grid; place-items:center; gap:.3rem; min-height:5.2rem; padding:.85rem; text-align:center;
-  border:1.5px dashed rgba(21,23,28,.22); border-radius:9px; background:var(--well); color:var(--lab); font-size:.9rem; font-weight:650; }
-.shot::before { content:"◎"; font-size:1.4rem; line-height:1; opacity:.45; }
+.shot { position:relative; display:grid; place-items:center; gap:.45rem; min-height:104px; padding:1.1rem; text-align:center;
+  border:1.5px dashed rgba(21,23,28,.2); border-radius:13px; background:var(--sunk); color:var(--lab); font-size:1rem; font-weight:650; }
+.shot::before { content:"◎"; font-size:1.8rem; line-height:1; opacity:.4; }
 .shot input { position:absolute; inset:0; width:100%; height:100%; padding:0; margin:0; border:none; background:none; opacity:0; cursor:pointer; }
 .shot.has { border-style:solid; border-color:rgba(24,122,72,.45); background:rgba(74,222,128,.10); color:var(--green); }
 .shot.has::before { content:"✓"; opacity:1; font-weight:800; }
 /* a button block stands alone: full width, thumb-sized */
-.cta { width:100%; border:1.5px solid var(--hair); border-radius:10px; padding:.75rem 1rem; font-size:.9rem; font-weight:750; background:#fff; }
+.cta { width:100%; min-height:56px; border:1.5px solid var(--hair); border-radius:13px; padding:.85rem 1rem; font-size:1rem; font-weight:750; background:#fff; }
 .cta:disabled { color:var(--dim); background:var(--well); border-color:transparent; }
 /* office only: the same field, wearing handles */
 .wrap { position:relative; }
-.wrap:has(.tools) .fld > b { padding-right:4.4rem; }
-.tools { position:absolute; top:.42rem; right:.42rem; display:flex; gap:.1rem; opacity:.4; transition:opacity .15s; }
+.wrap:has(.tools) .fld > b { padding-right:7.2rem; min-height:1.9rem; display:flex; align-items:center; }
+.tools { position:absolute; top:-.15rem; right:0; display:flex; gap:.15rem; opacity:.45; transition:opacity .15s; }
 .wrap:hover .tools, .wrap:focus-within .tools { opacity:1; }
-.tools button { border:none; background:var(--well); color:var(--dim); font-size:.85rem; line-height:1; padding:.42rem .5rem; border-radius:7px; }
+.tools button { border:none; background:var(--well); color:var(--dim); font-size:.95rem; line-height:1; min-width:38px; min-height:34px; padding:.4rem .5rem; border-radius:9px; }
 .tools button:hover:not(:disabled) { background:var(--ink); color:#fff; }
 .tools button:disabled { opacity:.3; }
-.add { border:1px dashed rgba(21,23,28,.25); background:none; color:var(--dim); border-radius:10px; padding:.5rem .9rem; font-size:.84rem; font-weight:650; justify-self:start; }
+.add { border:1.5px dashed rgba(21,23,28,.22); background:none; color:var(--dim); border-radius:13px; min-height:48px; padding:.6rem 1.1rem; font-size:.95rem; font-weight:700; justify-self:stretch; }
 .add:hover { border-color:var(--ink); color:var(--ink); }
 /* how the task ends — the outcome buttons, editable in place */
-.ends { display:flex; flex-wrap:wrap; align-items:center; gap:.35rem; margin-top:.2rem; }
-.ends > .hint { width:100%; font-size:.7rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
-.ends .outcome { padding:.62rem 1.1rem; font-size:.86rem; }
-.outcome.pencil { flex:0 1 auto; width:auto; min-width:5.5rem; field-sizing:content; text-align:center; }
+.ends, .sheet footer { display:grid; grid-template-columns:repeat(auto-fit, minmax(14rem, 1fr)); gap:.55rem; margin-top:.3rem; }
+.ends > .hint, .sheet footer .hint { grid-column:1 / -1; margin:0 0 .1rem; font-size:.78rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); }
+.outcome.pencil { width:100%; text-align:center; }
 /* THE TWO PRIMITIVES. Every visible thing Aludel does is one of these, or both in sequence:
    the pointer glides to a control and presses it, and the caret types into what it pressed.
    Violet because a model is acting — the same provenance the terminal speaks. Compose them
@@ -277,8 +291,8 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .scroll::-webkit-scrollbar-thumb { background:rgba(21,23,28,.16); border-radius:99px; }
 
 /* field */
-.entry { display:grid; gap:.15rem; width:100%; text-align:left; background:#fff; border:1px solid var(--hair);
-  border-radius:14px; padding:.95rem .95rem; }
+.entry { display:grid; gap:.2rem; width:100%; min-height:76px; align-content:center; text-align:left; background:#fff; border:1px solid var(--hair);
+  border-radius:14px; padding:.95rem 1.05rem; }
 .entry:active { transform:scale(.995); }
 .entry b { font-size:1.08rem; font-weight:750; }
 .entry span { font-size:.86rem; color:var(--dim); }
@@ -288,20 +302,19 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .scroll h2 { font-size:.76rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); margin:.6rem 0 -.1rem; }
 .scroll h2.bad { color:#b3271e; }
 .chips { display:flex; gap:.3rem; flex-wrap:wrap; }
-.chips button { border:1px solid var(--hair); background:#fff; border-radius:999px; padding:.42rem .95rem; font-size:.84rem; font-weight:600; color:var(--dim); }
+.chips button { border:1px solid var(--hair); background:#fff; border-radius:999px; min-height:42px; padding:.5rem 1.05rem; font-size:.92rem; font-weight:650; color:var(--dim); }
 .chips button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
 
 /* the logger sheet */
-.sheet { display:grid; grid-template-rows:none; align-content:start; gap:.5rem; padding:.9rem; overflow-y:auto; }
-.sheet header { display:grid; grid-template-columns:auto 1fr; align-items:center; column-gap:.65rem; row-gap:.05rem; margin-bottom:.25rem; }
-.sheet header button { grid-row:1 / span 2; padding:.45rem .55rem; border-radius:10px; font-size:.82rem; }
-.sheet header h2 { grid-column:2; margin:0; font-size:1.32rem; font-weight:800; letter-spacing:-.015em; text-transform:none; color:var(--ink); }
-.sheet header p { grid-column:2; margin:0; font-size:.86rem; color:var(--dim); }
+.sheet { display:grid; grid-template-rows:none; align-content:start; gap:var(--y2); padding:1.1rem 1rem 2rem; overflow-y:auto; }
+.sheet header { display:grid; gap:.35rem; padding-bottom:var(--y2); border-bottom:1px solid var(--hair); }
+.sheet header button { justify-self:start; min-height:44px; margin-bottom:.25rem; padding:.5rem .9rem; border-radius:11px; font-size:.92rem; }
+.sheet header h2 { margin:0; font-size:1.5rem; font-weight:800; letter-spacing:-.02em; text-transform:none; color:var(--ink); line-height:1.15; }
+.sheet header p { margin:0; font-size:.92rem; color:var(--dim); }
 input, select { font:inherit; color:var(--ink); background:#fff; border:1px solid var(--hair); border-radius:11px; padding:.6rem .7rem; width:100%; }
 input:focus-visible, select:focus-visible, button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
-.sheet footer { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.4rem; }
-.sheet footer .hint { width:100%; font-size:.64rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
-.outcome { border:1.5px solid rgba(21,23,28,.18); background:#fff; border-radius:999px; padding:.85rem 1.35rem; font-size:.95rem; font-weight:800; letter-spacing:.02em; }
+
+.outcome { display:grid; place-items:center; width:100%; min-height:60px; border:1.5px solid rgba(21,23,28,.2); background:#fff; border-radius:14px; padding:.9rem 1.2rem; font-size:1.05rem; font-weight:800; letter-spacing:.01em; text-align:center; }
 .outcome:disabled { opacity:.4; }
 .outcome:not(:disabled) { color:var(--ink); }
 .outcome:not(:disabled):active { background:var(--ink); color:#fff; }

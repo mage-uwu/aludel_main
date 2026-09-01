@@ -36,6 +36,15 @@ because a template cannot know which weekday a route runs. Read it before touchi
   every `/api/agent` call carries the screen (`view: { tab, draft, drafts }`), so whatever
   is open to the human is open to the agent — and an agent edit to an open draft plays
   from that draft, never from the ledger, so it can't stomp the human's pencil work.
+- The report is a **form for a gloved thumb in daylight**, and it is one system: a field is a
+  label and a control, nothing more. Three nested boxes — sheet, job, field — is three borders
+  saying nothing, so the report and the job are type and space and **the control is the only
+  thing with edges, because it is the only thing you touch**. Labels are real words at 16px,
+  never small-caps at 13: uppercase throws away the word shapes a glance runs on. Targets are
+  sized for the thumb, not the mouse — 56px of input, 60px of decision, 104px of shutter, 44px
+  floor on everything else — and the outcome buttons run one to a row, because a mis-tap there
+  writes the wrong outcome to a ledger that never forgets. Spacing is one rhythm (`--y1/2/3`:
+  label to control, field to field, job to job), never a value typed twice.
 - One renderer for a block, everywhere: `Input` in `src/field.tsx`. The office preview and
   the field logger mount the very same control — `set` given makes it live, `set` omitted
   makes it a disabled preview — so what you build is literally what the crew taps. Never
