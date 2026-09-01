@@ -220,14 +220,14 @@ export default function Office(): ReactElement {
   // the prompt exactly as if it were typed, so the routine, the guard and the commit are
   // untouched — voice is another keyboard, never a second agent with its own tools.
   const hear = async () => { if (ear.current) { ear.current.close(); ear.current = null; return void setMic(false); }
-    try { const k = await fetch("/api/voice", { method: "POST" }).then((r) => r.json() as Promise<{ secret?: string; model?: string; error?: string }>);
+    try { const k = await fetch("/api/voice", { method: "POST" }).then((r) => r.json() as Promise<{ secret?: string; error?: string }>);
       if (!k.secret) throw new Error(k.error ?? "no key");
       const pc = new RTCPeerConnection(); ear.current = pc; setMic(true);
       pc.addTrack((await navigator.mediaDevices.getUserMedia({ audio: true })).getAudioTracks()[0]!);
       pc.createDataChannel("oai-events").onmessage = (e: MessageEvent<string>) => { const m = JSON.parse(e.data) as { type: string; transcript?: string };
         if (m.type === "conversation.item.input_audio_transcription.completed" && m.transcript?.trim()) void send(m.transcript.trim()); };
       await pc.setLocalDescription(await pc.createOffer());
-      const a = await fetch(`https://api.openai.com/v1/realtime?model=${k.model!}`, { method: "POST", body: pc.localDescription!.sdp,
+      const a = await fetch("https://api.openai.com/v1/realtime/calls", { method: "POST", body: pc.localDescription!.sdp, // ?model= here is a 400; the session knows
         headers: { Authorization: `Bearer ${k.secret}`, "Content-Type": "application/sdp" } });
       await pc.setRemoteDescription({ type: "answer", sdp: await a.text() });
     } catch (e) { ear.current = null; setMic(false); setLog((l) => [...l, { who: "err", body: `The ear did not open: ${e}` }]); } };

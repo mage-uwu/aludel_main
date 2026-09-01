@@ -152,12 +152,13 @@ const reply = (text: string, drafts: Payload[], previous?: string, wizard?: bool
 // must never be the one it holds — so the worker mints an ephemeral one. The session only ever
 // listens: text out, no voice back, no turn of its own. What it hears goes into the prompt the
 // human already had, so the routine, the guard and the commit are untouched.
-const out = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+export const out = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 export const voice = async (env: Env): Promise<Response> => {
   const model = env.OPENAI_VOICE_MODEL;
-  if (!model) return out({ error: "no OPENAI_VOICE_MODEL is configured, so nothing is listening" }, 501);
-  const r = await fetch("https://api.openai.com/v1/realtime/sessions", { method: "POST", headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, modalities: ["text"], input_audio_transcription: { model: "whisper-1" }, turn_detection: { type: "server_vad", create_response: false } }) });
+  if (!model) return out({ error: "no OPENAI_VOICE_MODEL is configured: nothing is listening" }, 501);
+  const r = await fetch("https://api.openai.com/v1/realtime/client_secrets", { method: "POST", headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ session: { type: "realtime", model, output_modalities: ["text"], // GA nests these under audio.input; the beta's flat input_audio_transcription is gone
+      audio: { input: { transcription: { model: env.OPENAI_HEAR_MODEL }, turn_detection: { type: "server_vad", create_response: false } } } } }) });
   if (!r.ok) return out({ error: `the ear is unavailable (${r.status}): ${(await r.text()).slice(0, 200)}` }, 502);
-  return out({ secret: ((await r.json()) as { client_secret: { value: string } }).client_secret.value, model });
+  return out({ secret: ((await r.json()) as { value: string }).value });
 };

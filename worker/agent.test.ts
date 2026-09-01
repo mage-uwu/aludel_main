@@ -101,16 +101,28 @@ test("new_template without a name leaves the interview to ask for one", async ()
 // The ear: the browser needs a key of its own to hold a microphone open to the model, and our
 // real key must never be the one it holds. Everything else about voice is the prompt it already
 // had — a finished sentence goes in as if typed — so this is the whole of the server's part.
-const ear = (env: Partial<Env>, upstream: Response) => {
-  vi.stubGlobal("fetch", () => Promise.resolve(upstream));
-  return voice({ OPENAI_API_KEY: "real-key", ...env } as Env);
+let asked: { url: string; body: { session: Record<string, unknown> } } | null = null;
+const ear = (env: Partial<Env>, upstream: Response) => { asked = null;
+  vi.stubGlobal("fetch", (url: string, init: RequestInit) => { asked = { url, body: JSON.parse(String(init.body)) as never }; return Promise.resolve(upstream); });
+  return voice({ OPENAI_API_KEY: "real-key", OPENAI_HEAR_MODEL: "whisper-1", ...env } as Env);
 };
+
+// The shape the API actually wants, pinned. The beta's /realtime/sessions is a 404 now and its
+// flat input_audio_transcription is gone; GA mints at /realtime/client_secrets and nests the
+// ear's settings under session.audio.input. A user found that for us once; not twice.
+test("voice: asks the GA endpoint, in the GA shape, for an ear that only listens", async () => {
+  await ear({ OPENAI_VOICE_MODEL: "gpt-realtime-mini" }, new Response(JSON.stringify({ value: "ek" })));
+  const { url, body } = asked!; const session = body.session;
+  expect(url).toBe("https://api.openai.com/v1/realtime/client_secrets");
+  expect(session).toMatchObject({ type: "realtime", model: "gpt-realtime-mini", output_modalities: ["text"],
+    audio: { input: { transcription: { model: "whisper-1" }, turn_detection: { type: "server_vad", create_response: false } } } });
+});
 
 test("voice: the worker hands out an ephemeral key, never its own", async () => {
   const res = await ear({ OPENAI_VOICE_MODEL: "gpt-realtime-mini" },
-    new Response(JSON.stringify({ client_secret: { value: "ek_temp" } })));
-  const out = await res.json() as { secret: string; model: string };
-  expect(out).toEqual({ secret: "ek_temp", model: "gpt-realtime-mini" });
+    new Response(JSON.stringify({ value: "ek_temp" })));
+  const out = await res.json() as { secret: string };
+  expect(out).toEqual({ secret: "ek_temp" });
   expect(JSON.stringify(out)).not.toContain("real-key");
 });
 

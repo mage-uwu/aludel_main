@@ -80,7 +80,12 @@ because a template cannot know which weekday a route runs. Read it before touchi
   "new task" and throws the rest of the sentence away.
 - **Voice is another keyboard, never a second agent.** `/api/voice` mints an ephemeral key so
   the browser can hold a microphone open to the realtime model and the worker's own key never
-  leaves it. That session only ever listens — text out, no voice back, `create_response:false`,
+  leaves it. The GA endpoints are `POST /v1/realtime/client_secrets` (body
+  `{session:{type:"realtime", model, output_modalities, audio:{input:{transcription, turn_detection}}}}`,
+  answering with a top-level `value`) and `POST /v1/realtime/calls` for the SDP offer — a
+  `?model=` on that one is a 400, because the session already carries it. The beta's
+  `/realtime/sessions` and its flat `input_audio_transcription` are both gone; a test pins the
+  shape so the next person reads it here instead of finding it in production. That session only ever listens — text out, no voice back, `create_response:false`,
   no turn of its own — and every finished sentence lands in the prompt exactly as if typed, so
   the routine, the guard and the human's commit are untouched. A model with a microphone and
   its own tools would be a second brain with a different surface; this one cannot say anything
