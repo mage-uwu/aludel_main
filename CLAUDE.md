@@ -7,13 +7,17 @@ join. A cadence says how often and how long; **which day is the site's** (`servi
 because a template cannot know which weekday a route runs. Read it before touching
 `src/` or `worker/`. Non-negotiables that are easy to lose:
 
-- The app is ≤ 78,000 **characters** of TypeScript; `scripts/loc.sh` gates the build. Tests,
+- The app is ≤ 81,000 **characters** of TypeScript; `scripts/loc.sh` gates the build. Tests,
   CSS, and config are uncounted. It was a line budget until the count sat pinned at 800 for
   twenty-five commits while the source grew a third — lines price newlines, newlines are free,
   so it rewarded density and twice picked the cheaper-to-write design over the correct one.
   Characters price the thing itself, and remove the incentive to join statements at all. A
   400-char line cap is only a backstop against a schema crammed onto one line; JSX and prompts
   may run long. New code still pays for itself by trimming real fat, never by moving the line.
+  The line moved once, 78,000 → 81,000, for hands-free voice: a WebRTC handshake and an
+  ephemeral-key route are ~2,800 characters that cannot be written smaller, and the only fat
+  left of that size was a feature. That is the bar — a **new capability the app could not
+  otherwise have**, asked for and signed off by the owner, never a refactor that overran.
 - Every write goes through `guard()`; every view is `f(ledger, now)`; task/block/outcome
   keys are minted once, never retyped, never reused.
 - Nothing is ever erased — the ledger is append-only, so "delete a report" is **retirement**:
@@ -27,7 +31,8 @@ because a template cannot know which weekday a route runs. Read it before touchi
   entry, and the field UI's chips filter by list. Allocation is writing a name on work.
 - The agent is named Aludel. It drafts; a human's fact commits (`via: "agent"`). Its tool
   surface is the eight facts + `find` + `ask`, nothing else; its model id is config
-  (`OPENAI_MODEL`), never hardcoded. Template changes go through typed tools only —
+  (`OPENAI_MODEL`), never hardcoded — as is the ear's (`OPENAI_VOICE_MODEL`), and a missing
+  one is a refusal that says so rather than a guessed default. Template changes go through typed tools only —
   `new_template` starts the interview, `edit_template` stages the next version (the worker
   owns version numbers, key slugs, and label hygiene; the model never hand-rolls a `signed`
   fact) — and the guard refuses any fact type outside the eight (`default:` is load-bearing;
@@ -73,6 +78,13 @@ because a template cannot know which weekday a route runs. Read it before touchi
   can fire. Reading the sentence is the model's job, never a regex in the client — which is why
   there is no client-side shortcut for starting one. A shortcut is exactly the thing that hears
   "new task" and throws the rest of the sentence away.
+- **Voice is another keyboard, never a second agent.** `/api/voice` mints an ephemeral key so
+  the browser can hold a microphone open to the realtime model and the worker's own key never
+  leaves it. That session only ever listens — text out, no voice back, `create_response:false`,
+  no turn of its own — and every finished sentence lands in the prompt exactly as if typed, so
+  the routine, the guard and the human's commit are untouched. A model with a microphone and
+  its own tools would be a second brain with a different surface; this one cannot say anything
+  the crew did not.
 - Cues ask about **this job only**. The client, address and phone belong to the site, never to
   its paperwork — the crew is never invited to type them into a form, and the normalizer is
   told so. Most jobs record one or two things; a cleaning is often just a photo.

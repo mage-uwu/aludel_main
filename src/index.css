@@ -296,6 +296,14 @@ button { font:inherit; color:inherit; cursor:pointer; }
 }
 .term > form input:focus-visible { outline:none; }
 .term > form input::placeholder { color:#565e6b; }
+/* the ear: press it and Aludel listens instead of reading. Mint because a live microphone is
+   the machine's own certainty about its own state, never a model's words. */
+.term > form .ear { min-width:44px; min-height:44px; padding:0 .7rem; border:1px solid rgba(255,255,255,.2); border-radius:10px;
+  background:none; color:#8b949e; font-size:1rem; line-height:1; }
+.term > form .ear:hover { color:#fff; border-color:rgba(255,255,255,.45); }
+.term > form .ear.on { color:#000; background:var(--mint); border-color:var(--mint); animation:listening 1.6s ease-in-out infinite; }
+@keyframes listening { 50% { opacity:.5; } }
+@media (prefers-reduced-motion: reduce) { .term > form .ear.on { animation:none; } }
 .log::-webkit-scrollbar, .scroll::-webkit-scrollbar { width:6px; }
 .log::-webkit-scrollbar-thumb { background:rgba(255,255,255,.12); border-radius:99px; }
 .scroll::-webkit-scrollbar-thumb { background:rgba(21,23,28,.16); border-radius:99px; }

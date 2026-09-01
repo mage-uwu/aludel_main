@@ -143,6 +143,7 @@ export default function Office(): ReactElement {
   const [wide, setWide] = useState(() => localStorage.getItem("split") ?? "stage"); // which pane gets φ's long side
   const win = (w: string) => { setWide(w); localStorage.setItem("split", w); };
   const previous = useRef<string | undefined>(undefined); // the agent thread lives server-side; the interview lives here
+  const [mic, setMic] = useState(false); const ear = useRef<RTCPeerConnection | null>(null);
   const input = useRef<HTMLInputElement>(null); const tail = useRef<HTMLDivElement>(null); const stage = useRef<HTMLDivElement>(null); const hand = useRef<HTMLDivElement>(null); const caret = useRef<HTMLDivElement>(null);
   useEffect(() => { tail.current?.scrollTo({ top: 1e7 }); if (shut && !busy) stage.current?.scrollTo({ top: 1e7, behavior: "smooth" }); }, [log, busy, draft, shut]); // the stage follows what Aludel just wrote
   const edit = (f: (d: Template) => void) => setDraft((d) => { if (!d) return d; const c = structuredClone(d); f(c); return c; });
@@ -215,6 +216,21 @@ export default function Office(): ReactElement {
       if (res.wizard) wizard(typeof res.wizard === "string" ? res.wizard : undefined, res.named);
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false); };
+  // Hands free. The realtime model only ever listens: every finished sentence is dropped into
+  // the prompt exactly as if it were typed, so the routine, the guard and the commit are
+  // untouched — voice is another keyboard, never a second agent with its own tools.
+  const hear = async () => { if (ear.current) { ear.current.close(); ear.current = null; return void setMic(false); }
+    try { const k = await fetch("/api/voice", { method: "POST" }).then((r) => r.json() as Promise<{ secret?: string; model?: string; error?: string }>);
+      if (!k.secret) throw new Error(k.error ?? "no key");
+      const pc = new RTCPeerConnection(); ear.current = pc; setMic(true);
+      pc.addTrack((await navigator.mediaDevices.getUserMedia({ audio: true })).getAudioTracks()[0]!);
+      pc.createDataChannel("oai-events").onmessage = (e: MessageEvent<string>) => { const m = JSON.parse(e.data) as { type: string; transcript?: string };
+        if (m.type === "conversation.item.input_audio_transcription.completed" && m.transcript?.trim()) void send(m.transcript.trim()); };
+      await pc.setLocalDescription(await pc.createOffer());
+      const a = await fetch(`https://api.openai.com/v1/realtime?model=${k.model!}`, { method: "POST", body: pc.localDescription!.sdp,
+        headers: { Authorization: `Bearer ${k.secret}`, "Content-Type": "application/sdp" } });
+      await pc.setRemoteDescription({ type: "answer", sdp: await a.text() });
+    } catch (e) { ear.current = null; setMic(false); setLog((l) => [...l, { who: "err", body: `The ear did not open: ${e}` }]); } };
   const park = () => { if (hand.current) hand.current.style.opacity = "0"; }; // the work is over: the hand leaves
   const clear = () => { setDraft(null); setDrafts([]); setShut(null); setHint(""); park(); };
   const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent"); setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]); if (!no.length) clear(); };
@@ -253,7 +269,8 @@ export default function Office(): ReactElement {
         <button className="ghost" onClick={clear} disabled={busy}>Discard</button></div>}
       <form onSubmit={(e) => { e.preventDefault(); void send(); }}>
         <input ref={input} placeholder={hint || "Ask Aludel, or tell it what to set up…"} disabled={busy}
-          onKeyDown={(e) => { if (e.key === "Tab" && hint && !e.currentTarget.value) { e.preventDefault(); e.currentTarget.value = hint; } }} /></form>
+          onKeyDown={(e) => { if (e.key === "Tab" && hint && !e.currentTarget.value) { e.preventDefault(); e.currentTarget.value = hint; } }} />
+        <button type="button" className={mic ? "ear on" : "ear"} title={mic ? "Stop listening" : "Talk to Aludel"} onClick={() => void hear()}>◉</button></form>
     </section>
   );
 }

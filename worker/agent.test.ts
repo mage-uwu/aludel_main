@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vitest";
 import { apply, empty, guard, plan, versioned, type Draft, type Payload, type State, type Template, type TemplateId } from "../src/kernel";
-import { chat } from "./agent";
+import { chat, voice } from "./agent";
 import type { Env } from "./index";
 
 // The desk drives a real guard here: edit_template must produce a whole, well-keyed next
@@ -96,4 +96,32 @@ test("new_template without a name leaves the interview to ask for one", async ()
   script([{ type: "function_call", call_id: "c1", name: "new_template", arguments: JSON.stringify({}) }]);
   const out = await (await chat(env, team(world()), "boss@x.co", { text: "new report please" })).json() as { wizard: unknown; named?: string };
   expect(out.wizard).toBe(true); expect(out.named).toBeUndefined();
+});
+
+// The ear: the browser needs a key of its own to hold a microphone open to the model, and our
+// real key must never be the one it holds. Everything else about voice is the prompt it already
+// had — a finished sentence goes in as if typed — so this is the whole of the server's part.
+const ear = (env: Partial<Env>, upstream: Response) => {
+  vi.stubGlobal("fetch", () => Promise.resolve(upstream));
+  return voice({ OPENAI_API_KEY: "real-key", ...env } as Env);
+};
+
+test("voice: the worker hands out an ephemeral key, never its own", async () => {
+  const res = await ear({ OPENAI_VOICE_MODEL: "gpt-realtime-mini" },
+    new Response(JSON.stringify({ client_secret: { value: "ek_temp" } })));
+  const out = await res.json() as { secret: string; model: string };
+  expect(out).toEqual({ secret: "ek_temp", model: "gpt-realtime-mini" });
+  expect(JSON.stringify(out)).not.toContain("real-key");
+});
+
+test("voice: no configured model is a refusal that says so, never a guessed one", async () => {
+  const res = await ear({}, new Response("{}"));
+  expect(res.status).toBe(501);
+  expect((await res.json() as { error: string }).error).toMatch(/OPENAI_VOICE_MODEL/);
+});
+
+test("voice: an upstream refusal reaches the human as words", async () => {
+  const res = await ear({ OPENAI_VOICE_MODEL: "gpt-realtime-mini" }, new Response("model not found", { status: 404 }));
+  expect(res.status).toBe(502);
+  expect((await res.json() as { error: string }).error).toMatch(/404.*model not found/);
 });

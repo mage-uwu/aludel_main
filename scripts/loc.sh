@@ -10,7 +10,7 @@
 # Characters price the thing itself — and once they do, joining statements saves nothing, so
 # the incentive to game it is simply gone. The line cap is only a backstop against a monster
 # (a JSON schema crammed onto one line), not a style rule: JSX and prompts may run long.
-BUDGET=78000
+BUDGET=81000
 MAXLINE=400
 FILES=$(find src worker -name '*.ts' -o -name '*.tsx' | grep -v '\.test\.' | sort)
 CHARS=$(cat $FILES | wc -c | tr -d ' ')
