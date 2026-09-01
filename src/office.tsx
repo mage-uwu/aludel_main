@@ -187,8 +187,13 @@ export default function Office(): ReactElement {
       } else setDraft((d) => { const c = structuredClone(d ?? final); a.go(c); return c; });
       await zz(240); }
     setDraft(final); setBusy(false); };  // it rests where it finished; the routine ending is what sends it home
+  // He reads his own lines — never a second model's. The mic goes deaf while he talks or he
+  // answers himself; screen first, so a browser with no mouth still gets the question.
+  const talk = (s: string) => { const t = ear.current?.getSenders()[0]?.track; if (!mic || !t) return;
+    try { const u = new SpeechSynthesisUtterance(s); u.onstart = () => (t.enabled = false); u.onend = u.onerror = () => (t.enabled = true);
+      speechSynthesis.cancel(); speechSynthesis.speak(u); } catch { t.enabled = true; } };
   const say = (t: Template, sh: string[]) => { const c = pending(t, sh); setHint(c?.hint ?? ""); if (!c) { setShut(null); park(); } // scripted lines speak mint
-    setLog((l) => [...l, { who: "step", body: c ? c.q(t) : `"${t.name}" is on the stage — tweak anything, then commit it.` }]); };
+    const body = c ? c.q(t) : `"${t.name}" is on the stage — tweak anything, then commit it.`; setLog((l) => [...l, { who: "step", body }]); talk(body); };
   const wizard = (id?: string, named?: string) => { const v = id ? store.state.latest[id as TemplateId] : undefined; // an id means: add a task to that template, as its next version
     const t: Template = v ? { ...structuredClone(store.state.templates[`${id}@${v}`]!), version: v + 1 } : { id: newId<TemplateId>(), version: 1, name: named ?? "", tasks: [] };
     if (v) t.tasks.push(named ? newTask(named) : { key: "", title: "", outcomes: [], blocks: [] }); // named already? then the cue it would have asked is answered before it fires
@@ -206,7 +211,7 @@ export default function Office(): ReactElement {
       await perform(acts(draft, t), t); setShut(sh); say(t, sh); return; }
     setBusy(true);
     try { const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current, view: { tab, draft, drafts } }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean | string; named?: string }>) : Promise.reject(new Error(String(r.status)))));
-      previous.current = res.previous; setLog((l) => [...l, { who: "aludel", body: res.reply }]);
+      previous.current = res.previous; setLog((l) => [...l, { who: "aludel", body: res.reply }]); talk(res.reply);
       const d0 = res.drafts[0]; const sg = res.drafts.length === 1 && d0?.type === "signed" && !d0.template.retired ? d0.template : null;
       if (sg) { const from = draft?.id === sg.id ? draft : store.state.latest[sg.id] ? structuredClone(store.state.templates[`${sg.id}@${store.state.latest[sg.id]}`]!) : { ...sg, name: "", tasks: [] }; // an edit plays as the diff from the stage draft if one is open, else the live version; a new report builds from nothing
         setDraft({ ...structuredClone(from), id: sg.id, version: sg.version }); await perform(acts(from, sg), sg); } else setDrafts(res.drafts);
@@ -214,9 +219,9 @@ export default function Office(): ReactElement {
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false); };
   // Hands free: what it hears is typed into the prompt and submitted from there, never handed
-  // to send() — this handler binds once, so a captured send() answers every sentence with the
-  // state the mic was switched on in, and voice never reaches a cue. Busy? it waits in the box.
-  const hear = async () => { if (ear.current) { ear.current.close(); ear.current = null; return void setMic(false); }
+  // to send() — this binds once, so a captured send() answers with the state the mic was armed
+  // in. Busy? it waits in the box.
+  const hear = async () => { if (ear.current) { ear.current.close(); ear.current = null; speechSynthesis.cancel(); return void setMic(false); }
     try { const k = await fetch("/api/voice", { method: "POST" }).then((r) => r.json() as Promise<{ secret?: string; error?: string }>);
       if (!k.secret) throw new Error(k.error ?? "no key");
       const pc = new RTCPeerConnection(); ear.current = pc; setMic(true);

@@ -1,4 +1,3 @@
-import { newId } from "../src/kernel";
 import { session } from "./auth";
 import { chat, out as json, refine, voice } from "./agent";
 import { Team } from "./do";
@@ -23,12 +22,6 @@ export default {
     const path = new URL(req.url).pathname;
     const who = await session(env, req); if (!who) return json({ error: "signed out" }, 401);
 
-    if (path === "/api/team" && req.method === "POST") {
-      if (!env.DIR) return json({ error: "single-team mode: bind the DIR KV namespace first" }, 501); // founding needs the directory
-      const team = newId<string>();
-      await env.TEAM.get(env.TEAM.idFromName(team)).append(who.email, [{ type: "granted", email: who.email, role: "admin" }]);
-      await env.DIR.put(who.email, team); return json({ team });
-    }
     const stub = env.TEAM.get(env.TEAM.idFromName(who.team));
 
     if (path === "/api/t/me") return json({ email: who.email, team: who.team, role: await stub.role(who.email) });

@@ -86,7 +86,12 @@ because a template cannot know which weekday a route runs. Read it before touchi
   `?model=` on that one is a 400, because the session already carries it. The beta's
   `/realtime/sessions` and its flat `input_audio_transcription` are both gone; a test pins the
   shape so the next person reads it here instead of finding it in production. That session only ever listens — text out, no voice back, `create_response:false`,
-  no turn of its own — and every finished sentence is **typed into the prompt and submitted
+  no turn of its own — because **Aludel speaks with his own mouth, not the ear's**: the browser
+  reads aloud the exact line the terminal just printed, so the words spoken are the words the
+  routine wrote and there is no second model with an opinion. The mic goes deaf for the length
+  of an utterance, or he hears himself and answers his own question; and the line reaches the
+  screen BEFORE the mouth, so a browser without SpeechSynthesis still gets the interview.
+  Nothing is spoken unless the mic is on — and every finished sentence is **typed into the prompt and submitted
   from there**, never handed to `send()`: the data-channel handler binds once, so a captured
   `send()` would answer every sentence with the state the mic was switched on in and voice
   would never reach a cue at all. Going through the input also means a sentence heard while
