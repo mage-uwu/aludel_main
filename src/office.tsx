@@ -4,11 +4,8 @@ import { Input } from "./field";
 import { balance } from "./read";
 import { store } from "./sync";
 
-// Office mode: the stage holds the live form, the terminal is where you talk to Aludel.
-// Both edit the same draft — the interview writes a step at a time so you watch the form
-// assemble, and every field on it stays clickable, renameable, reorderable by hand. Colour
-// marks provenance: violet when a model spoke, mint when the script or the ledger did.
-// Nothing is real until Commit puts the draft through the guard.
+// Office mode. The stage and the terminal edit ONE draft: the interview writes a step at a
+// time and every field stays clickable and renameable by hand. Nothing is real until Commit.
 type Norm = {
   op?: string; target?: string; to?: string; by?: number;                 // a correction, in the shared verbs
   title?: string; labels?: string[]; days?: number;                       // an answer to a cue
@@ -216,16 +213,17 @@ export default function Office(): ReactElement {
       if (res.wizard) wizard(typeof res.wizard === "string" ? res.wizard : undefined, res.named);
     } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
     setBusy(false); };
-  // Hands free. The realtime model only ever listens: every finished sentence is dropped into
-  // the prompt exactly as if it were typed, so the routine, the guard and the commit are
-  // untouched — voice is another keyboard, never a second agent with its own tools.
+  // Hands free: what it hears is typed into the prompt and submitted from there, never handed
+  // to send() — this handler binds once, so a captured send() answers every sentence with the
+  // state the mic was switched on in, and voice never reaches a cue. Busy? it waits in the box.
   const hear = async () => { if (ear.current) { ear.current.close(); ear.current = null; return void setMic(false); }
     try { const k = await fetch("/api/voice", { method: "POST" }).then((r) => r.json() as Promise<{ secret?: string; error?: string }>);
       if (!k.secret) throw new Error(k.error ?? "no key");
       const pc = new RTCPeerConnection(); ear.current = pc; setMic(true);
       pc.addTrack((await navigator.mediaDevices.getUserMedia({ audio: true })).getAudioTracks()[0]!);
       pc.createDataChannel("oai-events").onmessage = (e: MessageEvent<string>) => { const m = JSON.parse(e.data) as { type: string; transcript?: string };
-        if (m.type === "conversation.item.input_audio_transcription.completed" && m.transcript?.trim()) void send(m.transcript.trim()); };
+        if (m.type !== "conversation.item.input_audio_transcription.completed" || !m.transcript?.trim()) return;
+        input.current!.value = m.transcript.trim(); input.current!.form!.requestSubmit(); };
       await pc.setLocalDescription(await pc.createOffer());
       const a = await fetch("https://api.openai.com/v1/realtime/calls", { method: "POST", body: pc.localDescription!.sdp, // ?model= here is a 400
         headers: { Authorization: `Bearer ${k.secret}`, "Content-Type": "application/sdp" } });

@@ -158,7 +158,7 @@ export const voice = async (env: Env): Promise<Response> => {
   if (!model || !hear) return out({ error: `nothing is listening: set ${model ? "OPENAI_HEAR_MODEL" : "OPENAI_VOICE_MODEL"}` }, 501);
   const r = await fetch("https://api.openai.com/v1/realtime/client_secrets", { method: "POST", headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ session: { type: "realtime", model, output_modalities: ["text"], // GA nests these under audio.input; the beta's flat one is gone
-      audio: { input: { transcription: { model: hear }, turn_detection: { type: "server_vad", create_response: false } } } } }) });
+      audio: { input: { transcription: { model: hear }, turn_detection: { type: "server_vad", create_response: false, silence_duration_ms: 1200 } } } } }) });
   if (!r.ok) return out({ error: `the ear is unavailable (${r.status}): ${(await r.text()).slice(0, 200)}` }, 502);
   return out({ secret: ((await r.json()) as { value: string }).value });
 };

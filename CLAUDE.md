@@ -86,8 +86,14 @@ because a template cannot know which weekday a route runs. Read it before touchi
   `?model=` on that one is a 400, because the session already carries it. The beta's
   `/realtime/sessions` and its flat `input_audio_transcription` are both gone; a test pins the
   shape so the next person reads it here instead of finding it in production. That session only ever listens — text out, no voice back, `create_response:false`,
-  no turn of its own — and every finished sentence lands in the prompt exactly as if typed, so
-  the routine, the guard and the human's commit are untouched. A model with a microphone and
+  no turn of its own — and every finished sentence is **typed into the prompt and submitted
+  from there**, never handed to `send()`: the data-channel handler binds once, so a captured
+  `send()` would answer every sentence with the state the mic was switched on in and voice
+  would never reach a cue at all. Going through the input also means a sentence heard while
+  Aludel is busy waits in the box where the crew can see it, instead of vanishing. The turn
+  detector gets `silence_duration_ms:1200`, because a tradesperson's "uh…" is not the end of a
+  sentence and the default splits it into two. The routine, the guard and the commit are
+  untouched. A model with a microphone and
   its own tools would be a second brain with a different surface; this one cannot say anything
   the crew did not.
 - Cues ask about **this job only**. The client, address and phone belong to the site, never to
