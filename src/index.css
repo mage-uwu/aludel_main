@@ -196,24 +196,22 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .hand { transition:opacity .25s, transform .13s; }  /* left/top are driven frame by frame, not tweened */
 .caret { transition:left .07s linear, top .12s, opacity .2s; }
 
-/* 1 — THE HAND IS ALUDEL HIMSELF, not a mouse he is holding. The same two poses the status
-   line uses: arms up while he crosses the form, hands forward on the press — so the face at
-   the prompt and the figure on the stage are one character, and you watch him build the thing.
-   He carries no colour, because he is the machine's hand and not its voice; a halo the colour
-   of the page keeps him legible on paper and on the slab alike. He stands just above whatever
-   he is touching, and the ring blooms under his hands, on the control itself. */
-.hand { width:auto; height:auto; margin:0; translate:-50% -155%; transform-origin:50% 100%;
-  font:700 18px/1.15 var(--sans); color:var(--ink); white-space:nowrap; letter-spacing:0; background:none;
-  filter:drop-shadow(0 0 4px var(--page)) drop-shadow(0 0 2px var(--page)) drop-shadow(0 1px 2px var(--page)); }
-/* the wave rides on ::before, never on .hand — an animated transform outranks the inline one
-   the press uses, the same trap the caret's blink already taught us. */
-.hand::before { content:"\FF3C(\665\2040\25BD\2040  )\FF0F"; display:block; animation:wave .58s ease-in-out infinite; }
-.hand.tap { transform:scale(.92); }
-.hand.tap::before { content:"(\3065  \1D17  _ \1D17)\3065 "; animation:none; }
-@keyframes wave { 0%, 100% { rotate:-5deg; translate:0 0; } 50% { rotate:5deg; translate:0 -2px; } }
-@media (prefers-reduced-motion: reduce) { .hand::before { animation:none; } }
-/* the press itself: a ring that blooms where his hands are, which is the control */
-.hand i { position:absolute; left:50%; top:155%; width:11px; height:11px; margin:-5.5px 0 0 -5.5px;
+/* 1 — the pointer. The system arrow, drawn as one path rather than a pixel grid: black fill
+   with a white edge, so the SAME two-tone reads on the form's paper and the terminal's slab in
+   either skin — that is why it is the one thing here allowed to hold its own colours. No hue
+   at all: it is the machine's hand, not its voice. Sized like a real pointer, never scaled up
+   into a prop; the eye follows a cursor because it moves, not because it is large. A kaomoji
+   was tried here and read as a puzzle — the crew knows what an arrow is. */
+.hand { width:26px; height:41px; margin:-1px 0 0 -1px; transform-origin:4% 2%;
+  filter:drop-shadow(1px 2px 2.5px rgba(0,0,0,.42));
+  background:no-repeat left top/contain url("data:image/svg+xml,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='-.7 -.7 12.4 19'>\
+<path d='M0 0 L0 15.6 L3.85 12.05 L6.15 17.3 L8.6 16.2 L6.35 11.1 L11.1 11.1 Z' \
+fill='%230d0f14' stroke='%23fff' stroke-width='1.15' stroke-linejoin='round' paint-order='stroke'/>\
+</svg>"); }
+.hand.tap { transform:scale(.86); }
+/* the press: a ring that blooms out of the tip, which is the box's own top-left corner */
+.hand i { position:absolute; left:0; top:0; width:11px; height:11px; margin:-5.5px 0 0 -5.5px;
   border:2px solid var(--ink); border-radius:50%; opacity:0; transform:scale(.3); }
 .hand.tap i { animation:press .42s ease-out; }
 @keyframes press { from { opacity:.9; transform:scale(.3); } to { opacity:0; transform:scale(3.4); } }

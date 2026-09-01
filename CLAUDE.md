@@ -110,17 +110,18 @@ because a template cannot know which weekday a route runs. Read it before touchi
   `acts()` already knows which control each verb uses, so a verb is an animation for free.
   Target a named item exact → whole-word → loose, never plain `includes` ("delete ph" must
   not hit "Photos").
-- The hand is **two primitives, and everything composes from them**: **Aludel himself**, who
-  walks to a control and presses it, and a blinking violet **caret** that types into what he
-  pressed, letter by letter. He is not holding a mouse — he *is* the pointer, the same kaomoji
-  the status line wears, in the same two poses it already defines: arms up (`building`) while
-  he crosses the form, hands forward (`presenting`) on the press. One character, so the face at
-  the prompt and the figure on the stage are the same creature and you watch him build the
-  thing. He waves as he goes, stands just above whatever he is touching, and the ring blooms
-  under his hands on the control itself. A halo the colour of the page keeps him legible on
-  paper and on the slab in either skin. He carries no colour, because he is the machine's hand
-  and not its voice. **The wave rides on `.hand::before`, never on `.hand`** — an animated
-  `transform` outranks the inline one the press uses, which is the caret's blink trap again. It enters from below the stage
+- The hand is **two primitives, and everything composes from them**: a black-and-white
+  **pointer** that drives to a control and presses it, and a blinking violet **caret** that
+  types into what it pressed, letter by letter. The pointer is the system arrow — one smooth
+  path, black fill with a white edge, the SAME two-tone on paper and on the slab in either
+  skin, which is why it is the one thing allowed to hold its own colours rather than tokens.
+  The tip is the box's own top-left corner, and the press ring blooms from it. It is drawn at a
+  real pointer's size, ~26px, never scaled into a prop: the eye follows a cursor because it
+  moves, not because it is large. It carries no hue, because it is the machine's hand and not
+  its voice. **Aludel's kaomoji was tried here and taken out** — one character doing the status
+  line and the pointing read as a puzzle to the crew, and a tradesperson already knows what an
+  arrow means. If anything on the hand is ever animated again, animate a child: an animated
+  `transform` outranks the inline one the press writes, which is the caret's blink trap again. It enters from below the stage
   once and then **stays** — a person does not put the mouse away between two edits, and the
   chain of moves is what makes it read as one mind working; only the routine ending sends it
   home. Motion is driven frame by frame, never CSS-tweened: a far target takes longer than a
