@@ -32,6 +32,11 @@ because a template cannot know which weekday a route runs. Read it before touchi
   owns version numbers, key slugs, and label hygiene; the model never hand-rolls a `signed`
   fact) — and the guard refuses any fact type outside the eight (`default:` is load-bearing;
   runtime JSON is not bound by our union). Staged drafts render as prose cards, never JSON.
+  Aludel wears a **kaomoji in the title bar** — resting, thinking, building, presenting, error.
+  It is a mood, not a message: derived in CSS from the DOM the app already renders (a disabled
+  prompt is thinking, a draft on the stage is presenting, both at once is the hand building, an
+  error last in the log is an error), so the model never emits one and cannot lie about what it
+  is doing. No colour on it — the glyphs carry the state and colour still means provenance.
   Committing is the human's act at the desk, so **Commit and Discard live in the terminal**, on
   a deck above the prompt — never on the stage: the stage is a preview of a phone screen and a
   phone screen has no button for signing off a template. The office is one shared tool with two operators:
