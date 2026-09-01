@@ -49,18 +49,6 @@ main.office .top nav { background:none; border-color:rgba(255,255,255,.12); }
 main.office .top nav button { font-size:.75rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.45rem 1rem; color:#8b949e; }
 main.office .top nav button.on { background:rgba(255,255,255,.11); color:#fff; box-shadow:none; }
 main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; }
-/* Aludel's face: a mood, not a message. It is read off the DOM the app already renders — a
-   disabled prompt is thinking, a draft on the stage is presenting, both at once is the hand
-   building, an error last in the log is an error — so the model never emits one and cannot lie
-   about what it is doing. No colour: the glyphs carry the state, and colour still means
-   provenance. Least- to most-specific, because :has() takes the specificity of its argument
-   and ties go to whichever comes last. */
-main.office > .top::before { content:"(=^w^=)"; position:absolute; left:.9rem; top:50%; transform:translateY(-50%);
-  font-family:var(--sans); font-size:.85rem; font-weight:500; letter-spacing:0; color:#8b949e; white-space:nowrap; }
-main.office:has(.stage .draft) > .top::before { content:"(\3065  \1D17  _ \1D17)\3065 "; }
-main.office:has(.term > form input:disabled) > .top::before { content:"(\2013\2A4A\2013)???"; }
-main.office:has(.stage .draft):has(.term > form input:disabled) > .top::before { content:"\FF3C(\665\2040\25BD\2040  )\FF0F"; }
-main.office:has(.log > p.err:last-child) > .top::before { content:"(\3002>\FE4F<)"; }
 .hint { color:var(--dim); }
 
 /* the two panes */
@@ -235,11 +223,21 @@ button { font:inherit; color:inherit; cursor:pointer; }
    edges: a lit bevel, a single gloss arc breaking over the top-right corner, and the
    violet-tinted pool the slab casts on the desk. */
 .term { min-height:0; display:grid; font-family:var(--mono); font-size:14.5px; line-height:1.6; }
-.term::after { content:"ALUDEL · TRM-01"; grid-row:6; font-size:.64rem; letter-spacing:.18em; color:#4d525c;
-  padding:.6rem clamp(1.1rem, 4vw, 2.6rem); border-top:1px solid rgba(255,255,255,.06);
+/* The foot of the terminal is Aludel's face: a mood, not a message. It is read off the DOM the
+   app already renders — a disabled prompt is thinking, a draft on the stage is presenting, both
+   at once is the hand building, an error last in the log is an error — so the model never emits
+   one and cannot lie about what it is doing. No colour: the glyphs carry the state, and colour
+   still means provenance. Least- to most-specific, because :has() takes the specificity of its
+   argument and ties go to whichever comes last. */
+.term::after { content:"(=^w^=)"; grid-row:6; font-family:var(--sans); font-size:.82rem; font-weight:500; letter-spacing:0; color:#8b949e;
+  padding:.5rem clamp(1.1rem, 4vw, 2.6rem); border-top:1px solid rgba(255,255,255,.06);
   background-image:radial-gradient(circle 3.5px at center, var(--mint) 99%, transparent 100%);
   background-repeat:no-repeat; background-size:9px 9px;  /* without a size the gradient fills the row and the dot sits dead centre */
   background-position:right clamp(1.1rem, 4vw, 2.6rem) center; }
+.term:has(.stage .draft)::after { content:"(\3065  \1D17  _ \1D17)\3065 "; }
+.term:has(> form input:disabled)::after { content:"(\2013\2A4A\2013)???"; }
+.term:has(.stage .draft):has(> form input:disabled)::after { content:"\FF3C(\665\2040\25BD\2040  )\FF0F"; }
+.term:has(> .log > p.err:last-child)::after { content:"(\3002>\FE4F<)"; }
 .log { overflow-y:auto; overscroll-behavior:contain; padding:1.1rem clamp(1.1rem, 4vw, 2.6rem); display:grid; gap:.62rem; align-content:start; color:var(--tty);
   mask-image:linear-gradient(180deg, transparent 0, #000 .9rem, #000 calc(100% - .4rem), rgba(0,0,0,.4));
   -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 .9rem, #000 calc(100% - .4rem), rgba(0,0,0,.4)); }
