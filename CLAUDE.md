@@ -166,7 +166,16 @@ because a template cannot know which weekday a route runs. Read it before touchi
   stage-to-conversation split is golden — the grip chooses which side gets φ's long side and
   **maximise** gives the tool the screen with the conversation kept to a few lines. Past 900px
   it is a **workstation**: the conversation takes the left column and the tool stands in a
-  column of its own on the **right**, wearing a handset's bezel. The column is the point — with
+  column of its own on the **right**, wearing a handset's bezel. There the wordmark bar belongs
+  to the **console**, not to the slab — it caps the left column and its hairline stops at that
+  column's edge, so the phone runs the full height of the screen with nothing above it, which
+  is what a phone standing on a desk looks like. One bar over both columns would make the tool
+  a panel inside a window; stopping it makes the tool a device on the desk. That takes **one
+  grid, not two**: `.term` dissolves to `display:contents` so `main.office` owns every row and
+  the stage can span them all. Which is also why the workstation block is **last in
+  `src/index.css`** — `.term`'s children name their own `grid-row` for the phone, and a
+  `grid-row` later in the file outranks an earlier `grid-area`, so moving the block up silently
+  re-opens dead tracks under the tool. The column is the point — with
   the full height of the slab rather than a share of it, the ratio (9:19.5, width driven off
   the height, floored at 360px and capped at 480px) comes out true at every desktop size
   instead of squat. There is nothing to maximise into there, so that button is hidden rather

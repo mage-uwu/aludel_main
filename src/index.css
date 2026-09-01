@@ -377,12 +377,17 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline:2px so
    It wears a handset's bezel because that is what it is. The ratio drives the width off the
    height, floored at a real handset and capped so a tall screen cannot stretch it into a
    ribbon. Under the breakpoint the screen already is a phone: one column, tool on top,
-   conversation under it, exactly as the field sees it. */
+   conversation under it, exactly as the field sees it.
+   The wordmark bar belongs to the CONSOLE, not to the slab: it caps the left column and stops
+   there, so the phone runs the whole height of the screen with nothing above it — which is
+   what a phone on a desk looks like. That needs one grid, not two, so .term dissolves into
+   `display:contents` and main.office owns every row. The terminal keeps its mono type either
+   way: a contents box still passes inheritance down, it just stops drawing. */
 @media (min-width:900px) {
-  /* every window state has to be restated — .term.wide-stage outranks a bare .term here */
-  .term, .term.wide-stage, .term.wide-max, .term.wide-min {
-    grid-template-columns:minmax(0,1fr) auto; grid-template-rows:minmax(0,1fr) auto auto auto;
-    grid-template-areas:"log stage" "deck stage" "sig stage" "form stage"; }
+  main.office { grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto minmax(0,1fr) auto auto auto;
+    grid-template-areas:"top stage" "log stage" "deck stage" "sig stage" "form stage"; }
+  .term { display:contents; }  /* every window state went with it: there are no rows left to set */
+  main.office > .top { grid-area:top; }
   .log { grid-area:log; } .deck { grid-area:deck; } .term > form { grid-area:form; } .term::before, .term::after { grid-area:sig; }
   .grip { display:none; }  /* the split is a column now; the window's own buttons still size it */
   .stage { grid-area:stage; justify-self:center; align-self:center; margin:.85rem .85rem .85rem .4rem;
