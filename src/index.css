@@ -60,6 +60,8 @@ main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; 
 /* rows: stage · grip · conversation · deck · prompt · signature. The stage-to-conversation
    split is still golden; the grip still only chooses which side gets φ's long side. */
 .term { grid-template-rows:minmax(0,.618fr) auto minmax(0,1fr) auto auto auto; transition:grid-template-rows .4s cubic-bezier(.2,.8,.25,1); }
+/* rows are named by hand, never left to flow — see the note on the status line below */
+.stage { grid-row:1; } .grip { grid-row:2; } .log { grid-row:3; } .deck { grid-row:4; }
 .term.wide-stage { grid-template-rows:minmax(0,1.618fr) auto minmax(0,1fr) auto auto auto; }
 .term.wide-min { grid-template-rows:auto auto minmax(0,1fr) auto auto auto; }
 /* maximised: the tool takes the screen and the conversation keeps a few lines at the foot,
@@ -223,21 +225,36 @@ button { font:inherit; color:inherit; cursor:pointer; }
    edges: a lit bevel, a single gloss arc breaking over the top-right corner, and the
    violet-tinted pool the slab casts on the desk. */
 .term { min-height:0; display:grid; font-family:var(--mono); font-size:14.5px; line-height:1.6; }
-/* The foot of the terminal is Aludel's face: a mood, not a message. It is read off the DOM the
-   app already renders — a disabled prompt is thinking, a draft on the stage is presenting, both
-   at once is the hand building, an error last in the log is an error — so the model never emits
-   one and cannot lie about what it is doing. No colour: the glyphs carry the state, and colour
-   still means provenance. Least- to most-specific, because :has() takes the specificity of its
-   argument and ties go to whichever comes last. */
-.term::after { content:"(=^w^=)"; grid-row:6; font-family:var(--sans); font-size:.82rem; font-weight:500; letter-spacing:0; color:#8b949e;
-  padding:.5rem clamp(1.1rem, 4vw, 2.6rem); border-top:1px solid rgba(255,255,255,.06);
+/* THE STATUS LINE, directly above the prompt: Aludel's face, and in words what it is doing.
+   A mood, not a message — read off the DOM the app already renders, so the model never emits
+   one and cannot lie about what it is doing: a disabled prompt is thinking, a draft on the
+   stage is presenting, both at once is the hand building, an error last in the log is an
+   error. No colour on the face; the glyphs carry the state and colour still means provenance.
+   Two pseudo-elements sharing one grid row: ::before is the face in a fixed-width column so
+   the label never shifts under it, ::after is the label (and still carries the online dot).
+   Rules run least- to most-specific, because :has() takes the specificity of its argument and
+   ties go to whichever comes last. */
+.term::before, .term::after { grid-row:5; grid-column:1; align-self:center; font-family:var(--sans); }
+.term::before { content:"(=^w^=)"; justify-self:start; width:calc(7.5rem + clamp(1.1rem, 4vw, 2.6rem)); z-index:1;
+  padding:.42rem 0 .42rem clamp(1.1rem, 4vw, 2.6rem); font-size:.85rem; font-weight:500; color:#8b949e; white-space:nowrap;
+  animation:hop 7s ease-in-out infinite; }
+.term::after { content:"ready"; padding:.42rem clamp(1.1rem, 4vw, 2.6rem) .42rem calc(7.5rem + clamp(1.1rem, 4vw, 2.6rem));
+  font-size:.7rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:#565e6b; border-top:1px solid rgba(255,255,255,.06);
   background-image:radial-gradient(circle 3.5px at center, var(--mint) 99%, transparent 100%);
   background-repeat:no-repeat; background-size:9px 9px;  /* without a size the gradient fills the row and the dot sits dead centre */
   background-position:right clamp(1.1rem, 4vw, 2.6rem) center; }
-.term:has(.stage .draft)::after { content:"(\3065  \1D17  _ \1D17)\3065 "; }
-.term:has(> form input:disabled)::after { content:"(\2013\2A4A\2013)???"; }
-.term:has(.stage .draft):has(> form input:disabled)::after { content:"\FF3C(\665\2040\25BD\2040  )\FF0F"; }
-.term:has(> .log > p.err:last-child)::after { content:"(\3002>\FE4F<)"; }
+/* a small idle life: two beats, then it settles again. Never a loop you can hear ticking. */
+@keyframes hop { 0%, 84%, 100% { transform:translateY(0); } 88% { transform:translateY(-3.5px); }
+  92% { transform:translateY(0); } 95% { transform:translateY(-1.5px); } 98% { transform:translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .term::before { animation:none; } }
+.term:has(.stage .draft)::before { content:"(\3065  \1D17  _ \1D17)\3065 "; }
+.term:has(.stage .draft)::after { content:"presenting"; }
+.term:has(> form input:disabled)::before { content:"(\2013\2A4A\2013)???"; }
+.term:has(> form input:disabled)::after { content:"thinking"; }
+.term:has(.stage .draft):has(> form input:disabled)::before { content:"\FF3C(\665\2040\25BD\2040  )\FF0F"; }
+.term:has(.stage .draft):has(> form input:disabled)::after { content:"building"; }
+.term:has(> .log > p.err:last-child)::before { content:"(\3002>\FE4F<)"; }
+.term:has(> .log > p.err:last-child)::after { content:"error"; }
 .log { overflow-y:auto; overscroll-behavior:contain; padding:1.1rem clamp(1.1rem, 4vw, 2.6rem); display:grid; gap:.62rem; align-content:start; color:var(--tty);
   mask-image:linear-gradient(180deg, transparent 0, #000 .9rem, #000 calc(100% - .4rem), rgba(0,0,0,.4));
   -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 .9rem, #000 calc(100% - .4rem), rgba(0,0,0,.4)); }
@@ -259,7 +276,7 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .deck .ghost { min-height:44px; background:none; color:#8b949e; border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:.5rem 1.2rem; font:inherit; font-size:.85rem; font-weight:700; }
 .deck .ghost:hover:not(:disabled) { color:#fff; border-color:rgba(255,255,255,.45); }
 .deck .go:disabled, .deck .ghost:disabled { opacity:.4; cursor:default; }
-.term > form { display:flex; align-items:center; gap:.7rem; padding:1rem clamp(1.1rem, 4vw, 2.6rem); padding-bottom:max(1rem, env(safe-area-inset-bottom)); border-top:1px solid rgba(255,255,255,.07); }
+.term > form { grid-row:6; display:flex; align-items:center; gap:.7rem; padding:1rem clamp(1.1rem, 4vw, 2.6rem); padding-bottom:max(1rem, env(safe-area-inset-bottom)); border-top:1px solid rgba(255,255,255,.07); }
 .term > form::before { content:"\203A"; color:var(--mint); font-weight:700; font-size:1.15rem; line-height:1; }
 .term > form input { flex:1; border:none; background:none; color:#e6edf3; font:inherit; caret-color:var(--mint); padding:0; border-radius:0; }
 /* iOS zooms the page whenever it focuses a field under 16px, and the zoom is the jitter. The
@@ -274,7 +291,7 @@ button { font:inherit; color:inherit; cursor:pointer; }
      item after it up a track and the prompt inherits the conversation's 1fr. The signature is
      explicitly on row 5, so that one can go. */
   html[data-keys] main.office > .top, html[data-keys] .grip { height:0; min-height:0; padding:0; overflow:hidden; border:none; }
-  html[data-keys] .term::after { display:none; }
+
   html[data-keys] .stage { margin-top:.35rem; }
 }
 .term > form input:focus-visible { outline:none; }
@@ -330,8 +347,8 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline:2px so
   /* every window state has to be restated — .term.wide-stage outranks a bare .term here */
   .term, .term.wide-stage, .term.wide-max, .term.wide-min {
     grid-template-columns:minmax(0,1fr) auto; grid-template-rows:minmax(0,1fr) auto auto auto;
-    grid-template-areas:"log stage" "deck stage" "form stage" "sig stage"; }
-  .log { grid-area:log; } .deck { grid-area:deck; } .term > form { grid-area:form; } .term::after { grid-area:sig; }
+    grid-template-areas:"log stage" "deck stage" "sig stage" "form stage"; }
+  .log { grid-area:log; } .deck { grid-area:deck; } .term > form { grid-area:form; } .term::before, .term::after { grid-area:sig; }
   .grip { display:none; }  /* the split is a column now; the window's own buttons still size it */
   .stage { grid-area:stage; justify-self:center; align-self:center; margin:.85rem .85rem .85rem .4rem;
     height:calc(100% - 1.7rem); max-height:1040px; width:auto; aspect-ratio:9 / 19.5; min-width:360px; max-width:480px;

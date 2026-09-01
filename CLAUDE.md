@@ -32,8 +32,10 @@ because a template cannot know which weekday a route runs. Read it before touchi
   owns version numbers, key slugs, and label hygiene; the model never hand-rolls a `signed`
   fact) — and the guard refuses any fact type outside the eight (`default:` is load-bearing;
   runtime JSON is not bound by our union). Staged drafts render as prose cards, never JSON.
-  Aludel wears a **kaomoji in the terminal's bottom-left corner** — resting, thinking, building,
-  presenting, error — where a status strip used to announce a model number it does not have.
+  Aludel wears a **kaomoji on the line directly above the prompt**, with the state in words
+  beside it — ready · thinking · building · presenting · error — and a small idle hop so the
+  desk has a pulse. It replaced a status strip that announced a model number the app does not
+  have. The face sits in a fixed-width column so the label never shifts under it.
   It is a mood, not a message: derived in CSS from the DOM the app already renders (a disabled
   prompt is thinking, a draft on the stage is presenting, both at once is the hand building, an
   error last in the log is an error), so the model never emits one and cannot lie about what it
@@ -129,9 +131,13 @@ because a template cannot know which weekday a route runs. Read it before touchi
   textured, lit, or frosted: no scanlines, no vignette, no gradient mesh, no grain, no
   backdrop blur, no gloss inset — black is `#000`, paper is `#fff`, and every division on the
   screen is a hairline or plain space, because the only things that should carry weight are
-  the words and the controls. The strip at the terminal's foot carries Aludel's face, not a
-  serial number: a machine that larps at being hardware is the one ornament this app cannot
-  afford. Type is sized for a gloved thumb in daylight: nothing the
+  the words and the controls. The line above the prompt carries Aludel's face and what it is
+  doing, not a serial number: a machine that larps at being hardware is the one ornament this
+  app cannot afford. In the terminal grid **every child names its own row**, because once one
+  is placed by hand the auto-flow cursor fights the explicit rows — the stage and the grip
+  landed in the same cell and the log swallowed clicks. Two items given a definite row but no
+  column do not stack either: the second opens an implicit **column**, and the whole terminal
+  quietly became two columns wide on a phone. Type is sized for a gloved thumb in daylight: nothing the
   crew reads is under ~0.8rem and nothing they tap is under ~40px — legibility outranks density.
   Two arrangements, never three: a third breakpoint is a layout nobody can hold in their head.
   The shell is sized from the **visual viewport** (`--vvh`, published by the script in
