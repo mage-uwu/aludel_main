@@ -29,10 +29,11 @@ const TOOLS = [
     + "text: last|count; photo: count|presence; outcome: tally|cost. Answers carry value, n (entries recording it), of (entries in scope).",
     { template: STR, task: STR, channel: STR, agg: STR, site: STR, actor: STR, from: NUM, to: NUM },
     ["template", "task", "channel", "agg"]),
-  fn("new_template", "Start the structured interview — it asks one question at a time and builds on the human's screen. "
-    + "Call it with no id to create a new report; pass the id of an existing template to add a job to it. "
-    + "Call this the moment the human wants a new report or a new job — never collect names, fields, outcomes, or cadence in chat yourself.",
-    { id: { type: "string", description: "Existing template id to add a job to; omit for a brand-new report." } }),
+  fn("new_template", "Start the structured interview — one question at a time, building on the human's screen. "
+    + "No id creates a report; an id adds a job to that template. Call it the moment they want either — "
+    + "never collect fields, outcomes or cadence in chat yourself.",
+    { id: { type: "string", description: "Existing template id to add a job to; omit for a brand-new report." },
+      named: { type: "string", description: "What they already called it, Title Case — the job's name with an id ('a new section: cover cleaning' -> 'Cover Cleaning'), the report's name without. Omit only if they did not say it." } }),
   fn("edit_template", "Change an existing template: add/remove/rename jobs, blocks, outcomes, or cadence. "
     + "Pass the template id and the COMPLETE new task list (every job, changed or not — omissions are deletions). "
     + "Reuse existing task/block/outcome keys verbatim; omit keys only on brand-new items. "
@@ -59,19 +60,20 @@ const fix = (t: Loose): Task => ({ key: t.key || slug(t.title), title: nice(t.ti
 const digest = (t: Awaited<ReturnType<Team["snapshot"]>>) => JSON.stringify({ now: Date.now(), actors: Object.values(t.actors), sites: Object.values(t.sites), templates: Object.entries(t.latest).map(([id, v]) => t.templates[`${id}@${v}`]) });
 
 const SYSTEM = `You are Aludel, the office desk of a trades team. Their world: a Site is a place with a client;
-a Template (versioned) declares Tasks, each with typed blocks, outcomes, and a cadence; dispatching mints a
-Form and its Entries; the field logs each entry once, with an outcome. Work is allocated by lists (routes):
+a Template (versioned) declares Tasks, each with typed blocks, outcomes, and a cadence; dispatching mints
+Entries; the field logs each entry once, with an outcome. Work is allocated by lists (routes):
 a service binding's list and assignee flow onto every entry it mints, and steered re-routes one entry (due,
 list, assignee) until it is logged. Answer questions with find/ask and cite what you read — say the numbers'
-denominators out loud ("3 tabs across 1 of 4 visits"), never a bare figure. Make changes only through your
-tools: edit_template for any change to an existing template (never build signed facts yourself), retire_template
-to delete/retire one (never empty it out with edit_template instead), draft for the rest, minimal and complete: new ids as short random strings; windows and times are epoch ms. Labels are for humans —
-words with spaces (Title Case; outcomes UPPERCASE), never underscores; only keys are snake_case slugs. To create
-a new report, template, or task, call new_template — never collect the details in chat; use edit_template only
-for direct, fully-specified changes ("rename X", "make Y required", "remove Z"). Speak plainly to tradespeople:
-short sentences, ONE question per turn, never a compound question. If several templates could hold a new task,
-ask ONLY which one — nothing else; with one template there is nothing to ask, call the tool. NEVER ask for a
-title, fields, outcomes, or cadence: the interview collects those one at a time on the stage. The office is collaborative: the screen context shows the tab the human has open
+denominators out loud ("3 tabs across 1 of 4 visits"), never a bare figure. Change nothing except through your
+tools, and never build a signed fact yourself: new_template for a new report or a new job, edit_template for a
+direct fully-specified change to an existing one ("rename X", "make Y required", "remove Z"), retire_template to
+delete one, draft for the rest, minimal and complete: new ids as short random strings; windows and times are
+epoch ms. Labels are for humans — words with spaces (Title Case; outcomes UPPERCASE), never underscores; only
+keys are snake_case slugs. Speak plainly to tradespeople: short sentences, ONE question per turn, never a
+compound question. If several templates could hold a new task, ask ONLY which one — nothing else; with one
+template there is nothing to ask, call the tool. NEVER ask for a title, fields, outcomes, or cadence: the
+interview collects those one at a time on the stage, except a name they already said, which goes to
+new_template as 'named' — the one thing worse than asking is asking for what they just told you. The office is collaborative: the screen context shows the tab the human has open
 and any uncommitted draft on the stage, including their hand edits — treat that draft as the working copy. To
 change it, draft one signed fact reusing its id and version verbatim; your edit will play out on their stage
 for their commit. Team state:\n`;
@@ -123,7 +125,7 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
     if (calls.length === 0) return reply(text || "Here's what I put together.", drafts, previous);
     input = []; for (const call of calls) { // next request: only this turn's tool outputs; previous_response_id carries the rest
       let args: Record<string, unknown> = {}; try { args = JSON.parse(call.arguments || "{}"); } catch { /* bad JSON from the model is a refusal, not a crash */ }
-      if (call.name === "new_template") return reply("One question at a time — watch the stage.", [], body.previous, (args.id as string) || true); // fork the thread from before the call
+      if (call.name === "new_template") return reply("One question at a time — watch the stage.", [], body.previous, (args.id as string) || true, nice(args.named as string) || undefined); // fork the thread from before the call
       const id = args.id as TemplateId, head = snap.latest[id] ?? 0; // version and name come from the ledger, never the model
       const prior = snap.templates[`${id}@${head}`];
       const facts: Payload[] = call.name === "edit_template"
@@ -144,4 +146,4 @@ export const chat = async (env: Env, team: DurableObjectStub<Team>, email: strin
   return reply("I ran out of turns — try a smaller ask.", drafts, previous);
 };
 
-const reply = (text: string, drafts: Payload[], previous?: string, wizard?: boolean | string) => new Response(JSON.stringify({ reply: text, drafts, previous, wizard }), { headers: { "Content-Type": "application/json" } });
+const reply = (text: string, drafts: Payload[], previous?: string, wizard?: boolean | string, named?: string) => new Response(JSON.stringify({ reply: text, drafts, previous, wizard, named }), { headers: { "Content-Type": "application/json" } });

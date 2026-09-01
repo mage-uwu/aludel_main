@@ -47,7 +47,12 @@ because a template cannot know which weekday a route runs. Read it before touchi
   instead of an answer — a correction re-routes and the cue stays pending — so order guides
   without caging. Open-ended cues close by an explicit `skip` ("done", "no", "none"), keyed to
   the job they asked about. `K(draft)` is the first job still missing an essential, never just
-  the newest, so moving on cannot strand an unfinished one for the guard to refuse.
+  the newest, so moving on cannot strand an unfinished one for the guard to refuse. And **never
+  ask for what they just said**: a name carried in on the request that starts the interview ("a
+  new section: cover cleaning") arrives as `new_template`'s `named` and answers the cue before it
+  can fire. Reading the sentence is the model's job, never a regex in the client — which is why
+  there is no client-side shortcut for starting one. A shortcut is exactly the thing that hears
+  "new task" and throws the rest of the sentence away.
 - Cues ask about **this job only**. The client, address and phone belong to the site, never to
   its paperwork — the crew is never invited to type them into a form, and the normalizer is
   told so. Most jobs record one or two things; a cleaning is often just a photo.

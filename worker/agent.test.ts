@@ -82,3 +82,18 @@ test("malformed tool calls do not throw", async () => {
     expect(typeof out.reply).toBe("string");
   }
 });
+
+// The name they already said must reach the interview, or the first thing it does is ask for
+// what they just told it. new_template forks the thread before the call, so `named` rides on
+// the reply itself — and it is label-hygiened on the way out like every other human-facing word.
+test("new_template carries a name the human already gave, and cleans it", async () => {
+  script([{ type: "function_call", call_id: "c1", name: "new_template", arguments: JSON.stringify({ id: "tpl1", named: "cover_cleaning" }) }]);
+  const out = await (await chat(env, team(world()), "boss@x.co", { text: "lets name a new section: cover cleaning" })).json() as { wizard: unknown; named?: string };
+  expect(out.wizard).toBe("tpl1"); expect(out.named).toBe("cover cleaning");
+});
+
+test("new_template without a name leaves the interview to ask for one", async () => {
+  script([{ type: "function_call", call_id: "c1", name: "new_template", arguments: JSON.stringify({}) }]);
+  const out = await (await chat(env, team(world()), "boss@x.co", { text: "new report please" })).json() as { wizard: unknown; named?: string };
+  expect(out.wizard).toBe(true); expect(out.named).toBeUndefined();
+});
