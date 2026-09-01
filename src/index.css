@@ -182,7 +182,11 @@ pre.card { font:11px/1.5 var(--mono); overflow-x:auto; }
 .add { border:1.5px dashed rgba(21,23,28,.22); background:none; color:var(--dim); border-radius:13px; min-height:48px; padding:.6rem 1.1rem; font-size:.95rem; font-weight:700; justify-self:stretch; }
 .add:hover { border-color:var(--ink); color:var(--ink); }
 /* how the task ends — the outcome buttons, editable in place */
-.ends, .sheet footer { display:grid; grid-template-columns:repeat(auto-fit, minmax(14rem, 1fr)); gap:.55rem; margin-top:.3rem; }
+/* The decision is the biggest thing on the sheet: a two-up grid of slabs, so four outcomes are
+   a 2x2 a thumb finds without looking. The odd one out takes the full width rather than leave a
+   hole — the hint is child 1, so an odd COUNT of outcomes ends on an even child. */
+.ends, .sheet footer { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.6rem; margin-top:.3rem; }
+.outcome:last-child:nth-child(even) { grid-column:1 / -1; }
 .ends > .hint, .sheet footer .hint { grid-column:1 / -1; margin:0 0 .1rem; font-size:.78rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); }
 .outcome.pencil { width:100%; text-align:center; }
 /* THE TWO PRIMITIVES. Every visible thing Aludel does is one of these, or both in sequence:
@@ -314,7 +318,8 @@ button { font:inherit; color:inherit; cursor:pointer; }
 input, select { font:inherit; color:var(--ink); background:#fff; border:1px solid var(--hair); border-radius:11px; padding:.6rem .7rem; width:100%; }
 input:focus-visible, select:focus-visible, button:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
 
-.outcome { display:grid; place-items:center; width:100%; min-height:60px; border:1.5px solid rgba(21,23,28,.2); background:#fff; border-radius:14px; padding:.9rem 1.2rem; font-size:1.05rem; font-weight:800; letter-spacing:.01em; text-align:center; }
+.outcome { display:grid; place-items:center; width:100%; min-height:82px; border:1.5px solid rgba(21,23,28,.2); background:#fff; border-radius:15px; padding:.85rem .7rem;
+  font-size:1rem; font-weight:800; letter-spacing:.01em; line-height:1.2; text-align:center; text-wrap:balance; }
 .outcome:disabled { opacity:.4; }
 .outcome:not(:disabled) { color:var(--ink); }
 .outcome:not(:disabled):active { background:var(--ink); color:#fff; }
