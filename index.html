@@ -23,8 +23,12 @@
           queued = 0;
           /* a zoomed visual viewport reports fewer CSS pixels; resizing to that would shrink the
              app every time iOS auto-zooms a small field. Hold the last unzoomed height. */
-          if (!v || v.scale <= 1.01) tall = (v ? v.height : window.innerHeight);
+          var zoomed = v && v.scale > 1.01;
+          if (!zoomed) tall = (v ? v.height : window.innerHeight);
           root.style.setProperty("--vvh", tall + "px");
+          /* the layout viewport never shrinks for a keyboard, so the gap between the two IS the
+             keyboard. The app sheds its ornament while one is up — see index.css. */
+          root.toggleAttribute("data-keys", !zoomed && window.innerHeight - tall > 120);
           if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
         }
         function fit() { if (!queued) queued = requestAnimationFrame(measure); }

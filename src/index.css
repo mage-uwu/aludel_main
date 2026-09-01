@@ -258,6 +258,18 @@ button { font:inherit; color:inherit; cursor:pointer; }
 /* iOS zooms the page whenever it focuses a field under 16px, and the zoom is the jitter. The
    prompt is the field a phone opens its keyboard for, so it never goes under. */
 @media (max-width:899px) { .term > form input { font-size:16px; } }
+/* A keyboard on a phone leaves ~380px of app, and the golden split of that is two useless
+   slivers. So while one is up the app sheds everything that is not the work: the wordmark bar,
+   the grip, the signature. Nothing there is read while typing, and it is ~80px — a third of
+   what is left to split. The split itself stays golden; it just has more to divide. */
+@media (max-width:899px) {
+  /* collapsed, never display:none — .top and .grip are auto-placed, so removing one shifts every
+     item after it up a track and the prompt inherits the conversation's 1fr. The signature is
+     explicitly on row 5, so that one can go. */
+  html[data-keys] main.office > .top, html[data-keys] .grip { height:0; min-height:0; padding:0; overflow:hidden; border:none; }
+  html[data-keys] .term::after { display:none; }
+  html[data-keys] .stage { margin-top:.35rem; }
+}
 .term > form input:focus-visible { outline:none; }
 .term > form input::placeholder { color:#565e6b; }
 .log::-webkit-scrollbar, .scroll::-webkit-scrollbar { width:6px; }

@@ -117,6 +117,12 @@ because a template cannot know which weekday a route runs. Read it before touchi
   `.scroll` do. Two rules keep that true: hold the last unzoomed height, because a zoomed visual
   viewport reports fewer CSS pixels and the app would shrink every time iOS auto-zoomed; and
   **nothing a phone can focus may be under 16px**, because that auto-zoom is itself the jitter.
+  A keyboard leaves ~380px of app, and a golden split of that is two useless slivers, so while
+  one is up (`html[data-keys]`, the gap between layout and visual viewport) the phone **sheds
+  its ornament** — the wordmark bar, the grip, the signature, ~80px of the ~240 left to divide.
+  Collapse those to zero height, never `display:none`: `.top` and `.grip` are auto-placed, so
+  removing one shifts every item after it up a grid track and the prompt inherits the
+  conversation's `1fr`.
   Never reuse a
   component's class name as a state modifier — `pane ${wide}` once painted the whole pane
   with the terminal's styling — and because the stage lives inside the terminal, terminal
