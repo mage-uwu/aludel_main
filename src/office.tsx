@@ -26,9 +26,8 @@ const block = (kind: string, label: string): Block => {
 
 // The verbs, shared by every cue: add · rename · remove · move (+ task). Any cue can take one
 // of these instead of an answer, so a correction is never mistaken for the reply to a question.
-// The job under construction: the first one still missing an essential, else the newest. So
-// "next: filter cleaning" cannot strand the job before it — the checklist walks back, asks for
-// what it lacks, and only then moves on. Nothing incomplete can be left behind for the guard.
+// The job under construction: the first still missing an essential, else the newest — so
+// moving on can never strand an unfinished one behind for the guard to refuse.
 const K = (t: Template): Task =>
   t.tasks.find((x) => !x.title || !x.outcomes.length) ?? t.tasks[t.tasks.length - 1] ?? { key: "", title: "", outcomes: [], blocks: [] };
 const at = (t: Template) => Math.max(0, t.tasks.indexOf(K(t))); // cues are keyed to the job they ask about
@@ -43,11 +42,10 @@ const op = (t: Template, a: string, n: Norm) => {
   for (const b of m ? [{ kind: m[1]!.toLowerCase(), label: m[2]!.trim() }] : n?.blocks ?? [{ kind: "text", label: a }]) k.blocks.push(block(b.kind, b.label));
 };
 
-// A routine is a branched checklist. Every cue states when it is still unanswered (`need`),
-// and only asks then — so a branch is nothing but a need that stays false down the road not
-// taken: decline the repeat and the three cues behind it never fire. The next question is
-// always just the first unanswered cue, which is why a correction can arrive at any moment,
-// re-route the draft, and leave the cue standing there to ask itself again.
+// A routine is a branched checklist: each cue says when it is still unanswered (`need`) and
+// only asks then, so a branch is just a need that stays false down the road not taken. The
+// next question is always the first unanswered cue — which is why a correction can arrive at
+// any moment and leave the cue standing to ask itself again.
 type Cue = { key: string; need: (t: Template) => boolean; q: (t: Template) => string; hint?: string; kind: string; take: (t: Template, a: string, n: Norm) => void };
 
 // The TASK subroutine — one pass per job on the report, and it repeats for every job named.
@@ -108,12 +106,14 @@ const acts = (a: Template, b: Template): Act[] => {
 
 // The form on the stage. Read-only in the Templates tab; with `edit`, every label is a pencil
 // and every field can be moved or dropped — the same surface Aludel writes into.
+// how often and how long, said the way a person says it — never a schema read aloud
+const says = (c: Cadence) => `Every ${c.every} ${c.unit}${c.every > 1 ? "s" : ""}${c.withinDays ? `, complete within ${c.withinDays} day${c.withinDays > 1 ? "s" : ""}` : ""}`;
 const Form = ({ t, edit }: { t: Template; edit?: (f: (d: Template) => void) => void }): ReactElement => (
   <article className="tpl">
     {edit ? <input className="pencil name" value={t.name} placeholder="Report name" onChange={(e) => edit((d) => { d.name = e.target.value; })} /> : <h3>{t.name} <span className="v">v{t.version}</span></h3>}
     {t.tasks.map((k, ti) => <div className="task" key={ti}>
       {edit ? <input className="pencil" value={k.title} onChange={(e) => edit((d) => { d.tasks[ti]!.title = e.target.value; })} /> : <b>{k.title}</b>}
-      {k.cadence && <em>every {k.cadence.every} {k.cadence.unit}{k.cadence.withinDays > 1 && ` · ${k.cadence.withinDays} days to do it`}</em>}
+      {k.cadence && <em>{says(k.cadence)}</em>}
       {k.blocks.map((b, bi) => <div className="wrap" key={bi}>
         <Input b={b} label={edit ? <input className="pencil" value={b.label} onChange={(e) => edit((d) => { d.tasks[ti]!.blocks[bi]!.label = e.target.value; })} /> : undefined} />
         {edit && <span className="tools"><button title="Move up" disabled={bi === 0} onClick={() => edit((d) => move(d.tasks[ti]!.blocks, bi, -1))}>↑</button>
