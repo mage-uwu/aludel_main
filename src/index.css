@@ -57,14 +57,14 @@ main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; 
    rearrangement: the conversation runs the full width and the tool holds φ's long side by
    default. The split is always golden; the grip only chooses which pane gets φ's long side
    (1.618 : 1 ≈ two thirds against one). */
-/* rows: title bar · stage · grip · conversation · prompt. The stage-to-conversation split
-   is still golden; the grip still only chooses which side gets φ's long side. */
-.term { grid-template-rows:minmax(0,.618fr) auto minmax(0,1fr) auto auto; transition:grid-template-rows .4s cubic-bezier(.2,.8,.25,1); }
-.term.wide-stage { grid-template-rows:minmax(0,1.618fr) auto minmax(0,1fr) auto auto; }
-.term.wide-min { grid-template-rows:auto auto minmax(0,1fr) auto auto; }
+/* rows: stage · grip · conversation · deck · prompt · signature. The stage-to-conversation
+   split is still golden; the grip still only chooses which side gets φ's long side. */
+.term { grid-template-rows:minmax(0,.618fr) auto minmax(0,1fr) auto auto auto; transition:grid-template-rows .4s cubic-bezier(.2,.8,.25,1); }
+.term.wide-stage { grid-template-rows:minmax(0,1.618fr) auto minmax(0,1fr) auto auto auto; }
+.term.wide-min { grid-template-rows:auto auto minmax(0,1fr) auto auto auto; }
 /* maximised: the tool takes the screen and the conversation keeps a few lines at the foot,
    which is what a small screen or a big zoom actually needs */
-.term.wide-max { grid-template-rows:minmax(0,1fr) auto 7rem auto auto; }
+.term.wide-max { grid-template-rows:minmax(0,1fr) auto 7rem auto auto auto; }
 .wide-min .stage { grid-template-rows:auto; }
 .wide-min .stage .scroll, .wide-min .hand { display:none; }
 .grip { border:none; background:none; padding:.32rem 0; display:grid; place-items:center; cursor:ns-resize; touch-action:manipulation; }
@@ -78,35 +78,6 @@ main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:#8b949e; 
 .stage { position:relative; width:calc(100% - 1.2rem); margin:.6rem auto .25rem; font:16px/1.55 var(--sans); color:var(--ink);
   background:#fff; border:none; border-radius:12px; overflow:hidden; min-height:0;
   display:grid; grid-template-rows:auto minmax(0,1fr); }
-/* A wide screen is a workstation, not a wide phone, so it gets the one rearrangement in the
-   app: the conversation takes the left, the tool stands on the right as a phone. That is the
-   whole point of the width — given a column of its own the preview gets the FULL height of
-   the slab instead of a share of it, which is the only way its proportions come out right.
-   It wears a handset's bezel because that is what it is. The ratio drives the width off the
-   height, floored at a real handset and capped so a tall screen cannot stretch it into a
-   ribbon. Under the breakpoint the screen already is a phone: one column, tool on top,
-   conversation under it, exactly as the field sees it. */
-@media (min-width:900px) {
-  /* every window state has to be restated — .term.wide-stage outranks a bare .term here */
-  .term, .term.wide-stage, .term.wide-max, .term.wide-min {
-    grid-template-columns:minmax(0,1fr) auto; grid-template-rows:minmax(0,1fr) auto auto;
-    grid-template-areas:"log stage" "form stage" "sig stage"; }
-  .log { grid-area:log; } .term > form { grid-area:form; } .term::after { grid-area:sig; }
-  .grip { display:none; }  /* the split is a column now; the window's own buttons still size it */
-  .stage { grid-area:stage; justify-self:center; align-self:center; margin:.85rem .85rem .85rem .4rem;
-    height:calc(100% - 1.7rem); max-height:1040px; width:auto; aspect-ratio:9 / 19.5; min-width:360px; max-width:480px;
-    /* the bezel: a ring of black around the screen and a hairline where a handset's edge
-       catches light. Drawn outside the box, so the phone is framed without losing a pixel
-       of form to it. */
-    border-radius:26px; box-shadow:0 0 0 9px #000, 0 0 0 10px rgba(255,255,255,.22); }
-  /* nothing left to maximise into: the phone already has the full height of the slab, and
-     widening it past the ratio would make it stop being a phone. The button goes rather than
-     lie — minimise still docks it, and both still work under the breakpoint. */
-  .tabs .win:last-child { display:none; }
-  /* minimised, the window is only its own bar, docked at the top of its column: a phone ratio
-     applied to an auto height has nothing to work from and inflates it back open */
-  .wide-min .stage { height:auto; max-height:none; aspect-ratio:auto; align-self:start; width:360px; border-radius:14px; }
-}
 
 /* the window's own buttons, at the end of its bar */
 .tabs .win { margin-left:.1rem; padding:.34rem .5rem; font-size:.85rem; line-height:1; color:var(--dim); border-radius:8px; letter-spacing:0; }
@@ -252,7 +223,7 @@ button { font:inherit; color:inherit; cursor:pointer; }
    edges: a lit bevel, a single gloss arc breaking over the top-right corner, and the
    violet-tinted pool the slab casts on the desk. */
 .term { min-height:0; display:grid; font-family:var(--mono); font-size:14.5px; line-height:1.6; }
-.term::after { content:"ALUDEL · TRM-01"; grid-row:5; font-size:.64rem; letter-spacing:.18em; color:#4d525c;
+.term::after { content:"ALUDEL · TRM-01"; grid-row:6; font-size:.64rem; letter-spacing:.18em; color:#4d525c;
   padding:.6rem clamp(1.1rem, 4vw, 2.6rem); border-top:1px solid rgba(255,255,255,.06);
   background-image:radial-gradient(circle 3.5px at center, var(--mint) 99%, transparent 100%);
   background-repeat:no-repeat; background-size:9px 9px;  /* without a size the gradient fills the row and the dot sits dead centre */
@@ -270,6 +241,14 @@ button { font:inherit; color:inherit; cursor:pointer; }
 .step b { color:var(--mint); } .step { color:#a9dcbd; }            /* the script is certain */
 .ledger b { color:var(--mint); } .ledger { color:var(--mint); }
 .err b, .err { color:var(--amber); }
+/* the deck: what the human does about the draft, at the desk where they do it. White is the
+   colour of the human's own hand here — the same law the conversation speaks. */
+.deck { display:flex; align-items:center; gap:.55rem; padding:.7rem clamp(1.1rem, 4vw, 2.6rem) .1rem; font-family:var(--mono); }
+.deck::before { content:"uncommitted"; margin-right:auto; font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:#8b949e; }
+.deck .go { min-height:44px; background:#fff; color:#000; border:none; border-radius:10px; padding:.5rem 1.2rem; font:inherit; font-size:.85rem; font-weight:700; }
+.deck .ghost { min-height:44px; background:none; color:#8b949e; border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:.5rem 1.2rem; font:inherit; font-size:.85rem; font-weight:700; }
+.deck .ghost:hover:not(:disabled) { color:#fff; border-color:rgba(255,255,255,.45); }
+.deck .go:disabled, .deck .ghost:disabled { opacity:.4; cursor:default; }
 .term > form { display:flex; align-items:center; gap:.7rem; padding:1rem clamp(1.1rem, 4vw, 2.6rem); padding-bottom:max(1rem, env(safe-area-inset-bottom)); border-top:1px solid rgba(255,255,255,.07); }
 .term > form::before { content:"\203A"; color:var(--mint); font-weight:700; font-size:1.15rem; line-height:1; }
 .term > form input { flex:1; border:none; background:none; color:#e6edf3; font:inherit; caret-color:var(--mint); padding:0; border-radius:0; }
@@ -325,3 +304,36 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline:2px so
 .outcome:not(:disabled):active { background:var(--ink); color:#fff; }
 .gate { display:grid; place-content:center; text-align:center; gap:.6rem; height:var(--vvh, 100svh); }
 @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } .entry:active, .go:active { transform:none; } }
+
+/* THE WORKSTATION, LAST IN THE FILE ON PURPOSE. Everything in here overrides a rule above it
+   at the same specificity, so it only wins by coming after: .term::after's own grid-row was
+   quietly beating the grid-area set here, putting the signature two dead tracks past its area.
+   A wide screen is a workstation, not a wide phone, so it gets the one rearrangement in the
+   app: the conversation takes the left, the tool stands on the right as a phone. That is the
+   whole point of the width — given a column of its own the preview gets the FULL height of
+   the slab instead of a share of it, which is the only way its proportions come out right.
+   It wears a handset's bezel because that is what it is. The ratio drives the width off the
+   height, floored at a real handset and capped so a tall screen cannot stretch it into a
+   ribbon. Under the breakpoint the screen already is a phone: one column, tool on top,
+   conversation under it, exactly as the field sees it. */
+@media (min-width:900px) {
+  /* every window state has to be restated — .term.wide-stage outranks a bare .term here */
+  .term, .term.wide-stage, .term.wide-max, .term.wide-min {
+    grid-template-columns:minmax(0,1fr) auto; grid-template-rows:minmax(0,1fr) auto auto auto;
+    grid-template-areas:"log stage" "deck stage" "form stage" "sig stage"; }
+  .log { grid-area:log; } .deck { grid-area:deck; } .term > form { grid-area:form; } .term::after { grid-area:sig; }
+  .grip { display:none; }  /* the split is a column now; the window's own buttons still size it */
+  .stage { grid-area:stage; justify-self:center; align-self:center; margin:.85rem .85rem .85rem .4rem;
+    height:calc(100% - 1.7rem); max-height:1040px; width:auto; aspect-ratio:9 / 19.5; min-width:360px; max-width:480px;
+    /* the bezel: a ring of black around the screen and a hairline where a handset's edge
+       catches light. Drawn outside the box, so the phone is framed without losing a pixel
+       of form to it. */
+    border-radius:26px; box-shadow:0 0 0 9px #000, 0 0 0 10px rgba(255,255,255,.22); }
+  /* nothing left to maximise into: the phone already has the full height of the slab, and
+     widening it past the ratio would make it stop being a phone. The button goes rather than
+     lie — minimise still docks it, and both still work under the breakpoint. */
+  .tabs .win:last-child { display:none; }
+  /* minimised, the window is only its own bar, docked at the top of its column: a phone ratio
+     applied to an auto height has nothing to work from and inflates it back open */
+  .wide-min .stage { height:auto; max-height:none; aspect-ratio:auto; align-self:start; width:360px; border-radius:14px; }
+}

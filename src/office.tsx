@@ -222,9 +222,8 @@ export default function Office(): ReactElement {
   return (
     <section className={`term wide-${wide}`}>
       <section className="stage">
-        <nav className="tabs">{live // while a draft is live the bar belongs to it: the commit is never scrolled away
-          ? <><b>{shut ? "Aludel is building…" : "Draft · uncommitted"}</b><button className="go" onClick={commit} disabled={busy || !!dead}>Commit</button>
-            <button className="ghost" onClick={clear} disabled={busy}>Discard</button></>
+        <nav className="tabs">{live // while a draft is live the bar names it; the commit lives at the prompt, not on the phone
+          ? <b>{shut ? "Aludel is building…" : "Draft · uncommitted"}</b>
           : ["templates", "sites", "ledger"].map((t) => <button key={t} className={t === tab ? "on" : ""} onClick={() => setTab(t)}>{t}</button>)}
           <button className="win" title={wide === "min" ? "Restore" : "Minimize"} onClick={() => win(wide === "min" ? "stage" : "min")}>{wide === "min" ? "▣" : "—"}</button>
           <button className="win" title={wide === "max" ? "Restore" : "Maximize"} onClick={() => win(wide === "max" ? "stage" : "max")}>▢</button></nav>
@@ -250,6 +249,8 @@ export default function Office(): ReactElement {
       <div className="log" ref={tail}>
         {log.map((m, i) => <p key={i} className={m.who}><b>{m.who}</b><span>{m.body}</span></p>)}
         {busy && <p className="step"><b>aludel</b><span>…</span></p>}</div>
+      {live && <div className="deck"><button className="go" onClick={commit} disabled={busy || !!dead}>Commit</button>
+        <button className="ghost" onClick={clear} disabled={busy}>Discard</button></div>}
       <form onSubmit={(e) => { e.preventDefault(); void send(); }}>
         <input ref={input} placeholder={hint || "Ask Aludel, or tell it what to set up…"} disabled={busy}
           onKeyDown={(e) => { if (e.key === "Tab" && hint && !e.currentTarget.value) { e.preventDefault(); e.currentTarget.value = hint; } }} /></form>

@@ -32,7 +32,9 @@ because a template cannot know which weekday a route runs. Read it before touchi
   owns version numbers, key slugs, and label hygiene; the model never hand-rolls a `signed`
   fact) — and the guard refuses any fact type outside the eight (`default:` is load-bearing;
   runtime JSON is not bound by our union). Staged drafts render as prose cards, never JSON.
-  The office is one shared tool with two operators:
+  Committing is the human's act at the desk, so **Commit and Discard live in the terminal**, on
+  a deck above the prompt — never on the stage: the stage is a preview of a phone screen and a
+  phone screen has no button for signing off a template. The office is one shared tool with two operators:
   every `/api/agent` call carries the screen (`view: { tab, draft, drafts }`), so whatever
   is open to the human is open to the agent — and an agent edit to an open draft plays
   from that draft, never from the ledger, so it can't stomp the human's pencil work.
