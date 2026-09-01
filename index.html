@@ -32,6 +32,9 @@
           if (window.scrollY || window.scrollX) window.scrollTo(0, 0);
         }
         function fit() { if (!queued) queued = requestAnimationFrame(measure); }
+        /* the skin the crew chose, before the first paint — anything later is a flash of the
+           wrong world. "auto" is the absence of a choice and falls through to the device. */
+        try { root.dataset.theme = localStorage.skin || "auto"; } catch (e) { /* private mode */ }
         measure();
         if (v) { v.addEventListener("resize", fit); v.addEventListener("scroll", fit); }
         addEventListener("resize", fit);

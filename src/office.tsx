@@ -154,6 +154,7 @@ export default function Office(): ReactElement {
       Object.assign(e.style, { opacity: "1", left: `${Math.min(x - s.left, s.width - 24)}px`, top: `${y - s.top}px` }); };
     // Motion a person reads as intent, not a tween: a far target takes longer than a near one,
     // the path bows instead of ruling a diagonal, and it eases out of one control into the next.
+    const step = (a: Act, s?: string) => setDraft((d) => { const c = structuredClone(d ?? final); a.go(c, s); return c; });
     const glide = (x: number, y: number) => new Promise<void>((ok) => { const s = box();
       const x0 = parseFloat(h.style.left) || 0, y0 = parseFloat(h.style.top) || 0;
       const dx = Math.min(x - s.left, s.width - 24) - x0, dy = y - s.top - y0, d = Math.hypot(dx, dy) || 1;
@@ -181,10 +182,10 @@ export default function Office(): ReactElement {
         const r = el.getBoundingClientRect(), pace = a.text.length > 22 ? 22 : 38;
         await glide(r.right - 22, r.top + r.height / 2); // it moves aside, clear of the letters it is typing
         for (let j = 1; j <= a.text.length; j++) {
-          setDraft((d) => { const c = structuredClone(d ?? final); a.go(c, a.text!.slice(0, j)); return c; });
+          step(a, a.text!.slice(0, j));
           put(bar, r.left + pad + ctx.measureText(a.text.slice(0, j)).width, r.top + r.height / 2); await zz(pace); }
         await zz(220); bar.style.opacity = "0";
-      } else setDraft((d) => { const c = structuredClone(d ?? final); a.go(c); return c; });
+      } else step(a);
       await zz(240); }
     setDraft(final); setBusy(false); };  // it rests where it finished; the routine ending is what sends it home
   // He reads his own lines — never a second model's. The mic goes deaf while he talks or he
@@ -192,8 +193,9 @@ export default function Office(): ReactElement {
   const talk = (s: string) => { const t = ear.current?.getSenders()[0]?.track; if (!mic || !t) return;
     try { const u = new SpeechSynthesisUtterance(s); u.onstart = () => (t.enabled = false); u.onend = u.onerror = () => (t.enabled = true);
       speechSynthesis.cancel(); speechSynthesis.speak(u); } catch { t.enabled = true; } };
+  const note = (who: string, body: string) => setLog((l) => [...l, { who, body }]);
   const say = (t: Template, sh: string[]) => { const c = pending(t, sh); setHint(c?.hint ?? ""); if (!c) { setShut(null); park(); } // scripted lines speak mint
-    const body = c ? c.q(t) : `"${t.name}" is on the stage — tweak anything, then commit it.`; setLog((l) => [...l, { who: "step", body }]); talk(body); };
+    const body = c ? c.q(t) : `"${t.name}" is on the stage — tweak anything, then commit it.`; note("step", body); talk(body); };
   const wizard = (id?: string, named?: string) => { const v = id ? store.state.latest[id as TemplateId] : undefined; // an id means: add a task to that template, as its next version
     const t: Template = v ? { ...structuredClone(store.state.templates[`${id}@${v}`]!), version: v + 1 } : { id: newId<TemplateId>(), version: 1, name: named ?? "", tasks: [] };
     if (v) t.tasks.push(named ? newTask(named) : { key: "", title: "", outcomes: [], blocks: [] }); // named already? then the cue it would have asked is answered before it fires
@@ -201,8 +203,8 @@ export default function Office(): ReactElement {
   const dead = drafts.flatMap((d) => (d.type === "signed" && d.template.retired ? [d.template.name] : []))[0]; // a staged retirement escalates: the prompt, not the button
   const send = async (text?: string) => { const ask = (text ?? input.current?.value ?? "").trim() || (shut ? hint : "");
     if (!ask || busy) return;
-    input.current!.value = ""; setLog((l) => [...l, { who: "you", body: ask }]);
-    if (dead) return void (/^y(es)?$/i.test(ask) ? commit() : setLog((l) => [...l, { who: "err", body: `Type YES to retire "${dead}", or press Discard. Logged work is kept either way.` }]));
+    input.current!.value = ""; note("you", ask);
+    if (dead) return void (/^y(es)?$/i.test(ask) ? commit() : note("err", `Type YES to retire "${dead}", or press Discard. Logged work is kept either way.`));
     if (shut && draft) { // the routine: answer the cue, or throw an edit at it — the model only normalizes
       const c = pending(draft, shut)!; const skip = /^(?:done|no|nope|none|skip|that.s it)\b\.?$/i.test(ask); setBusy(true);
       const n: Norm = skip || !store.online ? null : await fetch("/api/refine", { method: "POST", body: JSON.stringify({ kind: c.kind, text: ask }) }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
@@ -211,12 +213,12 @@ export default function Office(): ReactElement {
       await perform(acts(draft, t), t); setShut(sh); say(t, sh); return; }
     setBusy(true);
     try { const res = await fetch("/api/agent", { method: "POST", body: JSON.stringify({ text: ask, previous: previous.current, view: { tab, draft, drafts } }) }).then((r) => (r.ok ? (r.json() as Promise<{ reply: string; drafts: Payload[]; previous?: string; wizard?: boolean | string; named?: string }>) : Promise.reject(new Error(String(r.status)))));
-      previous.current = res.previous; setLog((l) => [...l, { who: "aludel", body: res.reply }]); talk(res.reply);
+      previous.current = res.previous; note("aludel", res.reply); talk(res.reply);
       const d0 = res.drafts[0]; const sg = res.drafts.length === 1 && d0?.type === "signed" && !d0.template.retired ? d0.template : null;
       if (sg) { const from = draft?.id === sg.id ? draft : store.state.latest[sg.id] ? structuredClone(store.state.templates[`${sg.id}@${store.state.latest[sg.id]}`]!) : { ...sg, name: "", tasks: [] }; // an edit plays as the diff from the stage draft if one is open, else the live version; a new report builds from nothing
         setDraft({ ...structuredClone(from), id: sg.id, version: sg.version }); await perform(acts(from, sg), sg); } else setDrafts(res.drafts);
       if (res.wizard && !shut) wizard(typeof res.wizard === "string" ? res.wizard : undefined, res.named); // an interview already running is never torn down and restarted
-    } catch { setLog((l) => [...l, { who: "err", body: store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone." }]); }
+    } catch { note("err", store.online ? "Aludel is unreachable right now." : "Aludel needs the server — this device is standalone."); }
     setBusy(false); };
   // Hands free: what it hears is typed into the prompt and submitted from there, never handed
   // to send() — this binds once, so a captured send() answers with the state the mic was armed
@@ -233,10 +235,10 @@ export default function Office(): ReactElement {
       const a = await fetch("https://api.openai.com/v1/realtime/calls", { method: "POST", body: pc.localDescription!.sdp, // ?model= here is a 400
         headers: { Authorization: `Bearer ${k.secret}`, "Content-Type": "application/sdp" } });
       await pc.setRemoteDescription({ type: "answer", sdp: await a.text() });
-    } catch (e) { ear.current = null; setMic(false); setLog((l) => [...l, { who: "err", body: `The ear did not open: ${e}` }]); } };
+    } catch (e) { ear.current = null; setMic(false); note("err", `The ear did not open: ${e}`); } };
   const park = () => { if (hand.current) hand.current.style.opacity = "0"; }; // the work is over: the hand leaves
   const clear = () => { setDraft(null); setDrafts([]); setShut(null); setHint(""); park(); };
-  const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent"); setLog((l) => [...l, { who: no.length ? "err" : "ledger", body: no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger." }]); if (!no.length) clear(); };
+  const commit = () => { const no = store.submit(draft ? [{ type: "signed", template: draft }] : drafts, "agent"); note(no.length ? "err" : "ledger", no.length ? `refused: ${no[0]!.reason}` : "appended to the ledger."); if (!no.length) clear(); };
   const s = store.state, now = Date.now(), live = draft || drafts.length > 0;
   return (
     <section className={`term wide-${wide}`}>

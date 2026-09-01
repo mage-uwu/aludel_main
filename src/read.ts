@@ -15,7 +15,7 @@ export const find = (s: State, f: Filter, now: number): Hit[] =>
 
 // The calculator. The block's kind decides which aggregations are legal, so an invalid
 // question cannot be expressed. Every answer carries its denominator (law 7).
-export const LEGAL = { number: ["sum", "avg", "min", "max", "last"], text: ["last", "count"], photo: ["count", "presence"], outcome: ["tally", "cost"] } as const;
+const LEGAL = { number: ["sum", "avg", "min", "max", "last"], text: ["last", "count"], photo: ["count", "presence"], outcome: ["tally", "cost"] } as const;
 export type Agg = (typeof LEGAL)[keyof typeof LEGAL][number];
 export type Query = { template: TemplateId; task: string; channel: string; agg: Agg } & Omit<Filter, "task">;
 export type Answer = { value: number | string | Record<string, number> | null; n: number; of: number };

@@ -6,42 +6,29 @@
    borders are ink on paper, never a brand tint.
    No webfont, by choice: instant paint and no network on a phone in a basement. */
 :root {
-  /* ONE WORLD, TWO SKINS. The relationship carries the design, not the absolute values: paper
-     always sits a step brighter than the slab it lies on, every division is a hairline, and
-     colour still means provenance and nothing else. Follow the device — a phone in a basement
-     and a phone in June are not the same screen, and the crew already told their OS which one
-     they are holding. Never write a colour below this block; add a token here instead. */
-  --page:#fff; --slab:#eef0f3; --slab2:#fff; --paper:#fff; --raise:#fff; --sunk:#f1f2f4;
-  --ink:#15171c; --dim:#636a76; --lab:#40454f; --faded:#8b919d;
-  --hair:rgba(21,23,28,.13); --well:rgba(21,23,28,.05); --dead:rgba(21,23,28,.04); --stroke:rgba(21,23,28,.22);
-  --tty:#2b2f36; --tty2:#0d0f13; --faint:#697180; --fainter:#98a0ac; --glint:#000;
-  --edge:rgba(21,23,28,.11); --edge2:rgba(21,23,28,.2); --edge3:rgba(21,23,28,.4); --sheen:rgba(21,23,28,.08);
-  --act:#15171c; --onact:#fff; --onink:#fff; --onmint:#fff;
-  --violet:#6338c6; --violet2:#4d2ba3; --mint:#12793c; --mint2:#166534; --green:#166534; --amber:#8a5a00;
-  --bad:#b3271e; --badline:rgba(179,39,30,.45); --okfill:rgba(22,101,52,.08); --okline:rgba(22,101,52,.4);
-  --you:#15171c; --youb:#8a919c; --draftline:rgba(99,56,198,.4);
-  --bezel:#c9ccd2; --bezeledge:rgba(21,23,28,.22);
+  /* ONE WORLD, TWO SKINS, ONE SOURCE. light-dark() picks by the used color-scheme, so every
+     token is written once and the switch below is all the toggle has to do. The relationship
+     carries the design, not the values: paper always sits a step brighter than the slab it
+     lies on, a well is cut DOWN from the surface it is in, every division is a hairline, and
+     colour still means provenance. Never write a bare colour below this block. */
+  --page:light-dark(#fff,#000); --slab:light-dark(#eef0f3,#0a0c10); --slab2:light-dark(#fff,#151920); --paper:light-dark(#fff,#161a21);
+  --raise:light-dark(#fff,#1e242e); --sunk:light-dark(#f1f2f4,#0e1116); --ink:light-dark(#15171c,#e7eaf0); --dim:light-dark(#636a76,#98a2b3);
+  --lab:light-dark(#40454f,#c4cbd8); --faded:light-dark(#8b919d,#6d7686); --hair:light-dark(rgba(21,23,28,.13),rgba(255,255,255,.11)); --well:light-dark(rgba(21,23,28,.05),rgba(255,255,255,.06));
+  --dead:light-dark(rgba(21,23,28,.04),rgba(255,255,255,.035)); --stroke:light-dark(rgba(21,23,28,.22),rgba(255,255,255,.16)); --tty:light-dark(#2b2f36,#c3ccd8); --tty2:light-dark(#0d0f13,#e9eef6);
+  --faint:light-dark(#697180,#8791a1); --fainter:light-dark(#98a0ac,#4f5866); --glint:light-dark(#000,#fff); --edge:light-dark(rgba(21,23,28,.11),rgba(255,255,255,.07));
+  --edge2:light-dark(rgba(21,23,28,.2),rgba(255,255,255,.2)); --edge3:light-dark(rgba(21,23,28,.4),rgba(255,255,255,.45)); --sheen:light-dark(rgba(21,23,28,.08),rgba(255,255,255,.12)); --act:light-dark(#15171c,#fff);
+  --onact:light-dark(#fff,#000); --onink:light-dark(#fff,#000); --onmint:light-dark(#fff,#000); --violet:light-dark(#6338c6,#b794ff);
+  --violet2:light-dark(#4d2ba3,#cdbcf5); --mint:light-dark(#12793c,#4ade80); --mint2:light-dark(#166534,#a9dcbd); --green:light-dark(#166534,#4ade80);
+  --amber:light-dark(#8a5a00,#e3b341); --bad:light-dark(#b3271e,#ff8f85); --badline:light-dark(rgba(179,39,30,.45),rgba(255,143,133,.45)); --okfill:light-dark(rgba(22,101,52,.08),rgba(74,222,128,.12));
+  --okline:light-dark(rgba(22,101,52,.4),rgba(74,222,128,.45)); --you:light-dark(#15171c,#e9eef5); --youb:light-dark(#8a919c,#7d8590); --draftline:light-dark(rgba(99,56,198,.4),rgba(183,148,255,.4));
+  --bezel:light-dark(#c9ccd2,#000); --bezeledge:light-dark(rgba(21,23,28,.22),rgba(255,255,255,.22));
   --sans:-apple-system, "SF Pro Text", "Segoe UI Variable Text", Inter, system-ui, sans-serif;
   --mono:ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
   --r:18px; color-scheme:light dark;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Depth, not more colour: a cool near-black ramp with real steps between page, slab, paper
-       and the controls on it — and a well that goes DARKER than the paper it is cut into, the
-       way a recess actually reads. Neutral grey is what makes a dark app look unfinished. */
-    --page:#000; --slab:#0a0c10; --slab2:#151920; --paper:#161a21; --raise:#1e242e; --sunk:#0e1116;
-    --ink:#e7eaf0; --dim:#98a2b3; --lab:#c4cbd8; --faded:#6d7686;
-    --hair:rgba(255,255,255,.11); --well:rgba(255,255,255,.06); --dead:rgba(255,255,255,.035); --stroke:rgba(255,255,255,.16);
-    --tty:#c3ccd8; --tty2:#e9eef6; --faint:#8791a1; --fainter:#4f5866; --glint:#fff;
-    --edge:rgba(255,255,255,.07); --edge2:rgba(255,255,255,.2); --edge3:rgba(255,255,255,.45); --sheen:rgba(255,255,255,.12);
-    --act:#fff; --onact:#000; --onink:#000; --onmint:#000;
-    --violet:#b794ff; --violet2:#cdbcf5; --mint:#4ade80; --mint2:#a9dcbd; --green:#4ade80; --amber:#e3b341;
-    --bad:#ff8f85; --badline:rgba(255,143,133,.45); --okfill:rgba(74,222,128,.12); --okline:rgba(74,222,128,.45);
-    --you:#e9eef5; --youb:#7d8590; --draftline:rgba(183,148,255,.4);
-    --bezel:#000; --bezeledge:rgba(255,255,255,.22);
-  }
-}
+/* the [ ] menu writes data-theme; "auto" matches neither and falls back to the device */
+:root[data-theme="light"] { color-scheme:light; }
+:root[data-theme="dark"] { color-scheme:dark; }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 /* the browser's default selection blue is the one thing that always reads as unfinished; this
    is an inversion, not a colour, so it spends none of the provenance vocabulary */
@@ -79,6 +66,15 @@ main.office .top nav { background:none; border-color:var(--sheen); }
 main.office .top nav button { font-size:.75rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; padding:.45rem 1rem; color:var(--faint); }
 main.office .top nav button.on { background:var(--sheen); color:var(--glint); box-shadow:none; }
 main.office .top .hint { font-size:.72rem; letter-spacing:.02em; color:var(--faint); }
+/* The skin switch in the [ ] menu. Which one is chosen is read off the root attribute, so the
+   buttons carry no state of their own — "auto" is the absence of a choice, which is why it
+   matches by :not() rather than by a value the app has to remember to write. */
+:root:not([data-theme="light"]):not([data-theme="dark"]) [data-skin="auto"],
+:root[data-theme="light"] [data-skin="light"],
+:root[data-theme="dark"] [data-skin="dark"] { background:var(--well); color:var(--ink); }
+:root:not([data-theme="light"]):not([data-theme="dark"]) main.office [data-skin="auto"],
+:root[data-theme="light"] main.office [data-skin="light"],
+:root[data-theme="dark"] main.office [data-skin="dark"] { background:var(--sheen); color:var(--glint); }
 .hint { color:var(--dim); }
 
 /* the two panes */

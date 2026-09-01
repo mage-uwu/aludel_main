@@ -149,8 +149,9 @@ because a template cannot know which weekday a route runs. Read it before touchi
   into. In the light skin `--raise` is the same white as the paper and a hairline does the
   lifting; in the dark skin nothing lifts by a border alone, so it takes a real step. The dark
   ramp is cool, not neutral — flat grey is what makes a dark app look unfinished. Every colour is a
-  token defined once in the two `:root` blocks at the top of `src/index.css`; **never write a
-  literal below them** (the two `#000` in the `.log` mask are alpha, not colour, and the
+  token written **once**, as `light-dark(light, dark)`, in the single `:root` block at the top
+  of `src/index.css` — one source, so the two skins cannot drift apart, and the toggle only has
+  to set `color-scheme`. **Never write a literal below that block** (the two `#000` in the `.log` mask are alpha, not colour, and the
   pointer's own black-with-a-white-edge is deliberately the same on both grounds). In the office the
   app **is** the terminal — one flat slab whose title bar carries only the centred
   wordmark and a `[ ]` menu (the office/field switch and who you are live in it) — the slab
